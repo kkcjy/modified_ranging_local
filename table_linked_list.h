@@ -12,20 +12,21 @@ typedef struct {
 } __attribute__((packed)) FreeQueue;
 
 /* for a message
-    as a SENDER
+    SENDER
                 Tx   --->   Rx   
         localSeq              remoteSeq
-    as a RECEIVER
+    RECEIVER
                 Rx   <---   Tx   
         localSeq              remoteSeq
 */
 typedef struct{
-    dwTime_t TxTime;                
-    dwTime_t RxTime;                 
+    dwTime_t TxTimestamp;         
+    dwTime_t RxTimestamp;            
     #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
     Coordinate_Tuple_t TxCoordinate;    
     Coordinate_Tuple_t RxCoordinate;   
     #endif
+    int64_t Tf;
     uint16_t localSeq;                 
     uint16_t remoteSeq;                 
     table_index_t pre;                  // point to prenode

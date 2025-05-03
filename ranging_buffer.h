@@ -30,7 +30,14 @@ typedef struct {
     #endif
 } __attribute__((packed)) RangingBufferNode; 
 
-// store RANGING_BUFFER_SIZE round-trip communication
+/* store RANGING_BUFFER_SIZE round-trip communication
+    sendBuffer
+        local   <---    neighbor
+        local   --->    neighbor
+    receiveBuffer
+        local   --->    neighbor
+        local   <---    neighbor
+*/
 typedef struct {
     uint8_t sendLength;
     uint8_t receiveLength;
@@ -38,6 +45,12 @@ typedef struct {
     table_index_t topReceiveBuffer;
     RangingBufferNode sendBuffer[RANGING_BUFFER_SIZE];
     RangingBufferNode receiveBuffer[RANGING_BUFFER_SIZE];
-}RangingBuffer; 
+} __attribute__((packed)) RangingBuffer; 
+
+
+void initRangingBufferNode(RangingBufferNode *node);
+void initRangingBuffer(RangingBuffer *buffer);
+void addRangingBuffer(RangingBuffer *buffer, RangingBufferNode *node, StatusType status);
+table_index_t searchRangingBuffer(RangingBuffer *buffer, uint16_t localSeq, StatusType status);
 
 #endif

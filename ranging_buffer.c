@@ -1,0 +1,315 @@
+#include <stdbool.h>
+#include "ranging_buffer.h"
+#include "table_linked_list.h"
+#include "nullVal.h"
+
+// static int64_t initTofSum;
+
+// int64_t getInitTofSum() {
+//     return initTofSum;
+// }
+
+void initRangingBufferNode(RangingBufferNode *node){
+    node->sendTx = nullTimeStamp;
+    node->sendRx = nullTimeStamp;
+    node->receiveTx = nullTimeStamp;
+    node->receiveRx = nullTimeStamp;
+    node->T1 = NULL_TOF;
+    node->T2 = NULL_TOF;
+    node->sumTof = NULL_TOF;
+    node->localSeq = NULL_SEQ;
+    node->preLocalSeq = NULL_SEQ;
+
+    #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+        node->sendTxCoordinate = nullCoordinate;
+        node->sendRxCoordinate = nullCoordinate;
+        node->receiveTxCoordinate = nullCoordinate;
+        node->receiveRxCoordinate = nullCoordinate;
+    #endif
+}
+
+void initRangingBuffer(RangingBuffer *buffer) {
+    buffer->topSendBuffer = NULL_INDEX;
+    buffer->topReceiveBuffer = NULL_INDEX;
+    buffer->receiveLength = 0;
+    buffer->sendLength = 0;
+    for (int i = 0; i < RANGING_BUFFER_SIZE; i++) {
+        initRangingBufferNode(&buffer->sendBuffer[i]);
+        initRangingBufferNode(&buffer->receiveBuffer[i]);
+    }
+    // initTofSum = 0;
+}
+
+// add RangingBufferNode to RangingBuffer(send/receive)
+void addRangingBuffer(RangingBuffer *buffer, RangingBufferNode *node, StatusType status){
+    if (status == SENDER) {
+        buffer->topSendBuffer = (buffer->topSendBuffer + 1) % RANGING_BUFFER_SIZE;
+        buffer->sendLength = buffer->sendLength < RANGING_BUFFER_SIZE ? buffer->sendLength + 1 : RANGING_BUFFER_SIZE;
+        buffer->sendBuffer[buffer->topSendBuffer].sendTx = node->sendTx;
+        buffer->sendBuffer[buffer->topSendBuffer].sendRx = node->sendRx;
+        buffer->sendBuffer[buffer->topSendBuffer].receiveTx = node->receiveTx;
+        buffer->sendBuffer[buffer->topSendBuffer].receiveRx = node->receiveRx;
+        buffer->sendBuffer[buffer->topSendBuffer].T1 = node->T1;
+        buffer->sendBuffer[buffer->topSendBuffer].T2 = node->T2;
+        buffer->sendBuffer[buffer->topSendBuffer].sumTof = node->sumTof;
+        buffer->sendBuffer[buffer->topSendBuffer].localSeq = node->localSeq;
+        buffer->sendBuffer[buffer->topSendBuffer].preLocalSeq = node->preLocalSeq;
+        #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+            buffer->sendBuffer[buffer->topSendBuffer].sendTxCoordinate = node->sendTxCoordinate;
+            buffer->sendBuffer[buffer->topSendBuffer].sendRxCoordinate = node->sendRxCoordinate;
+            buffer->sendBuffer[buffer->topSendBuffer].receiveTxCoordinate = node->receiveTxCoordinate;
+            buffer->sendBuffer[buffer->topSendBuffer].receiveRxCoordinate = node->receiveRxCoordinate;
+        #endif
+
+        DEBUG_PRINT("[SENDBUFFER_ADD]: sendTx:%llu,sendRx:%llu,receiveTx:%llu,receiveRx:%llu,sumTof:%lld,localSeq:%d,preLocalSeq:%d\n"
+            ,node->sendTx.full,node->sendRx.full,node->receiveTx.full,node->receiveRx.full,node->sumTof,node->localSeq,node->preLocalSeq);
+    }
+    else if (status == RECEIVER) {
+        buffer->topReceiveBuffer = (buffer->topReceiveBuffer + 1) % RANGING_BUFFER_SIZE;
+        buffer->receiveLength = buffer->receiveLength < RANGING_BUFFER_SIZE ? buffer->receiveLength + 1 : RANGING_BUFFER_SIZE;
+        buffer->receiveBuffer[buffer->topReceiveBuffer].sendTx = node->sendTx;
+        buffer->receiveBuffer[buffer->topReceiveBuffer].sendRx = node->sendRx;
+        buffer->receiveBuffer[buffer->topReceiveBuffer].receiveTx = node->receiveTx;
+        buffer->receiveBuffer[buffer->topReceiveBuffer].receiveRx = node->receiveRx;
+        buffer->receiveBuffer[buffer->topReceiveBuffer].T1 = node->T1;
+        buffer->receiveBuffer[buffer->topReceiveBuffer].T2 = node->T2;
+        buffer->receiveBuffer[buffer->topReceiveBuffer].sumTof = node->sumTof;
+        buffer->receiveBuffer[buffer->topReceiveBuffer].localSeq = node->localSeq;
+        buffer->receiveBuffer[buffer->topReceiveBuffer].preLocalSeq = node->preLocalSeq;
+        #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+            buffer->receiveBuffer[buffer->topReceiveBuffer].sendTxCoordinate = node->sendTxCoordinate;
+            buffer->receiveBuffer[buffer->topReceiveBuffer].sendRxCoordinate = node->sendRxCoordinate;
+            buffer->receiveBuffer[buffer->topReceiveBuffer].receiveTxCoordinate = node->receiveTxCoordinate;
+            buffer->receiveBuffer[buffer->topReceiveBuffer].receiveRxCoordinate = node->receiveRxCoordinate;
+        #endif
+
+        DEBUG_PRINT("[RECEIVEBUFFER_ADD]: sendTx:%llu,sendRx:%llu,receiveTx:%llu,receiveRx:%llu,sumTof:%lld,localSeq:%d,preLocalSeq:%d\n"
+            ,node->sendTx.full,node->sendRx.full,node->receiveTx.full,node->receiveRx.full,node->sumTof,node->localSeq,node->preLocalSeq);
+    }
+}
+
+/* select index from RangingBuffer(send/receive)
+SENDER
+select the index closest to localSeq from receiveBuffer
+RECEIVER
+select the index closest to localSeq from sendBuffer
+*/
+table_index_t searchRangingBuffer(RangingBuffer *buffer, uint16_t localSeq, StatusType status){
+    table_index_t index = NULL_INDEX;
+    if(status == SENDER) {
+        table_index_t i = buffer->topReceiveBuffer;
+        for (int j = 0; j < buffer->receiveLength; j++) {
+            if(buffer->receiveBuffer[i].localSeq < localSeq) {
+                if(index == NULL_INDEX || buffer->receiveBuffer[i].localSeq > buffer->receiveBuffer[index].localSeq) {
+                    index = i;
+                }
+            }
+            i = (i - 1 + RANGING_BUFFER_SIZE) % RANGING_BUFFER_SIZE;
+        }
+    }
+    else if(status == RECEIVER) {
+        table_index_t i = buffer->topSendBuffer;
+        for (int j = 0; j < buffer->sendLength; j++) {
+            if(buffer->sendBuffer[i].localSeq < localSeq) {
+                if(index == NULL_INDEX || buffer->sendBuffer[i].localSeq > buffer->sendBuffer[index].localSeq) {
+                    index = i;
+                }
+            }
+            i = (i - 1 + RANGING_BUFFER_SIZE) % RANGING_BUFFER_SIZE;
+        }
+    }
+    return index;
+}
+
+/* calculateTof
+flag == true
+    calculate the Tof using the most recent valid record
+flag == false
+    recalculate the Tof using the next most recent valid record
+*/
+double calculateTof(RangingBuffer *buffer, TableNode_t* tableNode, uint16_t checkLocalSeq, StatusType status, bool flag) {
+    // calculate D
+    dwTime_t Tx = tableNode->TxTimestamp;
+    dwTime_t Rx = tableNode->RxTimestamp;
+    uint16_t localSeq = tableNode->localSeq;
+    RangingBufferNode* node = NULL;
+    table_index_t index = searchRangingBuffer(buffer, checkLocalSeq, status);
+    if(index == NULL_INDEX){
+        DEBUG_PRINT("Warning: Cannot find the record with localSeq:%d\n",checkLocalSeq);
+        return -1;
+    }
+    if(status == SENDER){
+        node = &buffer->receiveBuffer[index];
+    }
+    else if(status == RECEIVER){
+        node = &buffer->sendBuffer[index];
+    }
+    int64_t Ra=0,Rb=0,Da=0,Db=0;
+    /* SENDER
+            sRx     ···Db···    rTx         ···Rb···        Rx
+        sTx         ···Ra···        rRx     ···Da···    Tx
+    */
+    if(status == SENDER){
+        Ra = (node->receiveRx.full-node->sendTx.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
+        Db = (node->receiveTx.full-node->sendRx.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
+        Rb = (Rx.full - node->receiveTx.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
+        Da = (Tx.full - node->receiveRx.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
+    }
+    /* RECEIVER
+        rTx         ···Ra···        sRx     ···Da···    Tx
+            rRx     ···Db···    sTx         ···Rb···        Rx
+    */
+    else if(status == RECEIVER){
+        Ra = (node->sendRx.full - node->receiveTx.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
+        Db = (node->sendTx.full - node->receiveRx.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
+        Rb = (Rx.full - node->sendTx.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
+        Da = (Tx.full - node->sendRx.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
+    }
+    int64_t T12 = node->sumTof;
+    int64_t T23 = 0;
+    DEBUG_PRINT("[CalculateTof]: status:%d,T12:%lld,Ra:%lld,Rb:%lld,Da:%lld,Db:%lld\n", status,T12,Ra, Rb, Da, Db);
+    float Ra_Da = (float)Ra/Da;
+    float Rb_Db = (float)Rb/Db;
+    int64_t diffA = Ra - Da;
+    int64_t diffB = Rb - Db;
+    DEBUG_PRINT("[CalculateTof]: Ra_Da:%f,Rb_Db:%f\n", Ra_Da, Rb_Db);
+
+    // fail to satisfy the convergence requirements
+    if(Ra_Da < CONVERGENCE_THRESHOLD || Rb_Db < CONVERGENCE_THRESHOLD) {
+        if(Ra_Da < Rb_Db) {
+            T23 = ((diffA * Rb + diffA * Db + diffB * Ra + diffB * Da)/2 - Ra*T12)/Da;
+        }
+        else {
+            T23 = ((diffA * Rb + diffA * Db + diffB * Ra + diffB * Da)/2 - Rb*T12)/Db;
+        }
+    }
+    else {
+        DEBUG_PRINT("Warning: Ra/Da and Rb/Db are both greater than CONVERGENCE_THRESHOLD(%f)\n",CONVERGENCE_THRESHOLD);
+        if(flag) {
+            DEBUG_PRINT("Warning: The latest record in rangingbuffer fails, and an attempt is made to recalculate the Tof using the next most recent valid record\n");
+            return calculateTof(buffer, tableNode, node->localSeq, status, false);
+        }
+        else {
+            DEBUG_PRINT("Warning: Recalculate Tof failed\n");
+            return -1;
+        }
+    }
+
+    // abnormal result
+    float Tof = T23 / 2;
+    float D = Tof * VELOCITY;
+    if(D < 0 || D > 1000){
+        DEBUG_PRINT("Warning: D = %f is out of range(0,1000)\n",D);
+        if(flag){
+            DEBUG_PRINT("Warning: The latest record in rangingbuffer fails, and an attempt is made to recalculate the Tof using the next most recent valid record\n");
+            return calculateTof(buffer, tableNode, node->localSeq, status, false);
+        }
+        else{
+            DEBUG_PRINT("Warning: Recalculate Tof failed\n");
+            return -1;
+        }
+    }
+
+    int64_t classicTof = ((Rb + Db) * (Ra - Da) + (Rb - Db) * (Ra + Da)) / (2*(Ra + Db + Rb + Da));
+    float classicD = classicTof * VELOCITY;
+
+    #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+        float trueDx = (tableNode->RxCoordinate.x - tableNode->TxCoordinate.x)/10.0;
+        float trueDy = (tableNode->RxCoordinate.y - tableNode->TxCoordinate.y)/10.0;
+        float trueDz = (tableNode->RxCoordinate.z - tableNode->TxCoordinate.z)/10.0;
+        float trueD = sqrt(trueDx*trueDx + trueDy*trueDy + trueDz*trueDz);
+        DEBUG_PRINT("[CalculateTof Finished]: modified_D = %f, classic_D = %f, true_D = %f", D, classicD, trueD);
+    #endif
+
+    /* Question
+    if flag == true, update the valid record
+    
+    if flag == false, the node is disconnected
+        maybe: Tx1, Rx1, Tx2, Rx2, Tx, Rx
+                Rx1     Tx2             Rx3     Tx4             Rx
+            Tx1             Rx2     Tx3             Rx4     Tx   
+
+        for a valid recalculation, store last Tx4, Rx4, Tx, Rx
+    */
+
+    // update ranging_buffer
+    RangingBufferNode newNode;
+    /* SENDER
+            sRx     ···Db···    rTx         ···Rb···        Rx
+        sTx         ···Ra···        rRx     ···Da···    Tx
+    */
+    if(status == SENDER) {
+        newNode.sendTx = Tx;
+        newNode.sendRx = Rx;
+        // newNode.receiveTx = node->receiveTx;
+        // newNode.receiveRx = node->receiveRx;
+        table_index_t last = searchRangingBuffer(buffer, localSeq, status);
+        newNode.receiveTx = buffer->receiveBuffer[last].receiveTx;
+        newNode.receiveRx = buffer->receiveBuffer[last].receiveRx;
+
+        #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+            newNode.sendTxCoordinate = tableNode->TxCoordinate;
+            newNode.sendRxCoordinate = tableNode->RxCoordinate;
+            // newNode.receiveRxCoordinate = node->receiveRxCoordinate;
+            // newNode.receiveTxCoordinate = node->receiveTxCoordinate;
+            newNode.receiveRxCoordinate = buffer->receiveBuffer[last].receiveRxCoordinate;
+            newNode.receiveTxCoordinate = buffer->receiveBuffer[last].receiveTxCoordinate;
+        #endif
+        newNode.localSeq = localSeq;
+        // newNode.preLocalSeq = node->localSeq;
+        newNode.preLocalSeq = buffer->receiveBuffer[last].localSeq;
+        newNode.sumTof = T23;
+        newNode.T1 = node->T2;
+        newNode.T2 = T23 - newNode.T1;
+        addRangingBuffer(buffer, &newNode, status);
+    }
+    /* RECEIVER
+        rTx         ···Ra···        sRx     ···Da···    Tx
+            rRx     ···Db···    sTx         ···Rb···        Rx
+    */
+    else if(status == RECEIVER) {
+        // newNode.sendTx = node->sendTx;
+        // newNode.sendRx = node->sendRx;
+        table_index_t last = searchRangingBuffer(buffer, localSeq, status);
+        newNode.sendTx = buffer->sendBuffer[last].sendTx;
+        newNode.sendRx = buffer->sendBuffer[last].sendRx;
+        newNode.receiveTx = Tx;
+        newNode.receiveRx = Rx;
+
+        #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+            // newNode.sendTxCoordinate = node->sendTxCoordinate;
+            // newNode.sendRxCoordinate = node->sendRxCoordinate;
+            newNode.sendTxCoordinate = buffer->sendBuffer[last].sendTxCoordinate;
+            newNode.sendRxCoordinate = buffer->sendBuffer[last].sendRxCoordinate;
+            newNode.receiveRxCoordinate = tableNode->RxCoordinate;
+            newNode.receiveTxCoordinate = tableNode->TxCoordinate;
+        #endif
+        newNode.localSeq = localSeq;
+        // newNode.preLocalSeq = node->localSeq;
+        newNode.preLocalSeq = buffer->sendBuffer[last].localSeq;
+        newNode.sumTof = T23;
+        newNode.T1 = node->T2;
+        newNode.T2 = T23 - newNode.T1;
+        addRangingBuffer(buffer, &newNode, status);
+    }
+    return D;
+}
+
+bool firstRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, table_index_t firstIndex, RangingBuffer* rangingBuffer, StatusType status) {
+    // 依次从A、B、A中取出数据
+    table_index_t indexA1 = firstIndex;
+    if (indexA1 == NULL_INDEX || listA->tableBuffer[indexA1].TxTimestamp.full == NULL_TIMESTAMP || listA->tableBuffer[indexA1].RxTimestamp.full == NULL_TIMESTAMP || listA->tableBuffer[indexA1].Tf != NULL_TOF) {
+        DEBUG_PRINT("Warning: The lastest record in listA is invalid or the record has owned Tof\n");
+        return false;
+    }
+    table_index_t indexB2 = findMaxSeqIndex(listB, listA->tableBuffer[indexA1].localSeq);
+    if (indexB2 == NULL_INDEX) {
+        DEBUG_PRINT("No valid record in listB\n");
+        return false;
+    }
+    table_index_t indexA3 = findMaxSeqIndex(listA, listB->tableBuffer[indexB2].localSeq);
+    if (indexA3 == NULL_INDEX)     {
+        DEBUG_PRINT("No valid record in listA\n");
+        return false;
+    }
+}
