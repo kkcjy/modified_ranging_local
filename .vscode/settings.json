@@ -1,5 +1,13 @@
 {
     "files.associations": {
-        "base_struct.h": "c"
+        "base_struct.h": "c",
+        "stdbool.h": "c",
+        "table_linked_list.h": "c",
+        "array": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "utility": "c",
+        "nullval.h": "c",
+        "ranging_buffer.h": "c"
     }
 }

@@ -1,4 +1,3 @@
-#include <stdbool.h>
 #include "ranging_buffer.h"
 #include "table_linked_list.h"
 #include "nullVal.h"
@@ -9,7 +8,7 @@
 //     return initTofSum;
 // }
 
-void initRangingBufferNode(RangingBufferNode *node){
+void initRangingBufferNode(RangingBufferNode *node) {
     node->sendTx = nullTimeStamp;
     node->sendRx = nullTimeStamp;
     node->receiveTx = nullTimeStamp;
@@ -41,7 +40,7 @@ void initRangingBuffer(RangingBuffer *buffer) {
 }
 
 // add RangingBufferNode to RangingBuffer(send/receive)
-void addRangingBuffer(RangingBuffer *buffer, RangingBufferNode *node, StatusType status){
+void addRangingBuffer(RangingBuffer *buffer, RangingBufferNode *node, StatusType status) {
     if (status == SENDER) {
         buffer->topSendBuffer = (buffer->topSendBuffer + 1) % RANGING_BUFFER_SIZE;
         buffer->sendLength = buffer->sendLength < RANGING_BUFFER_SIZE ? buffer->sendLength + 1 : RANGING_BUFFER_SIZE;
@@ -94,7 +93,7 @@ select the index closest to localSeq from receiveBuffer
 RECEIVER
 select the index closest to localSeq from sendBuffer
 */
-table_index_t searchRangingBuffer(RangingBuffer *buffer, uint16_t localSeq, StatusType status){
+table_index_t searchRangingBuffer(RangingBuffer *buffer, uint16_t localSeq, StatusType status) {
     table_index_t index = NULL_INDEX;
     if(status == SENDER) {
         table_index_t i = buffer->topReceiveBuffer;
@@ -326,7 +325,7 @@ double calculateTof(RangingBuffer *buffer, TableNode_t* tableNode, uint16_t chec
     return D;
 }
 
-bool InitializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, table_index_t firstIndex, RangingBuffer* rangingBuffer, StatusType status) {
+bool initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, table_index_t firstIndex, RangingBuffer* rangingBuffer, StatusType status) {
     // fetch data successively from listA, listB, and listA 
     table_index_t indexA1 = firstIndex;
     if (indexA1 == NULL_INDEX || listA->tableBuffer[indexA1].TxTimestamp.full == NULL_TIMESTAMP || listA->tableBuffer[indexA1].RxTimestamp.full == NULL_TIMESTAMP || listA->tableBuffer[indexA1].Tf != NULL_TOF) {
@@ -461,23 +460,9 @@ bool InitializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, 
     // initTofSum += Tof;
 }
 
-void printRangingBuffer(RangingBuffer *buffer){
-    int index = buffer->topReceiveBuffer;
-    for (int bound = 0; bound < RANGING_BUFFER_SIZE; bound++) {
-        if(index == NULL_INDEX) {
-            break;
-        }
-        DEBUG_PRINT("ReceiveBuffer[%d]: \n",index);
-        DEBUG_PRINT("sendTx: %llu, sendRx: %llu\n",buffer->receiveBuffer[index].sendTx.full,buffer->receiveBuffer[index].sendRx.full);
-        DEBUG_PRINT("receiveTx: %llu, receiveRx: %llu\n",buffer->receiveBuffer[index].receiveTx.full,buffer->receiveBuffer[index].receiveRx.full);
-        DEBUG_PRINT("sumTof: %lld\n",buffer->receiveBuffer[index].sumTof);
-        #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
-            DEBUG_PRINT("sendCoordinate: (%d,%d,%d)\n",buffer->receiveBuffer[i].sendRxCoordinate.x,buffer->receiveBuffer[i].sendRxCoordinate.y,buffer->receiveBuffer[i].sendRxCoordinate.z);
-            DEBUG_PRINT("receiveCoordinate: (%d,%d,%d)\n",buffer->receiveBuffer[i].receiveRxCoordinate.x,buffer->receiveBuffer[i].receiveRxCoordinate.y,buffer->receiveBuffer[i].receiveRxCoordinate.z);
-        #endif
-        index = (index - 1 + RANGING_BUFFER_SIZE) % RANGING_BUFFER_SIZE;
-    }
-    index = buffer->topSendBuffer;
+void printRangingBuffer(RangingBuffer *buffer) {
+    DEBUG_PRINT("--------------------START DEBUG_PRINT RANGINGBUFFER--------------------\n");
+    int index = buffer->topSendBuffer;
     for(int bound = 0; bound < RANGING_BUFFER_SIZE; bound++){
         if(index == NULL_INDEX){
             break;
@@ -492,4 +477,21 @@ void printRangingBuffer(RangingBuffer *buffer){
         #endif
         index = (index - 1 + RANGING_BUFFER_SIZE) % RANGING_BUFFER_SIZE;
     }
+
+    index = buffer->topReceiveBuffer;
+    for (int bound = 0; bound < RANGING_BUFFER_SIZE; bound++) {
+        if(index == NULL_INDEX) {
+            break;
+        }
+        DEBUG_PRINT("ReceiveBuffer[%d]: \n",index);
+        DEBUG_PRINT("sendTx: %llu, sendRx: %llu\n",buffer->receiveBuffer[index].sendTx.full,buffer->receiveBuffer[index].sendRx.full);
+        DEBUG_PRINT("receiveTx: %llu, receiveRx: %llu\n",buffer->receiveBuffer[index].receiveTx.full,buffer->receiveBuffer[index].receiveRx.full);
+        DEBUG_PRINT("sumTof: %lld\n",buffer->receiveBuffer[index].sumTof);
+        #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+            DEBUG_PRINT("sendCoordinate: (%d,%d,%d)\n",buffer->receiveBuffer[i].sendRxCoordinate.x,buffer->receiveBuffer[i].sendRxCoordinate.y,buffer->receiveBuffer[i].sendRxCoordinate.z);
+            DEBUG_PRINT("receiveCoordinate: (%d,%d,%d)\n",buffer->receiveBuffer[i].receiveRxCoordinate.x,buffer->receiveBuffer[i].receiveRxCoordinate.y,buffer->receiveBuffer[i].receiveRxCoordinate.z);
+        #endif
+        index = (index - 1 + RANGING_BUFFER_SIZE) % RANGING_BUFFER_SIZE;
+    }
+    DEBUG_PRINT("--------------------END DEBUG_PRINT RANGINGBUFFER--------------------\n");
 }

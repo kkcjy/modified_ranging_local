@@ -1,14 +1,14 @@
-#pragma once
 #ifndef TABLE_LINK_LIST_H
 #define TABLE_LINK_LIST_H
 
+#include <stdbool.h>
 #include "base_struct.h"
 
 typedef struct {
     table_index_t freeIndex[FREE_QUEUE_SIZE];
     table_index_t head;
     table_index_t tail;
-    table_index_t size;
+    table_index_t room;     // spare space
 } __attribute__((packed)) FreeQueue;
 
 /* for a message
@@ -23,8 +23,8 @@ typedef struct{
     dwTime_t TxTimestamp;         
     dwTime_t RxTimestamp;            
     #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
-    Coordinate_Tuple_t TxCoordinate;    
-    Coordinate_Tuple_t RxCoordinate;   
+        Coordinate_Tuple_t TxCoordinate;    
+        Coordinate_Tuple_t RxCoordinate;   
     #endif
     int64_t Tf;
     uint16_t localSeq;                 
@@ -40,5 +40,18 @@ typedef struct {
     table_index_t head;                 // -128 ~ 127
     table_index_t tail;                 // -128 ~ 127
 } __attribute__((packed)) TableLinkedList_t;
+
+
+void initFreeQueue(FreeQueue *queue);
+bool isEmpty(FreeQueue *queue);
+bool isFull(FreeQueue *queue);
+table_index_t pop(FreeQueue *queue);
+void push(FreeQueue *queue, table_index_t index);
+void initTableLinkedList(TableLinkedList_t *list);
+table_index_t addRecord(TableLinkedList_t *list, TableNode_t *node);
+void deleteTail(TableLinkedList_t *list);
+table_index_t searchTableLinkedList(TableLinkedList_t *list, uint16_t localSeq, uint16_t remoteSeq);
+table_index_t findLocalSeqIndex(TableLinkedList_t *list, uint16_t localSeq);
+table_index_t findRemoteSeqIndex(TableLinkedList_t *list, uint16_t remoteSeq);
 
 # endif

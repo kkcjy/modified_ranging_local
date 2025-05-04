@@ -1,4 +1,3 @@
-#include <stdbool.h>
 #include "table_linked_list.h"
 #include "nullVal.h"
 
@@ -55,9 +54,6 @@ void initTableLinkedList(TableLinkedList_t *list) {
         list->tableBuffer[i].remoteSeq = NULL_SEQ;
         list->tableBuffer[i].pre = NULL_INDEX;
         list->tableBuffer[i].next = NULL_INDEX;
-        #ifdef UKF_RELATIVE_POSITION_ENABLE
-            list->tableBuffer[i].ukfBufferId = NULL_INDEX;
-        #endif
     }
     initFreeQueue(&list->freeQueue);
     list->head = NULL_INDEX;
@@ -162,8 +158,7 @@ table_index_t searchTableLinkedList(TableLinkedList_t *list, uint16_t localSeq, 
 }
 
 // find the index of specified localSeq record
-table_index_t findLocalSeqIndex(TableLinkedList_t *list, uint16_t localSeq)
-{
+table_index_t findLocalSeqIndex(TableLinkedList_t *list, uint16_t localSeq) {
     table_index_t index = list->head;
     while (index != NULL_INDEX) {
         if (list->tableBuffer[index].localSeq == localSeq) {

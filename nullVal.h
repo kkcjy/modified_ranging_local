@@ -4,6 +4,7 @@
 #include "dwtypes.h"
 #include "base_struct.h"
 
+#define         NULL_ADDR               0
 #define         NULL_INDEX              -1
 #define         NULL_SEQ                0
 #define         NULL_TIMESTAMP          0

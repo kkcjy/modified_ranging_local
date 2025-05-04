@@ -1,4 +1,3 @@
-#pragma once
 #ifndef BASE_STRUCT_H
 #define BASE_STRUCT_H
 

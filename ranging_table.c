@@ -1,12 +1,51 @@
-// #include ""
+#include "ranging_table.h"
+#include "nullVal.h"
 
+void initRangingTable(RangingTable_t *table) {
+    table->state = NULL_STATE;
+    table->address = NULL_ADDR;
+    initTableLinkedList(&table->sendBuffer);
+    initTableLinkedList(&table->receiveBuffer);
+    initRangingBuffer(&table->validBuffer);
+}
 
-// void initFreeQueue(FreeQueue *queue) {
-//     queue->size = FREE_QUEUE_SIZE;
-//     queue->tail = queue->size - 1;
-//     queue->head = 0;
-//     for (table_index_t i = 0; i < FREE_QUEUE_SIZE; i++)
-//     {
-//         queue->freeIndex[i] = i;
-//     }
-// }
+void enableRangingTable(RangingTable_t *table, uint16_t address) {
+    table->state = USING;
+    table->address = address;
+}
+
+void disableRangingTable(RangingTable_t *table) {
+    table->state = NULL_STATE;
+    table->address = NULL_ADDR;
+    initTableLinkedList(&table->sendBuffer);
+    initTableLinkedList(&table->receiveBuffer);
+    initRangingBuffer(&table->validBuffer);
+}
+
+void printRangingTable(RangingTable_t *table) {
+    DEBUG_PRINT("====================START DEBUG_PRINT RANGINGTABLE====================\n");
+    DEBUG_PRINT("State: %s\n", (table->state == NULL_STATE) ? "NOT_USING" : "USING");
+    DEBUG_PRINT("Address: %d\n", table->address);
+    if (table->state == USING) {
+        DEBUG_PRINT("[SendBuffer]:\n");
+        table_index_t index = table->sendBuffer.head;
+        while (index != NULL_INDEX) {
+            DEBUG_PRINT("localSeq: %d,remoteSeq: %d,Tx: %lld,Rx: %lld,Tf: %lld\n", 
+                table->sendBuffer.tableBuffer[index].localSeq, table->sendBuffer.tableBuffer[index].remoteSeq, 
+                table->sendBuffer.tableBuffer[index].TxTimestamp.full, table->sendBuffer.tableBuffer[index].RxTimestamp.full, 
+                table->sendBuffer.tableBuffer[index].Tf);
+            index = table->sendBuffer.tableBuffer[index].next;
+        }
+        DEBUG_PRINT("[ReceiveBuffer]:\n");
+        index = table->receiveBuffer.head;
+        while (index != NULL_INDEX) {
+            DEBUG_PRINT("localSeq: %d,remoteSeq: %d,Tx: %lld,Rx: %lld,Tf: %lld\n", 
+                table->receiveBuffer.tableBuffer[index].localSeq, table->receiveBuffer.tableBuffer[index].remoteSeq, 
+                table->receiveBuffer.tableBuffer[index].TxTimestamp.full, table->receiveBuffer.tableBuffer[index].RxTimestamp.full, 
+                table->receiveBuffer.tableBuffer[index].Tf);
+            index = table->receiveBuffer.tableBuffer[index].next;
+        }
+    }
+    printRangingBuffer(&table->validBuffer);
+    DEBUG_PRINT("====================END DEBUG_PRINT RANGINGTABLE====================\n");
+}

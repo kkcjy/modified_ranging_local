@@ -1,8 +1,15 @@
-#pragma once
 #ifndef RANGING_BUFFER_H
 #define RANGING_BUFFER_H
 
+#include <stdbool.h>
 #include "base_struct.h"
+
+// for function calculateTof
+typedef enum {
+    FIRST_CALCULATE,
+    SECOND_CALCULATE_UNQUALIFIED,
+    SECOND_CALCULATE_ABNORMAL
+} FLAG;
 
 /* for a round-trip communication(RangingBufferNode)
 send                  T1
@@ -19,8 +26,13 @@ typedef struct {
     int64_t T1;
     int64_t T2;
     int64_t sumTof;
+    /*         sender                         receiver
+        Tx1             Rx2                 Rx1     Tx2
+            Rx1     Tx2                 Tx1             Rx2
+    preLocalSeq     localSeq        preLocalSeq     localSeq
+    */
     uint16_t localSeq;
-    uint16_t preLocalSeq;   // for searching
+    uint16_t preLocalSeq; 
 
     #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
         Coordinate16_Tuple_t sendTxCoordinate; 
@@ -52,5 +64,8 @@ void initRangingBufferNode(RangingBufferNode *node);
 void initRangingBuffer(RangingBuffer *buffer);
 void addRangingBuffer(RangingBuffer *buffer, RangingBufferNode *node, StatusType status);
 table_index_t searchRangingBuffer(RangingBuffer *buffer, uint16_t localSeq, StatusType status);
+double calculateTof(RangingBuffer *buffer, TableNode_t* tableNode, uint16_t checkLocalSeq, StatusType status, FLAG flag);
+bool initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, table_index_t firstIndex, RangingBuffer* rangingBuffer, StatusType status);
+void printRangingBuffer(RangingBuffer *buffer);
 
 #endif
