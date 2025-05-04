@@ -461,19 +461,23 @@ bool initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, 
 }
 
 void printRangingBuffer(RangingBuffer *buffer) {
-    DEBUG_PRINT("--------------------START DEBUG_PRINT RANGINGBUFFER--------------------\n");
+    DEBUG_PRINT("[ValidBuffer]:\n");
     int index = buffer->topSendBuffer;
     for(int bound = 0; bound < RANGING_BUFFER_SIZE; bound++){
         if(index == NULL_INDEX){
             break;
         }
-        DEBUG_PRINT("SendBuffer[%d]: \n",index);
-        DEBUG_PRINT("receiveTx: %llu,receiveRx: %llu\n",buffer->sendBuffer[index].receiveTx.full,buffer->sendBuffer[index].receiveRx.full);
-        DEBUG_PRINT("sendTx: %llu,sendRx: %llu\n",buffer->sendBuffer[index].sendTx.full,buffer->sendBuffer[index].sendRx.full);
-        DEBUG_PRINT("sumTof: %lld\n",buffer->sendBuffer[index].sumTof);
+        DEBUG_PRINT("SendBuffer[%d]: receiveTx: %llu,receiveRx: %llu,sendTx: %llu,sendRx: %llu,sumTof: %lld",
+            index,buffer->sendBuffer[index].receiveTx.full,buffer->sendBuffer[index].receiveRx.full,
+            buffer->sendBuffer[index].sendTx.full,buffer->sendBuffer[index].sendRx.full,
+            buffer->sendBuffer[index].sumTof
+        );
         #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
-            DEBUG_PRINT("receiveCoordinate: (%d,%d,%d)\n",buffer->sendBuffer[index].receiveRxCoordinate.x,buffer->sendBuffer[index].receiveRxCoordinate.y,buffer->sendBuffer[index].receiveRxCoordinate.z);
-            DEBUG_PRINT("sendCoordinate: (%d,%d,%d)\n",buffer->sendBuffer[index].sendRxCoordinate.x,buffer->sendBuffer[index].sendRxCoordinate.y,buffer->sendBuffer[index].sendRxCoordinate.z);
+            DEBUG_PRINT(",receiveCoordinate: (%d,%d,%d),sendCoordinate: (%d,%d,%d)\n",
+                buffer->sendBuffer[index].receiveRxCoordinate.x,buffer->sendBuffer[index].receiveRxCoordinate.y,buffer->sendBuffer[index].receiveRxCoordinate.z,
+                buffer->sendBuffer[index].sendRxCoordinate.x,buffer->sendBuffer[index].sendRxCoordinate.y,buffer->sendBuffer[index].sendRxCoordinate.z);
+        #else
+                DEBUG_PRINT("\n");
         #endif
         index = (index - 1 + RANGING_BUFFER_SIZE) % RANGING_BUFFER_SIZE;
     }
@@ -483,15 +487,17 @@ void printRangingBuffer(RangingBuffer *buffer) {
         if(index == NULL_INDEX) {
             break;
         }
-        DEBUG_PRINT("ReceiveBuffer[%d]: \n",index);
-        DEBUG_PRINT("sendTx: %llu, sendRx: %llu\n",buffer->receiveBuffer[index].sendTx.full,buffer->receiveBuffer[index].sendRx.full);
-        DEBUG_PRINT("receiveTx: %llu, receiveRx: %llu\n",buffer->receiveBuffer[index].receiveTx.full,buffer->receiveBuffer[index].receiveRx.full);
-        DEBUG_PRINT("sumTof: %lld\n",buffer->receiveBuffer[index].sumTof);
+        DEBUG_PRINT("ReceiveBuffer[%d]: sendTx: %llu,sendRx: %llu,receiveTx: %llu,receiveRx: %llu,sumTof: %lld",
+            index,buffer->receiveBuffer[index].sendTx.full,buffer->receiveBuffer[index].sendRx.full,
+            buffer->receiveBuffer[index].receiveTx.full,buffer->receiveBuffer[index].receiveRx.full,
+            buffer->receiveBuffer[index].sumTof);
         #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
-            DEBUG_PRINT("sendCoordinate: (%d,%d,%d)\n",buffer->receiveBuffer[i].sendRxCoordinate.x,buffer->receiveBuffer[i].sendRxCoordinate.y,buffer->receiveBuffer[i].sendRxCoordinate.z);
-            DEBUG_PRINT("receiveCoordinate: (%d,%d,%d)\n",buffer->receiveBuffer[i].receiveRxCoordinate.x,buffer->receiveBuffer[i].receiveRxCoordinate.y,buffer->receiveBuffer[i].receiveRxCoordinate.z);
+            DEBUG_PRINT(",sendCoordinate: (%d,%d,%d),receiveCoordinate: (%d,%d,%d)\n",
+                buffer->receiveBuffer[index].sendRxCoordinate.x,buffer->receiveBuffer[index].sendRxCoordinate.y,buffer->receiveBuffer[index].sendRxCoordinate.z,
+                buffer->receiveBuffer[index].receiveRxCoordinate.x,buffer->receiveBuffer[index].receiveRxCoordinate.y,buffer->receiveBuffer[index].receiveRxCoordinate.z);
+        #else
+            DEBUG_PRINT("\n");
         #endif
         index = (index - 1 + RANGING_BUFFER_SIZE) % RANGING_BUFFER_SIZE;
     }
-    DEBUG_PRINT("--------------------END DEBUG_PRINT RANGINGBUFFER--------------------\n");
 }

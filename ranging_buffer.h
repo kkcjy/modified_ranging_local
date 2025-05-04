@@ -35,10 +35,10 @@ typedef struct {
     uint16_t preLocalSeq; 
 
     #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
-        Coordinate16_Tuple_t sendTxCoordinate; 
-        Coordinate16_Tuple_t sendRxCoordinate; 
-        Coordinate16_Tuple_t receiveTxCoordinate;
-        Coordinate16_Tuple_t receiveRxCoordinate;
+        Coordinate_Tuple_t sendTxCoordinate; 
+        Coordinate_Tuple_t sendRxCoordinate; 
+        Coordinate_Tuple_t receiveTxCoordinate;
+        Coordinate_Tuple_t receiveRxCoordinate;
     #endif
 } __attribute__((packed)) RangingBufferNode; 
 

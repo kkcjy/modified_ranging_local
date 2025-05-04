@@ -23,7 +23,7 @@ void initRangingTableSet() {
 }
 
 // find the index of RangingTable by address
-table_index_t findRangingTable(uint16_t address){
+table_index_t findRangingTable(uint16_t address) {
     for (table_index_t i = 0; i < rangingTableSet->count; i++) {
         if(rangingTableSet->neighborReceiveBuffer[i].address == address) {
             return i;
@@ -78,3 +78,64 @@ table_index_t findLocalSendBufferNode(uint16_t seq) {
     }
     return NULL_INDEX;
 }
+
+static void printRangingMessage(Ranging_Message_t* rangingMessage) {
+    DEBUG_PRINT("====================START DEBUG_PRINT RANGINGMESSAGE====================\n");
+    DEBUG_PRINT("[Header]:\n");
+    DEBUG_PRINT("srcAddress: %u\n", rangingMessage->header.srcAddress);
+    DEBUG_PRINT("msgSequence: %u\n", rangingMessage->header.msgSequence);
+    DEBUG_PRINT("msgLength: %u\n", rangingMessage->header.msgLength);
+    DEBUG_PRINT("TxTimestamps:\n");
+    for(int i = 0; i < MESSAGE_HEAD_TX_SIZE; i++) {
+        DEBUG_PRINT("\tseqNumber: %u, timestamp: %llu",
+        rangingMessage->header.TxTimestamps[i].seqNumber, rangingMessage->header.TxTimestamps[i].timestamp.full);
+        #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+            DEBUG_PRINT(", coordinate:(%u,%u,%u)\n",rangingMessage->header.TxCoodinates[i].x, rangingMessage->header.TxCoodinates[i].y, rangingMessage->header.TxCoodinates[i].z);
+        #else
+            DEBUG_PRINT("\n");
+        #endif
+    }
+    DEBUG_PRINT("[BodyUnits]:\n");
+    for(int i = 0; i < MESSAGE_BODY_UNIT_SIZE; i++){
+        DEBUG_PRINT("dest: %u\n", rangingMessage->bodyUnits[i].dest);
+        DEBUG_PRINT("RxTimestamps:\n");
+        for(int j = 0; j < MESSAGE_BODY_RX_SIZE; j++){
+            DEBUG_PRINT("\tseqNumber: %u, timestamp: %llu",
+            rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber, rangingMessage->bodyUnits[i].RxTimestamps[j].timestamp.full);
+            #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+            DEBUG_PRINT(", coordinate:(%u,%u,%u)\n",rangingMessage->bodyUnits[i].rxCoodinate[j].x, rangingMessage->bodyUnits[i].rxCoodinate[j].y, rangingMessage->bodyUnits[i].rxCoodinate[j].z);
+            #else
+                DEBUG_PRINT("\n");
+            #endif
+        }
+    }
+    DEBUG_PRINT("====================END DEBUG_PRINT RANGINGMESSAGE====================\n");
+}
+
+static void printLocalSendBuffer() {
+    DEBUG_PRINT("--------------------START DEBUG_PRINT LOCALSENDBUFFER--------------------\n");
+    table_index_t index = rangingTableSet->topLocalSendBuffer;
+    int count = 0;
+    while (index != NULL_INDEX && count < TABLE_BUFFER_SIZE) {
+        DEBUG_PRINT("seq: %d,Tx: %lld", 
+            rangingTableSet->localSendBuffer[index].seqNumber, rangingTableSet->localSendBuffer[index].timestamp.full);
+        #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+            DEBUG_PRINT(", coordinate:(%u,%u,%u)\n",rangingTableSet->localSendBuffer[index].TxCoordinate.x, rangingTableSet->localSendBuffer[index].TxCoordinate.y, rangingTableSet->localSendBuffer[index].TxCoordinate.z);
+        #else
+            DEBUG_PRINT("\n");
+        #endif
+        index = (index - 1 + TABLE_BUFFER_SIZE) % TABLE_BUFFER_SIZE;
+        count++;
+    }
+    DEBUG_PRINT("--------------------END DEBUG_PRINT LOCALSENDBUFFER--------------------\n");
+}
+
+static void printRangingTableSet() {
+    DEBUG_PRINT("====================START DEBUG_PRINT RANGINGTABLESET====================\n");
+    printSendBuffer();
+    for (table_index_t i = 0; i < rangingTableSet->count; i++) {
+        printRangingTable(&rangingTableSet->neighborReceiveBuffer[i]);
+    }
+    DEBUG_PRINT("====================START DEBUG_PRINT RANGINGTABLESET====================\n");
+}
+

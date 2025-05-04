@@ -1,6 +1,6 @@
 #define         table_index_t           int8_t
 
-// #define         UWB_COMMUNICATION_SEND_POSITION_ENABLE
+#define         UWB_COMMUNICATION_SEND_POSITION_ENABLE
 
 // ADHOCDECK_H
 #define         UWB_MAX_TIMESTAMP       1099511627776
