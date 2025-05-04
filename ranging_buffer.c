@@ -332,12 +332,12 @@ bool initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, 
         DEBUG_PRINT("Warning: The lastest record in listA is invalid or the record has owned Tof\n");
         return false;
     }
-    table_index_t indexB2 = findMaxSeqIndex(listB, listA->tableBuffer[indexA1].localSeq);
+    table_index_t indexB2 = searchTableLinkedList(listB, listA->tableBuffer[indexA1].localSeq);
     if (indexB2 == NULL_INDEX) {
         DEBUG_PRINT("No valid record in listB\n");
         return false;
     }
-    table_index_t indexA3 = findMaxSeqIndex(listA, listB->tableBuffer[indexB2].localSeq);
+    table_index_t indexA3 = searchTableLinkedList(listA, listB->tableBuffer[indexB2].localSeq);
     if (indexA3 == NULL_INDEX) {
         DEBUG_PRINT("No valid record in listA\n");
         return false;

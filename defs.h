@@ -13,3 +13,10 @@
 #define         RANGING_BUFFER_SIZE     6
 #define         CONVERGENCE_THRESHOLD   0.7     // 收敛阈值
 #define         VELOCITY                0.4691763978616
+
+// MODIFIED_RANGING_H
+#define         MESSAGE_BODY_RX_SIZE    1
+#define         MESSAGE_HEAD_TX_SIZE    1
+#define         MESSAGE_BODY_UNIT_SIZE  1
+#define         TX_BUFFER_POOL_SIZE     TABLE_BUFFER_SIZE   
+#define         TABLE_SET_NEIGHBOR_NUM  10

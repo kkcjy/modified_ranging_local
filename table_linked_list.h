@@ -50,7 +50,7 @@ void push(FreeQueue *queue, table_index_t index);
 void initTableLinkedList(TableLinkedList_t *list);
 table_index_t addRecord(TableLinkedList_t *list, TableNode_t *node);
 void deleteTail(TableLinkedList_t *list);
-table_index_t searchTableLinkedList(TableLinkedList_t *list, uint16_t localSeq, uint16_t remoteSeq);
+table_index_t searchTableLinkedList(TableLinkedList_t *list, uint16_t localSeq);
 table_index_t findLocalSeqIndex(TableLinkedList_t *list, uint16_t localSeq);
 table_index_t findRemoteSeqIndex(TableLinkedList_t *list, uint16_t remoteSeq);
 

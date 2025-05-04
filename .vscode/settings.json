@@ -8,6 +8,7 @@
         "initializer_list": "c",
         "utility": "c",
         "nullval.h": "c",
-        "ranging_buffer.h": "c"
+        "ranging_buffer.h": "c",
+        "modified_ranging.h": "c"
     }
 }

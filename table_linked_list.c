@@ -140,12 +140,12 @@ void deleteTail(TableLinkedList_t *list) {
     push(&list->freeQueue, index);
 }
 
-table_index_t searchTableLinkedList(TableLinkedList_t *list, uint16_t localSeq, uint16_t remoteSeq) {
+table_index_t searchTableLinkedList(TableLinkedList_t *list, uint16_t seq) {
     table_index_t index = list->head;
     table_index_t ans = NULL_INDEX;
     while (index != NULL_INDEX) {
         // Rx、Tx is full
-        if (list->tableBuffer[index].localSeq < localSeq 
+        if (list->tableBuffer[index].localSeq < seq 
             && list->tableBuffer[index].RxTimestamp.full != NULL_TIMESTAMP 
             && list->tableBuffer[index].TxTimestamp.full != NULL_TIMESTAMP) {
             if (ans == NULL_INDEX || list->tableBuffer[index].localSeq > list->tableBuffer[ans].localSeq) {
