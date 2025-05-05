@@ -8,9 +8,9 @@ typedef struct {
     uint16_t dest;          // fill in the address of neighbor                                  
     Timestamp_Tuple_t RxTimestamps[MESSAGE_BODY_RX_SIZE]; 
     #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
-        Coordinate_Tuple_t rxCoodinates[MESSAGE_BODY_RX_SIZE];
+        Coordinate_Tuple_t RxCoodinates[MESSAGE_BODY_RX_SIZE];
     #endif
-} __attribute__((packed)) Body_Unit_t;
+} __attribute__((packed)) Message_Body_Unit_t;
 
 typedef struct {
     uint16_t srcAddress;    // address of the source of message                             
@@ -20,15 +20,15 @@ typedef struct {
         Coordinate_Tuple_t TxCoodinates[MESSAGE_HEAD_TX_SIZE];
     #endif
     uint16_t msgLength;                                      
-} __attribute__((packed)) Ranging_Message_Header_t;
+} __attribute__((packed)) Message_Header_t;
 
 /* Ranging_Message_t ———— message sent
     header: local address, local sequence, TxTimestamps, TxCoodinates, msgLength
     bodyUnits: neighbor address, RxTimestamps, RxCoodinates
 */
 typedef struct {
-    Ranging_Message_Header_t header;
-    Body_Unit_t bodyUnits[MESSAGE_BODY_UNIT_SIZE];
+    Message_Header_t header;
+    Message_Body_Unit_t bodyUnits[MESSAGE_BODY_UNIT_SIZE];
 } __attribute__((packed)) Ranging_Message_t;
 
 /* Ranging_Message_With_Additional_Info_t  ———— message received
@@ -36,9 +36,9 @@ typedef struct {
 */
 typedef struct {
     Ranging_Message_t rangingMessage;
-    Timestamp_Tuple_t RxTimestamp;          // local timestamp when message is received
+    Timestamp_Tuple_t RxTimestamp;              // local timestamp when message is received
     #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
-        Coordinate_Tuple_t RxCoordinate;  // local cooedinate when message is received
+        Coordinate_Tuple_t RxCoordinate;        // local cooedinate when message is received
     #endif
 } __attribute__((packed)) Ranging_Message_With_Additional_Info_t;
 
@@ -51,7 +51,7 @@ typedef struct {
 } __attribute__((packed)) localSendBufferNode_t;
 
 typedef struct {
-    int count;                              
+    int counter;                // number of neighbors                                   
     Semaphore_t mutex;            
     table_index_t topLocalSendBuffer;
     localSendBufferNode_t localSendBuffer[TX_BUFFER_POOL_SIZE]; 

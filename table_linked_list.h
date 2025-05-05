@@ -48,7 +48,7 @@ bool isFull(FreeQueue *queue);
 table_index_t pop(FreeQueue *queue);
 void push(FreeQueue *queue, table_index_t index);
 void initTableLinkedList(TableLinkedList_t *list);
-table_index_t addRecord(TableLinkedList_t *list, TableNode_t *node);
+table_index_t addTableLinkedList(TableLinkedList_t *list, TableNode_t *node);
 void deleteTail(TableLinkedList_t *list);
 table_index_t searchTableLinkedList(TableLinkedList_t *list, uint16_t localSeq);
 table_index_t findLocalSeqIndex(TableLinkedList_t *list, uint16_t localSeq);

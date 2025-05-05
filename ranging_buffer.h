@@ -1,7 +1,6 @@
 #ifndef RANGING_BUFFER_H
 #define RANGING_BUFFER_H
 
-#include <stdbool.h>
 #include "base_struct.h"
 
 // for function calculateTof
@@ -65,7 +64,7 @@ void initRangingBuffer(RangingBuffer *buffer);
 void addRangingBuffer(RangingBuffer *buffer, RangingBufferNode *node, StatusType status);
 table_index_t searchRangingBuffer(RangingBuffer *buffer, uint16_t localSeq, StatusType status);
 double calculateTof(RangingBuffer *buffer, TableNode_t* tableNode, uint16_t checkLocalSeq, StatusType status, FLAG flag);
-bool initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, table_index_t firstIndex, RangingBuffer* rangingBuffer, StatusType status);
+void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, table_index_t firstIndex, RangingBuffer* rangingBuffer, StatusType status);
 void printRangingBuffer(RangingBuffer *buffer);
 
 #endif

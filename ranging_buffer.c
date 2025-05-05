@@ -2,11 +2,11 @@
 #include "table_linked_list.h"
 #include "nullVal.h"
 
-// static int64_t initTofSum;
+static int64_t initTofSum;
 
-// int64_t getInitTofSum() {
-//     return initTofSum;
-// }
+int64_t getInitTofSum() {
+    return initTofSum;
+}
 
 void initRangingBufferNode(RangingBufferNode *node) {
     node->sendTx = nullTimeStamp;
@@ -36,7 +36,7 @@ void initRangingBuffer(RangingBuffer *buffer) {
         initRangingBufferNode(&buffer->sendBuffer[i]);
         initRangingBufferNode(&buffer->receiveBuffer[i]);
     }
-    // initTofSum = 0;
+    initTofSum = 0;
 }
 
 // add RangingBufferNode to RangingBuffer(send/receive)
@@ -325,7 +325,7 @@ double calculateTof(RangingBuffer *buffer, TableNode_t* tableNode, uint16_t chec
     return D;
 }
 
-bool initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, table_index_t firstIndex, RangingBuffer* rangingBuffer, StatusType status) {
+void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, table_index_t firstIndex, RangingBuffer* rangingBuffer, StatusType status) {
     // fetch data successively from listA, listB, and listA 
     table_index_t indexA1 = firstIndex;
     if (indexA1 == NULL_INDEX || listA->tableBuffer[indexA1].TxTimestamp.full == NULL_TIMESTAMP || listA->tableBuffer[indexA1].RxTimestamp.full == NULL_TIMESTAMP || listA->tableBuffer[indexA1].Tf != NULL_TOF) {
@@ -457,7 +457,7 @@ bool initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, 
         #endif
         addRangingBuffer(rangingBuffer, &newNode2, RECEIVER);
     }
-    // initTofSum += Tof;
+    initTofSum += classicTof;
 }
 
 void printRangingBuffer(RangingBuffer *buffer) {

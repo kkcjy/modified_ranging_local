@@ -60,8 +60,8 @@ void initTableLinkedList(TableLinkedList_t *list) {
     list->tail = NULL_INDEX;
 }
 
-// add record and full in record
-table_index_t addRecord(TableLinkedList_t *list, TableNode_t *node) {
+// add record and fill in record
+table_index_t addTableLinkedList(TableLinkedList_t *list, TableNode_t *node) {
     table_index_t index = list->head;
 
     // fill in record
@@ -71,10 +71,10 @@ table_index_t addRecord(TableLinkedList_t *list, TableNode_t *node) {
             get Rx for the first time and store it in the list(set Tx null)
             get Tx for the second time, find the corresponding position and store it
         */ 
-        if (list->tableBuffer[index].localSeq == node->localSeq && node->TxTimestamp.full != NULL_TIMESTAMP) {
-            list->tableBuffer[index].RxTimestamp = node->RxTimestamp;
+        if (list->tableBuffer[index].remoteSeq == node->remoteSeq && node->RxTimestamp.full != NULL_TIMESTAMP) {
+            list->tableBuffer[index].TxTimestamp = node->TxTimestamp;
             #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
-                list->tableBuffer[index].RxCoordinate = node->RxCoordinate;
+                list->tableBuffer[index].TxCoordinate = node->TxCoordinate;
             #endif
             return index;
         }

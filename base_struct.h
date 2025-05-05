@@ -1,7 +1,6 @@
 #ifndef BASE_STRUCT_H
 #define BASE_STRUCT_H
 
-#include <stdint.h>
 #include "defs.h"
 #include "dwtypes.h"
 
