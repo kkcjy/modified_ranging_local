@@ -120,7 +120,7 @@ table_index_t searchRangingBuffer(RangingBuffer_t *buffer, uint16_t localSeq, St
     return index;
 }
 
-/* calculateTof
+/* calculateTof and store valid calculation record
     FLAG = FIRST_CALCULATE,
         calculate the Tof using the most recent valid record
     FLAG = SECOND_CALCULATE_UNQUALIFIED,
@@ -133,7 +133,9 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
     dwTime_t Tx = tableNode->TxTimestamp;
     dwTime_t Rx = tableNode->RxTimestamp;
     uint16_t localSeq = tableNode->localSeq;
-    RangingBufferNode_t* node = NULL;
+
+    RangingBufferNode_t* node;
+    
     table_index_t index = searchRangingBuffer(buffer, checkLocalSeq, status);
     if(index == NULL_INDEX){
         DEBUG_PRINT("Warning: Cannot find the record with localSeq:%d\n",checkLocalSeq);
@@ -152,8 +154,8 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
         sTx         <--Ra-->        rRx     <--Da-->    Tx
     */
     if(status == SENDER){
-        Ra = (node->receiveRx.full-node->sendTx.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
-        Db = (node->receiveTx.full-node->sendRx.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
+        Ra = (node->receiveRx.full - node->sendTx.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
+        Db = (node->receiveTx.full - node->sendRx.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
         Rb = (Rx.full - node->receiveTx.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
         Da = (Tx.full - node->receiveRx.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
     }

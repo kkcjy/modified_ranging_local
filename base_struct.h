@@ -4,6 +4,7 @@
 #include "defs.h"
 #include "dwTypes.h"
 
+// not used
 typedef enum {
     CLASSIC_MODE,
     MODIFIED_MODE

@@ -56,7 +56,7 @@ typedef struct {
     table_index_t topReceiveBuffer;
     RangingBufferNode_t sendBuffer[RANGING_BUFFER_SIZE];
     RangingBufferNode_t receiveBuffer[RANGING_BUFFER_SIZE];
-} __attribute__((packed)) RangingBuffer_t; 
+} __attribute__((packed)) RangingBuffer_t;
 
 
 void initRangingBufferNode_t(RangingBufferNode_t *node);

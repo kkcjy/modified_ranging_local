@@ -22,6 +22,18 @@ void disableRangingTable(RangingTable_t *table) {
     initRangingBuffer(&table->validBuffer);
 }
 
+/* judge whether the data of communication with neighborA(tableA) is older than neighborB(tableB)
+    when it comes to the role of sender, the most recent role assignment should be receiver
+            Rx         Tx                 Rx
+
+        sx                 Rx         Tx
+*/
+bool compareTablePriority(RangingTable_t *tableA, RangingTable_t *tableB) {
+    RangingBufferNode_t nodeA = tableA->validBuffer.receiveBuffer[tableA->validBuffer.topReceiveBuffer];
+    RangingBufferNode_t nodeB = tableB->validBuffer.receiveBuffer[tableB->validBuffer.topReceiveBuffer];
+    return nodeA.receiveRx.full < nodeB.receiveRx.full;
+}
+
 void printRangingTable(RangingTable_t *table) {
     DEBUG_PRINT("--------------------START DEBUG_PRINT NEIBORRECEIVEBUFFER--------------------\n");
     DEBUG_PRINT("State: %s\n", (table->state == NULL_STATE) ? "NOT_USING" : "USING");

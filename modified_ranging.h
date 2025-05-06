@@ -2,7 +2,7 @@
 #define MODIFIED_RANGING_H
 
 #include "ranging_table.h"
-#include "semaphore.h"
+#include "queue_task_lock.h"
 
 typedef struct {
     uint16_t dest;          // fill in the address of neighbor                                  
@@ -48,26 +48,27 @@ typedef struct {
     #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
         Coordinate_Tuple_t TxCoordinate; 
     #endif
-} __attribute__((packed)) localSendBufferNode_t;
+} __attribute__((packed)) LocalSendBufferNode_t;
 
 typedef struct {
     int counter;                // number of neighbors                                   
-    Semaphore_t mutex;            
+    QueueTaskLock_t mutex;            
     table_index_t topLocalSendBuffer;
-    localSendBufferNode_t localSendBuffer[TX_BUFFER_POOL_SIZE]; 
+    LocalSendBufferNode_t localSendBuffer[TX_BUFFER_POOL_SIZE]; 
     RangingTable_t neighborReceiveBuffer[TABLE_SET_NEIGHBOR_NUM];      
 } __attribute__((packed)) RangingTableSet_t;
 
 
 void initRangingTableSet();
-table_index_t findRangingTable(uint16_t address);
 table_index_t registerRangingTable(uint16_t address);
 void unregisterRangingTable(uint16_t address);
+table_index_t findRangingTable(uint16_t address);
 table_index_t findLocalSendBufferNode(uint16_t seq);
-static void printRangingMessage(Ranging_Message_t* rangingMessage);
-static void printLocalSendBuffer();
-static void printRangingTableSet();
-static Time_t generateRangingMessage(Ranging_Message_t *rangingMessage);
-static void processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo);
+int setPriorityIndex();
+void printRangingMessage(Ranging_Message_t* rangingMessage);
+void printLocalSendBuffer();
+void printRangingTableSet();
+Time_t generateRangingMessage(Ranging_Message_t *rangingMessage);
+void processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo);
 
 #endif

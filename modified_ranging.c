@@ -7,6 +7,7 @@
 static uint16_t localAddress;                   // local address
 static RangingTableSet_t* rangingTableSet;      // local rangingTableSet
 static uint16_t localSendSeqNumber = 1;         // sequence number of locally sent messages
+static uint8_t *neighborIdxPriorityQueue;      // used for choosing neighbors to sent messages
 #ifdef WARM_UP_WAIT_ENABLE
     static int discardCount = 0;                // wait for device warming up and discard message
 #endif
@@ -23,17 +24,8 @@ void initRangingTableSet() {
     for (int i = 0; i < TABLE_SET_NEIGHBOR_NUM; i++) {
         initRangingTable(&rangingTableSet->neighborReceiveBuffer[i]);
     }
+    neighborIdxPriorityQueue = (uint8_t*)malloc(sizeof(uint8_t) * TABLE_SET_NEIGHBOR_NUM);
     DEBUG_PRINT("[initRangingTableSet]: RangingTableSet is ready\n");
-}
-
-// find the index of RangingTable by address
-table_index_t findRangingTable(uint16_t address) {
-    for (table_index_t i = 0; i < rangingTableSet->counter; i++) {
-        if(rangingTableSet->neighborReceiveBuffer[i].address == address) {
-            return i;
-        }
-    }
-    return NULL_INDEX;
 }
 
 // activate a RangingTable for the new neighbor
@@ -69,6 +61,17 @@ void unregisterRangingTable(uint16_t address) {
     rangingTableSet->counter--;
 }
 
+
+// find the index of RangingTable by address
+table_index_t findRangingTable(uint16_t address) {
+    for (table_index_t i = 0; i < rangingTableSet->counter; i++) {
+        if(rangingTableSet->neighborReceiveBuffer[i].address == address) {
+            return i;
+        }
+    }
+    return NULL_INDEX;
+}
+
 // find the index of LocalSendBufferNode by seq
 table_index_t findLocalSendBufferNode(uint16_t seq) {
     table_index_t index = rangingTableSet->topLocalSendBuffer;
@@ -83,7 +86,27 @@ table_index_t findLocalSendBufferNode(uint16_t seq) {
     return NULL_INDEX;
 }
 
-static void printRangingMessage(Ranging_Message_t* rangingMessage) {
+// get the index of neighbor(USING) in rangingTableSet with the oldest ranging record
+int setPriorityIndex() {
+    int topIndex = 0;
+    for(int i = 0; i < rangingTableSet->counter; i++) {
+        if(rangingTableSet->neighborReceiveBuffer[i].state == USING) {
+            neighborIdxPriorityQueue[topIndex++] = i;
+        }
+    }
+
+    for(int i = 1; i < topIndex; i++) {
+        for(int j = i; j > 0 && compareTablePriority(&rangingTableSet->neighborReceiveBuffer[neighborIdxPriorityQueue[j]], 
+            &rangingTableSet->neighborReceiveBuffer[neighborIdxPriorityQueue[j - 1]]); j--) {
+                int temp = neighborIdxPriorityQueue[j];
+                neighborIdxPriorityQueue[j] = neighborIdxPriorityQueue[j - 1];
+                neighborIdxPriorityQueue[j - 1] = temp;
+        }
+    }
+    return topIndex;
+}
+
+void printRangingMessage(Ranging_Message_t* rangingMessage) {
     DEBUG_PRINT("====================START DEBUG_PRINT RANGINGMESSAGE====================\n");
     DEBUG_PRINT("[Header]:\n");
     DEBUG_PRINT("srcAddress: %u\n", rangingMessage->header.srcAddress);
@@ -116,7 +139,7 @@ static void printRangingMessage(Ranging_Message_t* rangingMessage) {
     DEBUG_PRINT("====================END DEBUG_PRINT RANGINGMESSAGE====================\n");
 }
 
-static void printLocalSendBuffer() {
+void printLocalSendBuffer() {
     DEBUG_PRINT("--------------------START DEBUG_PRINT LOCALSENDBUFFER--------------------\n");
     table_index_t index = rangingTableSet->topLocalSendBuffer;
     int count = 0;
@@ -134,7 +157,7 @@ static void printLocalSendBuffer() {
     DEBUG_PRINT("--------------------END DEBUG_PRINT LOCALSENDBUFFER--------------------\n");
 }
 
-static void printRangingTableSet() {
+void printRangingTableSet() {
     DEBUG_PRINT("====================START DEBUG_PRINT RANGINGTABLESET====================\n");
     printSendBuffer();
     for (table_index_t i = 0; i < rangingTableSet->counter; i++) {
@@ -143,50 +166,51 @@ static void printRangingTableSet() {
     DEBUG_PRINT("====================START DEBUG_PRINT RANGINGTABLESET====================\n");
 }
 
-static Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
+Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
     Time_t curTime = getCurrentTime();
     Time_t taskDelay = M2T(RANGING_PERIOD + rand()%(RANGING_PERIOD_RAND_RANGE + 1) - RANGING_PERIOD_RAND_RANGE/2);
 
     int8_t bodyUnitCounter = 0;     // counter for valid bodyunits
-    int neighborCounter = 0;        // counter for neighbors recorded in rangingTableSet
+
+    /* adjust
+        select the neighbor with the oldest ranging record(modify compareTablePriority() to change the comparison rule)
+    */
+    int topIndex = setPriorityIndex();
 
     /* generate bodyUnits
         bodyUnit: dest(address of neighbor) + Rx(statuses during the last MESSAGE_BODY_RX_SIZE times of message reception)
     */
-    while(bodyUnitCounter < MESSAGE_BODY_UNIT_SIZE && neighborCounter < rangingTableSet->counter) {
+    while(bodyUnitCounter < MESSAGE_BODY_UNIT_SIZE && bodyUnitCounter < topIndex) {
         // push the message of rangingTable into bodyUnit
-        RangingTable_t *rangingTable = &rangingTableSet->neighborReceiveBuffer[neighborCounter];
-        if(rangingTable->state == USING){
-            Message_Body_Unit_t *bodyUnit = &rangingMessage->bodyUnits[bodyUnitCounter];
-            // dest
-            bodyUnit->dest = rangingTable->address;
+        RangingTable_t *rangingTable = &rangingTableSet->neighborReceiveBuffer[neighborIdxPriorityQueue[bodyUnitCounter]];
+        Message_Body_Unit_t *bodyUnit = &rangingMessage->bodyUnits[bodyUnitCounter];
+        // dest
+        bodyUnit->dest = rangingTable->address;
 
-            // Rx
-            table_index_t index = rangingTable->receiveBuffer.head;
-            for(int i = 0; i < MESSAGE_BODY_RX_SIZE; i++){
-                // receiveBuffer --> bodyUnit->RxTimestamps
-                if(index != NULL_INDEX){
-                    bodyUnit->RxTimestamps[i].seqNumber = rangingTable->receiveBuffer.tableBuffer[index].remoteSeq;
-                    bodyUnit->RxTimestamps[i].timestamp = rangingTable->receiveBuffer.tableBuffer[index].RxTimestamp;
-                    #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
-                        bodyUnit->RxCoodinates[i].x = rangingTable->receiveBuffer.tableBuffer[index].RxCoordinate.x;
-                        bodyUnit->RxCoodinates[i].y = rangingTable->receiveBuffer.tableBuffer[index].RxCoordinate.y;
-                        bodyUnit->RxCoodinates[i].z = rangingTable->receiveBuffer.tableBuffer[index].RxCoordinate.z;
-                    #endif
-                    index = rangingTable->receiveBuffer.tableBuffer[index].next;
-                }
-                // insufficient data, fill with null
-                else{
-                    bodyUnit->RxTimestamps[i].seqNumber = NULL_SEQ;
-                    bodyUnit->RxTimestamps[i].timestamp.full = NULL_TIMESTAMP;
-                    #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
-                        bodyUnit->RxCoodinates[i] = nullCoordinate;
-                    #endif
-                }
+        // Rx
+        table_index_t index = rangingTable->receiveBuffer.head;
+        for(int i = 0; i < MESSAGE_BODY_RX_SIZE; i++){
+            // receiveBuffer --> bodyUnit->RxTimestamps
+            if(index != NULL_INDEX){
+                bodyUnit->RxTimestamps[i].seqNumber = rangingTable->receiveBuffer.tableBuffer[index].remoteSeq;
+                bodyUnit->RxTimestamps[i].timestamp = rangingTable->receiveBuffer.tableBuffer[index].RxTimestamp;
+                #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+                    bodyUnit->RxCoodinates[i].x = rangingTable->receiveBuffer.tableBuffer[index].RxCoordinate.x;
+                    bodyUnit->RxCoodinates[i].y = rangingTable->receiveBuffer.tableBuffer[index].RxCoordinate.y;
+                    bodyUnit->RxCoodinates[i].z = rangingTable->receiveBuffer.tableBuffer[index].RxCoordinate.z;
+                #endif
+                index = rangingTable->receiveBuffer.tableBuffer[index].next;
             }
-            bodyUnitCounter++;
+            // insufficient data, fill with null
+            else{
+                bodyUnit->RxTimestamps[i].seqNumber = NULL_SEQ;
+                bodyUnit->RxTimestamps[i].timestamp.full = NULL_TIMESTAMP;
+                #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+                    bodyUnit->RxCoodinates[i] = nullCoordinate;
+                #endif
+            }
         }
-        neighborCounter++;
+        bodyUnitCounter++;
     }
 
     /* generate header
@@ -231,7 +255,7 @@ static Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
     return taskDelay;
 }
 
-static void processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo) {
+void processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo) {
     #ifdef WARM_UP_WAIT_ENABLE
         if((discardCount * RANGING_PERIOD < WARM_UP_TIME) || discardCount < DISCARD_MESSAGE_NUM) {
             DEBUG_PRINT("[processRangingMessage]: Discarding message, discardCount:%d\n",discardCount);
@@ -379,15 +403,4 @@ static void processRangingMessage(Ranging_Message_With_Additional_Info_t *rangin
     }
 
     printRangingTableSet();
-}
-
-/* --------------------------------------------------------------------------------
-Time_t generateRangingMessage(Ranging_Message_t *rangingMessage);
-void processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo);
-
-    uwbTask
-*/
-
-static void imitateUWBRangingTxTask() {
-    
 }
