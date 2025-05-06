@@ -1,7 +1,7 @@
 #include "table_linked_list.h"
 #include "nullVal.h"
 
-void initFreeQueue(FreeQueue *queue) {
+void initFreeQueue(FreeQueue_t *queue) {
     queue->room = FREE_QUEUE_SIZE;
     queue->tail = FREE_QUEUE_SIZE - 1;
     queue->head = 0;
@@ -11,17 +11,17 @@ void initFreeQueue(FreeQueue *queue) {
 }
 
 // spare space is empty
-bool isEmpty(FreeQueue *queue) {
+bool isEmpty(FreeQueue_t *queue) {
     return queue->room == 0;
 }
 
 // spare space is full
-bool isFull(FreeQueue *queue) {
+bool isFull(FreeQueue_t *queue) {
     return queue->room == FREE_QUEUE_SIZE;
 }
 
 // get a node from freequeue
-table_index_t pop(FreeQueue *queue) {
+table_index_t pop(FreeQueue_t *queue) {
     if(isEmpty(queue)) {
         return NULL_INDEX;
     }
@@ -32,7 +32,7 @@ table_index_t pop(FreeQueue *queue) {
 }
 
 // push a node into freequeue
-void push(FreeQueue *queue, table_index_t index) {
+void push(FreeQueue_t *queue, table_index_t index) {
     if(isFull(queue)) {
         return;
     }

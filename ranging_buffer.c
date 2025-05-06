@@ -8,7 +8,7 @@ int64_t getInitTofSum() {
     return initTofSum;
 }
 
-void initRangingBufferNode(RangingBufferNode *node) {
+void initRangingBufferNode_t(RangingBufferNode_t *node) {
     node->sendTx = nullTimeStamp;
     node->sendRx = nullTimeStamp;
     node->receiveTx = nullTimeStamp;
@@ -27,20 +27,20 @@ void initRangingBufferNode(RangingBufferNode *node) {
     #endif
 }
 
-void initRangingBuffer(RangingBuffer *buffer) {
+void initRangingBuffer(RangingBuffer_t *buffer) {
     buffer->topSendBuffer = NULL_INDEX;
     buffer->topReceiveBuffer = NULL_INDEX;
     buffer->receiveLength = 0;
     buffer->sendLength = 0;
     for (int i = 0; i < RANGING_BUFFER_SIZE; i++) {
-        initRangingBufferNode(&buffer->sendBuffer[i]);
-        initRangingBufferNode(&buffer->receiveBuffer[i]);
+        initRangingBufferNode_t(&buffer->sendBuffer[i]);
+        initRangingBufferNode_t(&buffer->receiveBuffer[i]);
     }
     initTofSum = 0;
 }
 
-// add RangingBufferNode to RangingBuffer(send/receive)
-void addRangingBuffer(RangingBuffer *buffer, RangingBufferNode *node, StatusType status) {
+// add RangingBufferNode_t to RangingBuffer_t(send/receive)
+void addRangingBuffer(RangingBuffer_t *buffer, RangingBufferNode_t *node, StatusType status) {
     if (status == SENDER) {
         buffer->topSendBuffer = (buffer->topSendBuffer + 1) % RANGING_BUFFER_SIZE;
         buffer->sendLength = buffer->sendLength < RANGING_BUFFER_SIZE ? buffer->sendLength + 1 : RANGING_BUFFER_SIZE;
@@ -87,13 +87,13 @@ void addRangingBuffer(RangingBuffer *buffer, RangingBufferNode *node, StatusType
     }
 }
 
-/* select index from RangingBuffer(send/receive)
+/* select index from RangingBuffer_t(send/receive)
 SENDER
 select the index closest to localSeq from receiveBuffer
 RECEIVER
 select the index closest to localSeq from sendBuffer
 */
-table_index_t searchRangingBuffer(RangingBuffer *buffer, uint16_t localSeq, StatusType status) {
+table_index_t searchRangingBuffer(RangingBuffer_t *buffer, uint16_t localSeq, StatusType status) {
     table_index_t index = NULL_INDEX;
     if(status == SENDER) {
         table_index_t i = buffer->topReceiveBuffer;
@@ -128,12 +128,12 @@ table_index_t searchRangingBuffer(RangingBuffer *buffer, uint16_t localSeq, Stat
     FLAS = SECOND_CALCULATE_ABNORMAL
         recalculate the Tof using the next most recent valid record
 */
-double calculateTof(RangingBuffer *buffer, TableNode_t* tableNode, uint16_t checkLocalSeq, StatusType status, FLAG flag) {
+double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t checkLocalSeq, StatusType status, FLAG flag) {
     // calculate D
     dwTime_t Tx = tableNode->TxTimestamp;
     dwTime_t Rx = tableNode->RxTimestamp;
     uint16_t localSeq = tableNode->localSeq;
-    RangingBufferNode* node = NULL;
+    RangingBufferNode_t* node = NULL;
     table_index_t index = searchRangingBuffer(buffer, checkLocalSeq, status);
     if(index == NULL_INDEX){
         DEBUG_PRINT("Warning: Cannot find the record with localSeq:%d\n",checkLocalSeq);
@@ -239,7 +239,7 @@ double calculateTof(RangingBuffer *buffer, TableNode_t* tableNode, uint16_t chec
             Tx1             Rx2     Tx3             Rx4     Tx   
     */
     // update ranging_buffer
-    RangingBufferNode newNode;
+    RangingBufferNode_t newNode;
     /* SENDER
             sRx     <--Db-->    rTx         <--Rb-->        Rx
 
@@ -325,7 +325,7 @@ double calculateTof(RangingBuffer *buffer, TableNode_t* tableNode, uint16_t chec
     return D;
 }
 
-void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, table_index_t firstIndex, RangingBuffer* rangingBuffer, StatusType status) {
+void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, table_index_t firstIndex, RangingBuffer_t* rangingBuffer, StatusType status) {
     // fetch data successively from listA, listB, and listA 
     table_index_t indexA1 = firstIndex;
     if (indexA1 == NULL_INDEX || listA->tableBuffer[indexA1].TxTimestamp.full == NULL_TIMESTAMP || listA->tableBuffer[indexA1].RxTimestamp.full == NULL_TIMESTAMP || listA->tableBuffer[indexA1].Tf != NULL_TOF) {
@@ -374,7 +374,7 @@ void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, 
     }
     DEBUG_PRINT("[firstRecordBuffer]: Tof = %lld\n",classicTof);
     
-    RangingBufferNode newNode1,newNode2;
+    RangingBufferNode_t newNode1,newNode2;
 
     // update ranging_buffer
     if(status == SENDER){
@@ -460,7 +460,7 @@ void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, 
     initTofSum += classicTof;
 }
 
-void printRangingBuffer(RangingBuffer *buffer) {
+void printRangingBuffer(RangingBuffer_t *buffer) {
     DEBUG_PRINT("[ValidBuffer]:\n");
     int index = buffer->topSendBuffer;
     for(int bound = 0; bound < RANGING_BUFFER_SIZE; bound++){

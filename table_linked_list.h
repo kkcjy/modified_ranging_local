@@ -9,7 +9,7 @@ typedef struct {
     table_index_t head;
     table_index_t tail;
     table_index_t room;     // spare space
-} __attribute__((packed)) FreeQueue;
+} __attribute__((packed)) FreeQueue_t;
 
 /* for a message
     SENDER
@@ -36,17 +36,17 @@ typedef struct{
 // used for sendbuffer and receivebuffer
 typedef struct {
     TableNode_t tableBuffer[TABLE_BUFFER_SIZE];
-    FreeQueue freeQueue;                
+    FreeQueue_t freeQueue;                
     table_index_t head;                 // -128 ~ 127
     table_index_t tail;                 // -128 ~ 127
 } __attribute__((packed)) TableLinkedList_t;
 
 
-void initFreeQueue(FreeQueue *queue);
-bool isEmpty(FreeQueue *queue);
-bool isFull(FreeQueue *queue);
-table_index_t pop(FreeQueue *queue);
-void push(FreeQueue *queue, table_index_t index);
+void initFreeQueue(FreeQueue_t *queue);
+bool isEmpty(FreeQueue_t *queue);
+bool isFull(FreeQueue_t *queue);
+table_index_t pop(FreeQueue_t *queue);
+void push(FreeQueue_t *queue, table_index_t index);
 void initTableLinkedList(TableLinkedList_t *list);
 table_index_t addTableLinkedList(TableLinkedList_t *list, TableNode_t *node);
 void deleteTail(TableLinkedList_t *list);

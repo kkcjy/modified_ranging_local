@@ -9,7 +9,7 @@ typedef struct {
     uint16_t address;
     TableLinkedList_t sendBuffer; 
     TableLinkedList_t receiveBuffer; 
-    RangingBuffer validBuffer;   
+    RangingBuffer_t validBuffer;   
 } __attribute__((packed)) RangingTable_t;
 
 

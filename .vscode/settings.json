@@ -16,6 +16,7 @@
         "stddef.h": "c",
         "time_backup.h": "c",
         "unistd.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "dwtypes.h": "c"
     }
 }

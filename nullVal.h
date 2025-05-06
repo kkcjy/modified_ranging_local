@@ -1,7 +1,7 @@
 #ifndef NULL_VALUE_H
 #define NULL_VALUE_H
 
-#include "time_backup.h"
+#include "dwTypes.h"
 #include "base_struct.h"
 
 #define         NULL_ADDR               0

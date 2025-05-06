@@ -10,7 +10,7 @@ typedef enum {
     SECOND_CALCULATE_ABNORMAL
 } FLAG;
 
-/* for a round-trip communication(RangingBufferNode)
+/* for a round-trip communication(RangingBufferNode_t)
 send                  T1
                 Tx   --->   Rx
 
@@ -39,7 +39,7 @@ typedef struct {
         Coordinate_Tuple_t receiveTxCoordinate;
         Coordinate_Tuple_t receiveRxCoordinate;
     #endif
-} __attribute__((packed)) RangingBufferNode; 
+} __attribute__((packed)) RangingBufferNode_t;
 
 /* store RANGING_BUFFER_SIZE round-trip communication
     sendBuffer
@@ -54,17 +54,17 @@ typedef struct {
     uint8_t receiveLength;
     table_index_t topSendBuffer;
     table_index_t topReceiveBuffer;
-    RangingBufferNode sendBuffer[RANGING_BUFFER_SIZE];
-    RangingBufferNode receiveBuffer[RANGING_BUFFER_SIZE];
-} __attribute__((packed)) RangingBuffer; 
+    RangingBufferNode_t sendBuffer[RANGING_BUFFER_SIZE];
+    RangingBufferNode_t receiveBuffer[RANGING_BUFFER_SIZE];
+} __attribute__((packed)) RangingBuffer_t; 
 
 
-void initRangingBufferNode(RangingBufferNode *node);
-void initRangingBuffer(RangingBuffer *buffer);
-void addRangingBuffer(RangingBuffer *buffer, RangingBufferNode *node, StatusType status);
-table_index_t searchRangingBuffer(RangingBuffer *buffer, uint16_t localSeq, StatusType status);
-double calculateTof(RangingBuffer *buffer, TableNode_t* tableNode, uint16_t checkLocalSeq, StatusType status, FLAG flag);
-void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, table_index_t firstIndex, RangingBuffer* rangingBuffer, StatusType status);
-void printRangingBuffer(RangingBuffer *buffer);
+void initRangingBufferNode_t(RangingBufferNode_t *node);
+void initRangingBuffer(RangingBuffer_t *buffer);
+void addRangingBuffer(RangingBuffer_t *buffer, RangingBufferNode_t *node, StatusType status);
+table_index_t searchRangingBuffer(RangingBuffer_t *buffer, uint16_t localSeq, StatusType status);
+double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t checkLocalSeq, StatusType status, FLAG flag);
+void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, table_index_t firstIndex, RangingBuffer_t* rangingBuffer, StatusType status);
+void printRangingBuffer(RangingBuffer_t *buffer);
 
 #endif

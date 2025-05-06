@@ -1,4 +1,4 @@
-#include "time_backup.h"
+#include "localHost.h"
 
 // get current time(ms)
 uint64_t get_current_milliseconds() {
@@ -16,15 +16,17 @@ void precise_msleep(uint64_t milliseconds) {
     nanosleep(&req, NULL);
 }
 
-// set initTime and randOffTime(ms)
-void iniTimeSetting() {
-    initTime = get_current_milliseconds(); 
+// set localAddress initTime and randOffTime(ms)
+void LocalInit(Local_Host_t localHost, uint16_t address) {
+    localHost.localAddress = address;
 
-    srand((unsigned int)(initTime));
-    randOffTime = rand() % (MAX_RANDOM_TIME_OFF + 1);
+    localHost.initTime = get_current_milliseconds(); 
+
+    srand((unsigned int)(localHost.initTime));
+    localHost.randOffTime = rand() % (MAX_RANDOM_TIME_OFF + 1);
 }
 
 // return current time(ms)
-uint64_t getCurrentTime() {
-    return (get_current_milliseconds() - initTime) + randOffTime;
+uint64_t getCurrentTime(Local_Host_t localHost) {
+    return (get_current_milliseconds() - localHost.initTime) + localHost.randOffTime;
 }
