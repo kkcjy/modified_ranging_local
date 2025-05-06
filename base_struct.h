@@ -2,7 +2,7 @@
 #define BASE_STRUCT_H
 
 #include "defs.h"
-#include "dwtypes.h"
+#include "time_backup.h"
 
 typedef enum {
     CLASSIC_MODE,

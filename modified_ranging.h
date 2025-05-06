@@ -67,5 +67,7 @@ table_index_t findLocalSendBufferNode(uint16_t seq);
 static void printRangingMessage(Ranging_Message_t* rangingMessage);
 static void printLocalSendBuffer();
 static void printRangingTableSet();
+static Time_t generateRangingMessage(Ranging_Message_t *rangingMessage);
+static void processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo);
 
 #endif

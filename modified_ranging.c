@@ -380,3 +380,14 @@ static void processRangingMessage(Ranging_Message_With_Additional_Info_t *rangin
 
     printRangingTableSet();
 }
+
+/* --------------------------------------------------------------------------------
+Time_t generateRangingMessage(Ranging_Message_t *rangingMessage);
+void processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo);
+
+    uwbTask
+*/
+
+static void imitateUWBRangingTxTask() {
+    
+}

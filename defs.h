@@ -9,7 +9,10 @@
 #define         UWB_COMMUNICATION_SEND_POSITION_ENABLE
 #define         WARM_UP_WAIT_ENABLE
 
-// ADHOCDECK_H
+// TIME_BACKUP_H
+#define         MAX_RANDOM_TIME_OFF         10
+
+// UWB
 #define         UWB_MAX_TIMESTAMP           1099511627776
 
 // TABLE_LINK_LIST_H
@@ -30,7 +33,7 @@
 #define         RANGING_PERIOD_MIN          50
 #define         RANGING_PERIOD_MAX          1000
 #define         RANGING_PERIOD              200     
-#define         RANGING_PERIOD_RAND_RANGE   50      
+#define         RANGING_PERIOD_RAND_RANGE   50  
 #define         M2T(X)                      ((unsigned int)(X))
 #define         WARM_UP_TIME                10000
 #define         DISCARD_MESSAGE_NUM         25

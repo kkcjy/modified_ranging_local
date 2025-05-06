@@ -10,6 +10,12 @@
         "nullval.h": "c",
         "ranging_buffer.h": "c",
         "modified_ranging.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "defs.h": "c",
+        "time.h": "c",
+        "stddef.h": "c",
+        "time_backup.h": "c",
+        "unistd.h": "c",
+        "stdlib.h": "c"
     }
 }
