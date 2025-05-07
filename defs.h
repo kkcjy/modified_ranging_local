@@ -1,7 +1,6 @@
+#define _POSIX_C_SOURCE 199309L
 #ifndef DEFS_H
 #define DEFS_H
-
-#include <stdint.h>
 
 #define         table_index_t               int8_t
 #define         Time_t                      uint32_t
@@ -10,6 +9,7 @@
 #define         WARM_UP_WAIT_ENABLE
 
 // UWB
+#define         UWB_MAX_MESSAGE_LEN         127
 #define         UWB_MAX_TIMESTAMP           1099511627776
 
 // LOCAL_HOST_H
@@ -41,5 +41,28 @@
 #define         WARM_UP_TIME                10000               // time for device to warm up
 #define         DISCARD_MESSAGE_NUM         25                  // number of message thrown during device warming up
 #define         MAX_INITIAL_CALCULATION     6                   // number of times initializeRecordBuffer called(no more than RANGING_BUFFER_SIZE)
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
+#include <time.h>
+#include <pthread.h>
+
+
+#include "local_host.h"
+#include "modified_ranging.h"
+#include "ranging_table.h"
+#include "ranging_buffer.h"
+#include "table_linked_list.h"
+
+#include "base_struct.h"
+#include "lock.h"
+#include "nullVal.h"
+#include "debug.h"
+#include "dwTypes.h"
 
 #endif

@@ -1,10 +1,8 @@
 #ifndef LOCALINFO_H
 #define LOCALINFO_H
 
-#define _POSIX_C_SOURCE 199309L
-#include <time.h>
-#include <stdlib.h>
 #include "defs.h"
+
 
 typedef struct {
     uint16_t localAddress;

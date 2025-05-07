@@ -1,8 +1,8 @@
 #ifndef NULL_VALUE_H
 #define NULL_VALUE_H
 
-#include "dwTypes.h"
-#include "base_struct.h"
+#include "defs.h"
+
 
 #define         NULL_ADDR               0
 #define         NULL_INDEX              -1

@@ -1,16 +1,15 @@
-#include <string.h>
-#include <stdlib.h>
 #include "modified_ranging.h"
-#include "nullVal.h"
-#include "dwTypes.h"
 
-static uint16_t localAddress;                   // local address
-static RangingTableSet_t* rangingTableSet;      // local rangingTableSet
-static uint16_t localSendSeqNumber = 1;         // sequence number of locally sent messages
-static uint8_t *neighborIdxPriorityQueue;      // used for choosing neighbors to sent messages
+
+extern Local_Host_t localHost;
+extern RangingTableSet_t* rangingTableSet;     
+
+uint16_t localSendSeqNumber = 1;
+uint8_t *neighborIdxPriorityQueue;      // used for choosing neighbors to sent messages
 #ifdef WARM_UP_WAIT_ENABLE
-    static int discardCount = 0;                // wait for device warming up and discard message
+    int discardCount = 0;               // wait for device warming up and discard message
 #endif
+
 
 void initRangingTableSet() {
     rangingTableSet = (RangingTableSet_t*)malloc(sizeof(RangingTableSet_t));
@@ -167,7 +166,7 @@ void printRangingTableSet() {
 }
 
 Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
-    Time_t curTime = getCurrentTime();
+    Time_t curTime = getCurrentTime(localHost);
     Time_t taskDelay = M2T(RANGING_PERIOD + rand()%(RANGING_PERIOD_RAND_RANGE + 1) - RANGING_PERIOD_RAND_RANGE/2);
 
     int8_t bodyUnitCounter = 0;     // counter for valid bodyunits
@@ -218,7 +217,7 @@ Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
     */
     Message_Header_t *header = &rangingMessage->header;
     // srcAddress
-    header->srcAddress = localAddress;
+    header->srcAddress = localHost.localAddress;
 
     // msgSequence
     header->msgSequence = localSendSeqNumber++;
@@ -351,7 +350,7 @@ void processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
         dest + Rx
     */
     for (int i = 0; i < MESSAGE_BODY_UNIT_SIZE; i++) {
-        if (rangingMessage->bodyUnits[i].dest == localAddress) {
+        if (rangingMessage->bodyUnits[i].dest == localHost.localAddress) {
             // RxTimestamp with larger seqNumber come first when generating message
             for (int j = MESSAGE_BODY_RX_SIZE - 1; j >= 0 ; j--) {
                 if (rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber != NULL_SEQ) {

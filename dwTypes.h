@@ -3,6 +3,7 @@
 
 #include "defs.h"
 
+
 typedef union {
 	uint8_t raw[5];
 	uint64_t full;

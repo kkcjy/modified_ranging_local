@@ -1,7 +1,8 @@
 #ifndef RANGING_BUFFER_H
 #define RANGING_BUFFER_H
 
-#include "base_struct.h"
+#include "defs.h"
+
 
 // for function calculateTof
 typedef enum {
@@ -34,10 +35,10 @@ typedef struct {
     uint16_t preLocalSeq; 
 
     #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
-        Coordinate_Tuple_t sendTxCoordinate; 
-        Coordinate_Tuple_t sendRxCoordinate; 
-        Coordinate_Tuple_t receiveTxCoordinate;
-        Coordinate_Tuple_t receiveRxCoordinate;
+    Coordinate_Tuple_t sendTxCoordinate; 
+    Coordinate_Tuple_t sendRxCoordinate; 
+    Coordinate_Tuple_t receiveTxCoordinate;
+    Coordinate_Tuple_t receiveRxCoordinate;
     #endif
 } __attribute__((packed)) RangingBufferNode_t;
 

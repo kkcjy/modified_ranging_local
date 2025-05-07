@@ -1,5 +1,5 @@
 #include "ranging_table.h"
-#include "nullVal.h"
+
 
 void initRangingTable(RangingTable_t *table) {
     table->state = NULL_STATE;

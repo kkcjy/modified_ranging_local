@@ -1,8 +1,8 @@
 #ifndef TABLE_LINK_LIST_H
 #define TABLE_LINK_LIST_H
 
-#include <stdbool.h>
-#include "base_struct.h"
+#include "defs.h"
+
 
 typedef struct {
     table_index_t freeIndex[FREE_QUEUE_SIZE];
@@ -23,8 +23,8 @@ typedef struct{
     dwTime_t TxTimestamp;         
     dwTime_t RxTimestamp;            
     #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
-        Coordinate_Tuple_t TxCoordinate;    
-        Coordinate_Tuple_t RxCoordinate;   
+    Coordinate_Tuple_t TxCoordinate;    
+    Coordinate_Tuple_t RxCoordinate;   
     #endif
     int64_t Tf;
     uint16_t localSeq;                 
