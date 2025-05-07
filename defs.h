@@ -6,17 +6,15 @@
 #define         Time_t                      uint32_t
 
 #define         UWB_COMMUNICATION_SEND_POSITION_ENABLE
+// #define         CLASSIC_TOF_ENABLE                              // allow classicTof if ratioes not satisfy(used in calculateTof)
 #define         WARM_UP_WAIT_ENABLE
-
-// UWB
-#define         UWB_MAX_MESSAGE_LEN         127
-#define         UWB_MAX_TIMESTAMP           1099511627776
 
 // LOCAL_HOST_H
 #define         MAX_RANDOM_TIME_OFF         10
 
 // QUEUE_TASK_LOCK_H
 #define         QUEUE_TASK_LENGTH           3
+#define         UWB_MAX_MESSAGE_LEN         127
 
 // TABLE_LINK_LIST_H
 #define         TABLE_BUFFER_SIZE           10                  // max size of RangingTable_t.sendBuffer and RangingTable_t.receiveBuffer
@@ -26,6 +24,7 @@
 #define         RANGING_BUFFER_SIZE         6                   // max size of RangingTable_t.validBuffer
 #define         CONVERGENCE_THRESHOLD       0.7    
 #define         VELOCITY                    0.4691763978616
+#define         UWB_MAX_TIMESTAMP           1099511627776
 
 // MODIFIED_RANGING_H
 #define         MESSAGE_BODY_RX_SIZE        1                   // length of Rx in bodyUnits(message)

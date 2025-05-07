@@ -178,7 +178,6 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
     int64_t diffB = Rb - Db;
     DEBUG_PRINT("[CalculateTof]: Ra_Da:%f,Rb_Db:%f\n", Ra_Da, Rb_Db);
 
-    // fail to satisfy the convergence requirements
     if(Ra_Da < CONVERGENCE_THRESHOLD || Rb_Db < CONVERGENCE_THRESHOLD) {
         if(Ra_Da < Rb_Db) {
             T23 = ((diffA * Rb + diffA * Db + diffB * Ra + diffB * Da)/2 - Ra*T12)/Da;
@@ -187,16 +186,24 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
             T23 = ((diffA * Rb + diffA * Db + diffB * Ra + diffB * Da)/2 - Rb*T12)/Db;
         }
     }
+
+    // fail to satisfy the convergence requirements
     else {
-        DEBUG_PRINT("Warning: Ra/Da and Rb/Db are both greater than CONVERGENCE_THRESHOLD(%f)\n",CONVERGENCE_THRESHOLD);
-        if(flag) {
-            DEBUG_PRINT("Warning: The latest record in rangingbuffer fails, and an attempt is made to recalculate the Tof using the next most recent valid record\n");
-            return calculateTof(buffer, tableNode, node->localSeq, status, SECOND_CALCULATE_UNQUALIFIED);
-        }
-        else {
-            DEBUG_PRINT("Warning: Recalculate Tof failed\n");
-            return -1;
-        }
+        #ifdef CLASSIC_TOF_ENABLE
+            // calculate T23 with the latest data in classic method
+            T23 = (diffA * Rb + diffA * Db + diffB * Ra + diffB * Da) / (Ra + Db + Rb + Da);
+        #else
+            // calculate T23 with the data of the time before latest in modified method
+            DEBUG_PRINT("Warning: Ra/Da and Rb/Db are both greater than CONVERGENCE_THRESHOLD(%f)\n",CONVERGENCE_THRESHOLD);
+            if(flag) {
+                DEBUG_PRINT("Warning: The latest record in rangingbuffer fails, and an attempt is made to recalculate the Tof using the next most recent valid record\n");
+                return calculateTof(buffer, tableNode, node->localSeq, status, SECOND_CALCULATE_UNQUALIFIED);
+            }
+            else {
+                DEBUG_PRINT("Warning: Recalculate Tof failed\n");
+                return -1;
+            }
+        #endif
     }
 
     // abnormal result
