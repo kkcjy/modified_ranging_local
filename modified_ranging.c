@@ -254,13 +254,18 @@ Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
     return taskDelay;
 }
 
-void processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo) {
+// return the min Tof with neighbor
+bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo) {
     #ifdef WARM_UP_WAIT_ENABLE
         if((discardCount * RANGING_PERIOD < WARM_UP_TIME) || discardCount < DISCARD_MESSAGE_NUM) {
             DEBUG_PRINT("[processRangingMessage]: Discarding message, discardCount:%d\n",discardCount);
             discardCount++;
             return;
         }
+    #endif
+
+    #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
+        int TofMin = INT_MAX;
     #endif
 
     Ranging_Message_t *rangingMessage = &rangingMessageWithAdditionalInfo->rangingMessage;
@@ -339,6 +344,11 @@ void processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
                 if(D == -1) {
                     DEBUG_PRINT("[calculateTof]: Failed to calculate TOF\n");
                 }
+                else {
+                    #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
+                        TofMin = D < TofMin ? D : TofMin;
+                    #endif
+                }
             }
         }
         else{
@@ -389,10 +399,15 @@ void processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
                         }
                     }
                     else {
-                        double d = calculateTof(&neighborReceiveBuffer->validBuffer, &neighborReceiveBuffer->sendBuffer.tableBuffer[newReceiveRecordIndex_BodyUnit],
+                        double D = calculateTof(&neighborReceiveBuffer->validBuffer, &neighborReceiveBuffer->sendBuffer.tableBuffer[newReceiveRecordIndex_BodyUnit],
                             neighborReceiveBuffer->sendBuffer.tableBuffer[newReceiveRecordIndex_BodyUnit].localSeq, SENDER, true);
-                        if(d == -1){
+                        if(D == -1){
                             DEBUG_PRINT("Warning: Failed to calculate TOF.\n");
+                        }
+                        else {
+                            #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
+                                TofMin = D < TofMin ? D : TofMin;
+                            #endif
                         }
                     }
                 }
@@ -402,4 +417,10 @@ void processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
     }
 
     printRangingTableSet();
+
+    #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
+        return TofMin * VELOCITY < SAFE_DISTANCE;
+    #else
+        return false;
+    #endif
 }

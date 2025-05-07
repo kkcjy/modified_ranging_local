@@ -38,7 +38,7 @@ typedef struct {
     Ranging_Message_t rangingMessage;
     Timestamp_Tuple_t RxTimestamp;          // local timestamp when message is received
     #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
-    Coordinate_Tuple_t RxCoordinate;    // local cooedinate when message is received
+    Coordinate_Tuple_t RxCoordinate;        // local cooedinate when message is received
     #endif
 } __attribute__((packed)) Ranging_Message_With_Additional_Info_t;
 
@@ -58,6 +58,9 @@ typedef struct {
     RangingTable_t neighborReceiveBuffer[TABLE_SET_NEIGHBOR_NUM];      
 } __attribute__((packed)) RangingTableSet_t;
 
+typedef struct {
+    
+} __attribute__((packed));
 
 void initRangingTableSet();
 table_index_t registerRangingTable(uint16_t address);
@@ -69,6 +72,6 @@ void printRangingMessage(Ranging_Message_t* rangingMessage);
 void printLocalSendBuffer();
 void printRangingTableSet();
 Time_t generateRangingMessage(Ranging_Message_t *rangingMessage);
-void processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo);
+bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo);
 
 #endif

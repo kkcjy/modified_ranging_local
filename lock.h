@@ -29,6 +29,6 @@ typedef struct {
 void initQueue(QueueTaskLock_t *queue);
 void QueueTaskTx(QueueTaskLock_t *queue);
 void QueueTaskRx(QueueTaskLock_t *queue, void *data, size_t data_size);
-int processFromQueue(QueueTaskLock_t *queue);
+bool processFromQueue(QueueTaskLock_t *queue);
 
 #endif

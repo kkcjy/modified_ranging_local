@@ -82,7 +82,7 @@ void QueueTaskRx(QueueTaskLock_t *queue, void *data, size_t data_size) {
 /* process data
     prohibit generate
 */
-int processFromQueue(QueueTaskLock_t *queue) {
+bool processFromQueue(QueueTaskLock_t *queue) {
     while(queue->count = 0);
 
     pthread_mutex_lock(&queue->mutex);
@@ -94,9 +94,19 @@ int processFromQueue(QueueTaskLock_t *queue) {
 
     Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo = (Ranging_Message_With_Additional_Info_t*)queue->queueTask[queue->head].data;
 
-    processRangingMessage(rangingMessageWithAdditionalInfo);
+    #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
+        bool unSafe = processRangingMessage(rangingMessageWithAdditionalInfo);
+    #else
+        processRangingMessage(rangingMessageWithAdditionalInfo);
+    #endif
 
     pthread_mutex_unlock(&queue->mutex);
 
     queue->processMutex = FREE;
+
+    #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
+        return unSafe;
+    #else
+        return false;
+    #endif
 }
