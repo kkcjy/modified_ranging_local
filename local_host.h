@@ -3,7 +3,6 @@
 
 #include "defs.h"
 
-
 typedef struct {
     uint16_t localAddress;
     uint64_t initTime;              // local init time(ms)
@@ -12,7 +11,6 @@ typedef struct {
 
 
 uint64_t get_current_milliseconds();
-void precise_msleep(uint64_t milliseconds);
 void LocalInit(Local_Host_t localHost, uint16_t address);
 uint64_t getCurrentTime(Local_Host_t localHost);
 

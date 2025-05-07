@@ -8,15 +8,6 @@ uint64_t get_current_milliseconds() {
     return ((uint64_t)ts.tv_sec * 1000000 + (uint64_t)ts.tv_nsec / 1000) / 1000;
 }
 
-// sleep specific time(ms)
-void precise_msleep(uint64_t milliseconds) {
-    struct timespec req = {
-        .tv_sec = milliseconds / 1000,              
-        .tv_nsec = (milliseconds % 1000) * 1000000   
-    };
-    nanosleep(&req, NULL);
-}
-
 // set localAddress initTime and randOffTime(ms)
 void LocalInit(Local_Host_t localHost, uint16_t address) {
     localHost.localAddress = address;

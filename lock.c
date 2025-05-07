@@ -3,38 +3,30 @@
 
 void initQueue(QueueTaskLock_t *queue) {
     pthread_mutex_init(&queue->mutex, NULL);
-    queue->TxMutex = FREE;
-    queue->processMutex = FREE;
+    pthread_mutex_init(&queue->countMutex, NULL);
     for(int i = 0; i < QUEUE_TASK_LENGTH; i++) {
-        queue->queueTask->data = NULL;
-        queue->queueTask->data_size = 0;
+        queue->queueTask[i].data = NULL;
+        queue->queueTask[i].data_size = 0;
     }
     queue->head = 0;
     queue->tail = 0;
     queue->count = 0;
-    queue->TxCount = 0;
-    queue->RxCount = 0;
 }
 
-/* generate data and Tx(top priority) 
-    prohibit processing, permit receiving
-*/
+// generate data and Tx
 void QueueTaskTx(QueueTaskLock_t *queue) {
     pthread_mutex_lock(&queue->mutex);
 
-    // wait for processing task finished
-    while (queue->processMutex);
-
-    queue->TxMutex = BUSY;
-
     Ranging_Message_t *rangingMessage = (Ranging_Message_t*)malloc(sizeof(uint8_t) * UWB_MAX_MESSAGE_LEN);
+    if (!rangingMessage) {
+        DEBUG_PRINT("[QueueTaskTx]: malloc failed\n");
+        pthread_mutex_unlock(&queue->mutex);
+        return;
+    }
 
     Time_t timeDelay = generateRangingMessage(rangingMessage);
 
     pthread_mutex_unlock(&queue->mutex);
-
-    // wait for last Tx task finished
-    while (queue->TxMutex);   // TxMutex
 
     /*
         Tx start(socket)
@@ -43,54 +35,56 @@ void QueueTaskTx(QueueTaskLock_t *queue) {
     free(rangingMessage);
     rangingMessage = NULL; 
 
-    queue->TxMutex = FREE;
-
-    queue->TxCount++;
-    DEBUG_PRINT("[QueueTaskTx]: sent the %d-th message\n", queue->TxCount);
+    DEBUG_PRINT("[QueueTaskTx]: sent the message\n");
 }
 
-/* Rx
-    permit everything
-*/
+// Rx
 void QueueTaskRx(QueueTaskLock_t *queue, void *data, size_t data_size) {
-    if(queue->count == QUEUE_TASK_LENGTH) {
-        DEBUG_PRINT("[QueueTaskRx]: queueTask is full\n");
-        return;
-    }
-
     if(data_size == 0) {
         DEBUG_PRINT("[QueueTaskRx]: receive empty message\n");
         return;
     }
 
-    // with additional info
+    pthread_mutex_lock(&queue->countMutex);
+    if(queue->count == QUEUE_TASK_LENGTH) {
+        DEBUG_PRINT("[QueueTaskRx]: queueTask is full, message missed\n");
+        pthread_mutex_unlock(&queue->countMutex);
+        return;
+    }
+
+    // receive data
     queue->queueTask[queue->tail].data = malloc(data_size);
     if (queue->queueTask[queue->tail].data == NULL) {
         DEBUG_PRINT("[QueueTaskRx]: malloc failed\n");
-        return -1;
+        pthread_mutex_unlock(&queue->countMutex);
+        return;
     }
     queue->queueTask[queue->tail].data_size = data_size;
     memcpy(queue->queueTask[queue->tail].data, data, data_size);
 
     queue->tail = (queue->tail + 1) % QUEUE_TASK_LENGTH;
     queue->count++;
+    pthread_mutex_unlock(&queue->countMutex);
 
-    queue->RxCount++;
-    DEBUG_PRINT("[QueueTaskRx]: receive the %d-th message\n", queue->RxCount);
+    DEBUG_PRINT("[QueueTaskRx]: receive the message\n");
 }
 
-/* process data
-    prohibit generate
-*/
+// process
 bool processFromQueue(QueueTaskLock_t *queue) {
-    while(queue->count = 0);
+GET:
 
     pthread_mutex_lock(&queue->mutex);
+    pthread_mutex_lock(&queue->countMutex);
+    if(queue->count != 0) {
+        goto PROCESS;
+    }
 
-    // wait for last task fished
-    while (queue->processMutex);
+    pthread_mutex_unlock(&queue->mutex);
+    pthread_mutex_unlock(&queue->countMutex);
+    usleep(100); 
+    goto GET;
 
-    queue->processMutex = BUSY;
+PROCESS:
 
     Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo = (Ranging_Message_With_Additional_Info_t*)queue->queueTask[queue->head].data;
 
@@ -100,9 +94,14 @@ bool processFromQueue(QueueTaskLock_t *queue) {
         processRangingMessage(rangingMessageWithAdditionalInfo);
     #endif
 
-    pthread_mutex_unlock(&queue->mutex);
+    free(queue->queueTask[queue->head].data);
+    queue->queueTask[queue->head].data = NULL;
+    queue->head = (queue->head + 1) % QUEUE_TASK_LENGTH;
+    queue->count--;
 
-    queue->processMutex = FREE;
+    pthread_mutex_unlock(&queue->countMutex);
+
+    pthread_mutex_unlock(&queue->mutex);
 
     #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
         return unSafe;
