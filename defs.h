@@ -1,6 +1,6 @@
-#define _POSIX_C_SOURCE 199309L
 #ifndef DEFS_H
 #define DEFS_H
+#define _POSIX_C_SOURCE 199309L
 
 #define         table_index_t               int8_t
 #define         Time_t                      uint32_t

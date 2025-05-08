@@ -13,5 +13,6 @@ typedef struct {
 uint64_t get_current_milliseconds();
 void LocalInit(Local_Host_t localHost, uint16_t address);
 uint64_t getCurrentTime(Local_Host_t localHost);
+void local_sleep(uint64_t milliseconds);
 
 #endif

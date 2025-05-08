@@ -22,3 +22,11 @@ void LocalInit(Local_Host_t localHost, uint16_t address) {
 uint64_t getCurrentTime(Local_Host_t localHost) {
     return (get_current_milliseconds() - localHost.initTime) + localHost.randOffTime;
 }
+
+void local_sleep(uint64_t milliseconds) {
+    struct timespec req = {
+        .tv_sec = milliseconds / 1000,              
+        .tv_nsec = (milliseconds % 1000) * 1000000   
+    };
+    nanosleep(&req, NULL);
+}

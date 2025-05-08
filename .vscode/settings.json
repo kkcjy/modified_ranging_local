@@ -38,6 +38,8 @@
         "ranging_table.h": "c",
         "stdarg.h": "c",
         "stdio.h": "c",
-        "imitate_uwb.h": "c"
+        "imitate_uwb.h": "c",
+        "socket.h": "c",
+        "in.h": "c"
     }
 }

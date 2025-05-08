@@ -1,2 +1,2 @@
 callback
-socket
+set socket auto send
