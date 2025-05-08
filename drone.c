@@ -1,14 +1,20 @@
 #include "socket_frame.h"
-#include "defs.h"
+#include "local_host.h"
+#include "lock.h"
+#include "modified_ranging.h"
 
 const char *local_drone_id;             
 Local_Host_t localHost;                 // local host
 RangingTableSet_t* rangingTableSet;     // local rangingTableSet
 QueueTaskLock_t queueTaskLock;          // lock for task
+uint16_t localSendSeqNumber = 1;
+uint8_t *neighborIdxPriorityQueue;      // used for choosing neighbors to sent messages
 #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
     int safeRoundCounter = 0;           // counter for safe distance
 #endif
-
+#ifdef WARM_UP_WAIT_ENABLE
+    int discardCount = 0;               // wait for device warming up and discard message
+#endif
 
 void send_to_center(int center_socket, const char *node_id, const char *message) {
     NodeMessage msg;
@@ -90,12 +96,15 @@ int main(int argc, char *argv[]) {
     printf("Node %s connected to center\n", local_drone_id);
 
     // set local info
-    LocalInit(localHost, (uint16_t)local_drone_id);
+    LocalInit(localHost, *(uint16_t*)local_drone_id);
 
     // Main send loop
-    char message[BUFFER_SIZE];
+    char message[MESSAGE_SIZE];
+
     while (1) {
-        strcpy(message, "message");
+        snprintf(message, MESSAGE_SIZE, "message%d", localSendSeqNumber++);
+
+        // strcpy(message, "message", localSendSeqNumber++);
 
         send_to_center(center_socket, local_drone_id, message);
 

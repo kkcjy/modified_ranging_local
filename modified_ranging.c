@@ -4,10 +4,10 @@
 extern Local_Host_t localHost;
 extern RangingTableSet_t* rangingTableSet;     
 
-uint16_t localSendSeqNumber = 1;
-uint8_t *neighborIdxPriorityQueue;      // used for choosing neighbors to sent messages
+extern uint16_t localSendSeqNumber = 1;
+extern uint8_t *neighborIdxPriorityQueue;      // used for choosing neighbors to sent messages
 #ifdef WARM_UP_WAIT_ENABLE
-    int discardCount = 0;               // wait for device warming up and discard message
+    extern int discardCount = 0;               // wait for device warming up and discard message
 #endif
 
 

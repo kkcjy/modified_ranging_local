@@ -10,20 +10,22 @@
 #include <netinet/in.h>
 #include <pthread.h>
 
-#define MAX_NODES 10
-#define BUFFER_SIZE 1024
-#define CENTER_PORT 8888
-#define REJECT_INFO "REJECT"
+#define     MAX_NODES       10
+#define     BUFFER_SIZE     1024
+#define     ID_SIZE         20
+#define     MESSAGE_SIZE    BUFFER_SIZE - ID_SIZE - sizeof(size_t)
+#define     CENTER_PORT     8888
+#define     REJECT_INFO     "REJECT"
 
 typedef struct {
-    char sender_id[20];
-    char data[BUFFER_SIZE - 20 - sizeof(size_t)];
+    char sender_id[ID_SIZE];
+    char data[MESSAGE_SIZE];
     size_t data_size;
 } NodeMessage;
 
 typedef struct {
     int socket;
-    char node_id[20];
+    char node_id[ID_SIZE];
 } NodeInfo;
 
 #endif

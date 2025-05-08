@@ -1,5 +1,5 @@
-#ifndef LOCALINFO_H
-#define LOCALINFO_H
+#ifndef LOCAL_HOST_H
+#define LOCAL_HOST_H
 
 #include "defs.h"
 

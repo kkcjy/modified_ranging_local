@@ -1,4 +1,5 @@
 #include "lock.h"
+#include "modified_ranging.h"
 
 
 void initQueue(QueueTaskLock_t *queue) {

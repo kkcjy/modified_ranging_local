@@ -1,4 +1,4 @@
-#include "table_linked_list.h"
+#include "defs.h"
 
 
 void initFreeQueue(FreeQueue_t *queue) {

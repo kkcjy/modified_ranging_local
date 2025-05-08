@@ -2,7 +2,8 @@
 #define TABLE_LINK_LIST_H
 
 #include "defs.h"
-
+#include "dwTypes.h"
+#include "base_struct.h"
 
 typedef struct {
     table_index_t freeIndex[FREE_QUEUE_SIZE];

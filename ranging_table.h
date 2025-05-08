@@ -1,8 +1,9 @@
 #ifndef RANGING_TABLE_H
 #define RANGING_TABLE_H
 
-#include "defs.h"
-
+#include "base_struct.h"
+#include "table_linked_list.h"
+#include "ranging_buffer.h"
 
 typedef struct {
     TableState state; 

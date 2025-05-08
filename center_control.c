@@ -18,7 +18,7 @@ void *handle_node_connection(void *arg) {
     int node_socket = *(int *)arg;
     free(arg);
     
-    char node_id[20];
+    char node_id[ID_SIZE];
     ssize_t bytes_received = recv(node_socket, node_id, sizeof(node_id), 0);
     if (bytes_received <= 0) {
         close(node_socket);

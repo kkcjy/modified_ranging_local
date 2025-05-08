@@ -2,7 +2,7 @@
 #define BASE_STRUCT_H
 
 #include "defs.h"
-
+#include "dwTypes.h"
 
 // not used
 typedef enum {

@@ -2,7 +2,11 @@
 #define MODIFIED_RANGING_H
 
 #include "defs.h"
-
+#include "ranging_table.h"
+#include "nullVal.h"
+#include "local_host.h"
+#include "base_struct.h"
+#include "lock.h"
 
 typedef struct {
     uint16_t dest;          // fill in the address of neighbor                                  
@@ -58,9 +62,6 @@ typedef struct {
     RangingTable_t neighborReceiveBuffer[TABLE_SET_NEIGHBOR_NUM];      
 } __attribute__((packed)) RangingTableSet_t;
 
-typedef struct {
-    
-} __attribute__((packed));
 
 void initRangingTableSet();
 table_index_t registerRangingTable(uint16_t address);

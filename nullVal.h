@@ -1,5 +1,5 @@
-#ifndef NULL_VALUE_H
-#define NULL_VALUE_H
+#ifndef NULL_VAL_H
+#define NULL_VAL_H
 
 #include "defs.h"
 

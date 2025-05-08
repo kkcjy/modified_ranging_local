@@ -2,7 +2,10 @@
 #define RANGING_BUFFER_H
 
 #include "defs.h"
-
+#include "base_struct.h"
+#include "table_linked_list.h"
+#include "defs.h"
+#include "nullVal.h"
 
 // for function calculateTof
 typedef enum {
