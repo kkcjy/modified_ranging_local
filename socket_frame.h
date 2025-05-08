@@ -10,10 +10,9 @@
 #include <netinet/in.h>
 #include <pthread.h>
 
-#define MAX_NODES 1
+#define MAX_NODES 10
 #define BUFFER_SIZE 1024
 #define CENTER_PORT 8888
-#define BROADCAST_PORT 8889
 #define REJECT_INFO "REJECT"
 
 typedef struct {

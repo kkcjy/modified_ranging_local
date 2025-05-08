@@ -4,7 +4,15 @@ NodeInfo nodes[MAX_NODES];
 int node_count = 0;
 pthread_mutex_t nodes_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void broadcast_to_nodes(const char *message);
+void broadcast_to_nodes(NodeMessage *msg) {
+    pthread_mutex_lock(&nodes_mutex);
+    for (int i = 0; i < node_count; i++) {
+        if (send(nodes[i].socket, msg, sizeof(NodeMessage), 0) < 0) {
+            perror("Broadcast failed");
+        }
+    }
+    pthread_mutex_unlock(&nodes_mutex);
+}
 
 void *handle_node_connection(void *arg) {
     int node_socket = *(int *)arg;
@@ -26,17 +34,23 @@ void *handle_node_connection(void *arg) {
         printf("Node %s connected\n", node_id);
     }
     else {
-        printf("The connection number of nodes has reached upper limit(%d), and the connection is rejected\n", MAX_NODES);
+        printf("Max nodes reached (%d), rejecting %s\n", MAX_NODES, node_id);
         NodeMessage reject_msg;
         strcpy(reject_msg.data, REJECT_INFO);
         reject_msg.data_size = strlen(reject_msg.data);
         send(node_socket, &reject_msg, sizeof(reject_msg), 0);
+        close(node_socket);
+        pthread_mutex_unlock(&nodes_mutex);
+        return NULL;
     }
     pthread_mutex_unlock(&nodes_mutex);
 
     NodeMessage msg;
     while ((bytes_received = recv(node_socket, &msg, sizeof(msg), 0)) > 0) {
         printf("[%s] %.*s\n", node_id, (int)msg.data_size, msg.data);
+        
+        // Immediately broadcast received message to all nodes
+        broadcast_to_nodes(&msg);
     }
 
     pthread_mutex_lock(&nodes_mutex);
@@ -51,34 +65,6 @@ void *handle_node_connection(void *arg) {
     pthread_mutex_unlock(&nodes_mutex);
 
     close(node_socket);
-    return NULL;
-}
-
-void broadcast_to_nodes(const char *message) {
-    NodeMessage msg;
-    strncpy(msg.sender_id, "CENTER", sizeof(msg.sender_id));
-    msg.data_size = strlen(message) + 1;
-    strncpy(msg.data, message, sizeof(msg.data));
-
-    pthread_mutex_lock(&nodes_mutex);
-    for (int i = 0; i < node_count; i++) {
-        if (send(nodes[i].socket, &msg, sizeof(msg), 0) < 0) {
-            perror("Broadcast failed");
-        }
-    }
-    pthread_mutex_unlock(&nodes_mutex);
-}
-
-void *center_input_handler(void *arg) {
-    char input[BUFFER_SIZE];
-    while (1) {
-        printf("center> ");
-        fgets(input, BUFFER_SIZE, stdin);
-        input[strcspn(input, "\n")] = 0;
-        if (strlen(input) > 0) {
-            broadcast_to_nodes(input);
-        }
-    }
     return NULL;
 }
 
@@ -106,16 +92,13 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    if (listen(server_fd, 3) < 0) {
+    if (listen(server_fd, MAX_NODES) < 0) {
         perror("listen");
         exit(EXIT_FAILURE);
     }
 
-    printf("Center started on port %d\n", CENTER_PORT);
-
-    pthread_t input_thread;
-    pthread_create(&input_thread, NULL, center_input_handler, NULL);
-    pthread_detach(input_thread);
+    printf("Control Center started on port %d (Max drones: %d)\n", CENTER_PORT, MAX_NODES);
+    printf("Waiting for drone connections...\n");
 
     while (1) {
         int *new_socket = malloc(sizeof(int));
