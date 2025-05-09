@@ -11,7 +11,7 @@ make center_control     # Build only the control center
 Running the System
 
 Start the Control Center
-make run-center
+./center_control
 
 Start the Drone Simulator
-make run-drone
+./drone "port" "local_address"
