@@ -1,8 +1,11 @@
 #include "lock.h"
 #include "modified_ranging.h"
 
+extern RangingTableSet_t* rangingTableSet;     
+extern Local_Host_t localHost;    
 
-void initQueue(QueueTaskLock_t *queue) {
+
+void initQueueTaskLock(QueueTaskLock_t *queue) {
     pthread_mutex_init(&queue->mutex, NULL);
     pthread_mutex_init(&queue->countMutex, NULL);
     for(int i = 0; i < QUEUE_TASK_LENGTH; i++) {
@@ -15,28 +18,38 @@ void initQueue(QueueTaskLock_t *queue) {
 }
 
 // generate data and Tx
-void QueueTaskTx(QueueTaskLock_t *queue) {
+Time_t QueueTaskTx(QueueTaskLock_t *queue, int msgSize, SendFunction send_func, int centerSocket, const char* droneId) {
     pthread_mutex_lock(&queue->mutex);
 
-    Ranging_Message_t *rangingMessage = (Ranging_Message_t*)malloc(sizeof(uint8_t) * UWB_MAX_MESSAGE_LEN);
+    Ranging_Message_t *rangingMessage = (Ranging_Message_t*)malloc(msgSize);
     if (!rangingMessage) {
         DEBUG_PRINT("[QueueTaskTx]: malloc failed\n");
         pthread_mutex_unlock(&queue->mutex);
-        return;
+        return RANGING_PERIOD;
     }
 
     Time_t timeDelay = generateRangingMessage(rangingMessage);
 
+    dwTime_t curTime;
+    curTime.full = getCurrentTime(&localHost);
+
+    // adjust - have not updated location yet
+    Coordinate_Tuple_t curLocation = getCurrentLocation(&localHost);
+
+    addLocalSendBuffer(curTime, curLocation);
+
     pthread_mutex_unlock(&queue->mutex);
 
-    /*
-        Tx start(socket)
-    */
+    // adjust rangingMessage -> char*
+    if (send_func) {
+        send_func(centerSocket, droneId, rangingMessage);
+    }
 
     free(rangingMessage);
     rangingMessage = NULL; 
 
     DEBUG_PRINT("[QueueTaskTx]: sent the message\n");
+    return timeDelay;
 }
 
 // Rx
@@ -82,14 +95,15 @@ GET:
 
     pthread_mutex_unlock(&queue->mutex);
     pthread_mutex_unlock(&queue->countMutex);
-    usleep(100); 
+    local_sleep(10); 
     goto GET;
 
 PROCESS:
-
+    // adjust char* -> Ranging_Message_With_Additional_Info_t
     Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo = (Ranging_Message_With_Additional_Info_t*)queue->queueTask[queue->head].data;
 
     #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
+        // distance < SAFE_DISTANCE -> unsafe
         bool unSafe = processRangingMessage(rangingMessageWithAdditionalInfo);
     #else
         processRangingMessage(rangingMessageWithAdditionalInfo);

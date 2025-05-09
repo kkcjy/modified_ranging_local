@@ -4,17 +4,19 @@
 #include "modified_ranging.h"
 
 const char *local_drone_id;             
-Local_Host_t localHost;                 // local host
-RangingTableSet_t* rangingTableSet;     // local rangingTableSet
-QueueTaskLock_t queueTaskLock;          // lock for task
+Local_Host_t *localHost;                        // local host
+RangingTableSet_t* rangingTableSet;             // local rangingTableSet
+QueueTaskLock_t queueTaskLock;                  // lock for task
 uint16_t localSendSeqNumber = 1;
-uint8_t *neighborIdxPriorityQueue;      // used for choosing neighbors to sent messages
+uint8_t *neighborIdxPriorityQueue;              // used for choosing neighbors to sent messages
 #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
-    int safeRoundCounter = 0;           // counter for safe distance
+    int safeRoundCounter = 0;                   // counter for safe distance
+    int dynamicRangingPeriod = RANGING_PERIOD;  // ranging period
 #endif
 #ifdef WARM_UP_WAIT_ENABLE
-    int discardCount = 0;               // wait for device warming up and discard message
+    int discardCount = 0;                       // wait for device warming up and discard message
 #endif
+
 
 void send_to_center(int center_socket, const char *node_id, const char *message) {
     NodeMessage msg;
@@ -27,6 +29,33 @@ void send_to_center(int center_socket, const char *node_id, const char *message)
     }
 }
 
+// for processing
+void *process_messages(void *arg) {
+    while (1) {
+        bool unSafe = processFromQueue(&queueTaskLock);
+        /*  
+            unsafe -> set RANGING_PERIOD_LOW
+            safe more than SAFE_DISTANCE_ROUND_BORDER -> set RANGING_PERIOD
+        */
+        if (unSafe) {
+            #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
+                dynamicRangingPeriod = RANGING_PERIOD_LOW;
+                safeRoundCounter = 0;
+            #endif
+            printf("Warning: Unsafe condition detected!\n");
+        }
+        else {
+            safeRoundCounter++;
+            if(safeRoundCounter == SAFE_DISTANCE_ROUND_BORDER) {
+                dynamicRangingPeriod = RANGING_PERIOD;
+            }
+        }
+        local_sleep(10);                      
+    }
+    return NULL;
+}
+
+// for Rx
 void *receive_from_center(void *arg) {
     int center_socket = *(int *)arg;
     NodeMessage msg;
@@ -46,7 +75,10 @@ void *receive_from_center(void *arg) {
         
         // don't display messages from self
         if (strcmp(msg.sender_id, local_drone_id) != 0) {
-            printf("[%s] %.*s\n", msg.sender_id, (int)msg.data_size, msg.data);
+            // Rx
+            QueueTaskRx(&queueTaskLock, &msg, sizeof(NodeMessage));
+            
+            printf("Received message from %s, added to queue\n", msg.sender_id);
         }
     }
     return NULL;
@@ -60,6 +92,11 @@ int main(int argc, char *argv[]) {
 
     const char *center_ip = argv[1];
     local_drone_id = argv[2];
+
+    // init operation
+    localInit(localHost, *(uint16_t*)local_drone_id);
+    initQueueTaskLock(&queueTaskLock);      // before create pthread
+    initRangingTableSet();
     
     int center_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (center_socket < 0) {
@@ -85,32 +122,35 @@ int main(int argc, char *argv[]) {
     // Send drone ID first
     send(center_socket, local_drone_id, strlen(local_drone_id), 0);
 
-    // Start receive thread
+    // start process
+    pthread_t process_thread;
+    if (pthread_create(&process_thread, NULL, process_messages, NULL)) {
+        perror("pthread_create for process thread failed");
+        close(center_socket);
+        return -1;
+    }
+
+    // start receive
     pthread_t receive_thread;
     if (pthread_create(&receive_thread, NULL, receive_from_center, &center_socket)) {
-        perror("pthread_create");
+        perror("pthread_create for receive thread failed");
         close(center_socket);
         return -1;
     }
 
     printf("Node %s connected to center\n", local_drone_id);
 
-    // set local info
-    LocalInit(localHost, *(uint16_t*)local_drone_id);
-
-    // Main send loop
-    char message[MESSAGE_SIZE];
-
+    // main send loop
     while (1) {
-        snprintf(message, MESSAGE_SIZE, "message%d", localSendSeqNumber++);
+        Time_t time_delay = QueueTaskTx(&queueTaskLock, MESSAGE_SIZE, send_to_center, center_socket, local_drone_id);
 
-        // strcpy(message, "message", localSendSeqNumber++);
+        localSendSeqNumber++;
 
-        send_to_center(center_socket, local_drone_id, message);
-
-        local_sleep(RANGING_PERIOD);
+        local_sleep(time_delay);
     }
 
+    pthread_join(receive_thread, NULL);
+    pthread_join(process_thread, NULL);
     close(center_socket);
     return 0;
 }

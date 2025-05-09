@@ -4,6 +4,7 @@
 #include "defs.h"
 #include "dwTypes.h"
 #include "base_struct.h"
+#include "nullVal.h"
 
 typedef struct {
     table_index_t freeIndex[FREE_QUEUE_SIZE];

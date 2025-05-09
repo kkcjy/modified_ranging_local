@@ -2,6 +2,7 @@
 #define RANGING_TABLE_H
 
 #include "base_struct.h"
+#include "debug.h"
 #include "table_linked_list.h"
 #include "ranging_buffer.h"
 

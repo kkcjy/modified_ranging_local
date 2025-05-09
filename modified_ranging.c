@@ -1,13 +1,12 @@
 #include "modified_ranging.h"
 
-
 extern Local_Host_t localHost;
 extern RangingTableSet_t* rangingTableSet;     
 
-extern uint16_t localSendSeqNumber = 1;
-extern uint8_t *neighborIdxPriorityQueue;      // used for choosing neighbors to sent messages
+extern uint16_t localSendSeqNumber;
+extern uint8_t *neighborIdxPriorityQueue;       // used for choosing neighbors to sent messages
 #ifdef WARM_UP_WAIT_ENABLE
-    extern int discardCount = 0;               // wait for device warming up and discard message
+    extern int discardCount;                    // wait for device warming up and discard message
 #endif
 
 
@@ -60,6 +59,12 @@ void unregisterRangingTable(uint16_t address) {
     rangingTableSet->counter--;
 }
 
+void addLocalSendBuffer(dwTime_t timestamp, Coordinate_Tuple_t TxCoordinate) {
+    rangingTableSet->topLocalSendBuffer = (rangingTableSet->topLocalSendBuffer + 1) % TX_BUFFER_POOL_SIZE;
+    rangingTableSet->localSendBuffer[rangingTableSet->topLocalSendBuffer].seqNumber = rangingTableSet->topLocalSendBuffer;
+    rangingTableSet->localSendBuffer[rangingTableSet->topLocalSendBuffer].timestamp = timestamp;
+    rangingTableSet->localSendBuffer[rangingTableSet->topLocalSendBuffer].TxCoordinate = TxCoordinate;
+}
 
 // find the index of RangingTable by address
 table_index_t findRangingTable(uint16_t address) {
@@ -158,7 +163,7 @@ void printLocalSendBuffer() {
 
 void printRangingTableSet() {
     DEBUG_PRINT("====================START DEBUG_PRINT RANGINGTABLESET====================\n");
-    printSendBuffer();
+    printLocalSendBuffer();
     for (table_index_t i = 0; i < rangingTableSet->counter; i++) {
         printRangingTable(&rangingTableSet->neighborReceiveBuffer[i]);
     }
@@ -166,7 +171,6 @@ void printRangingTableSet() {
 }
 
 Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
-    Time_t curTime = getCurrentTime(localHost);
     Time_t taskDelay = M2T(RANGING_PERIOD + rand()%(RANGING_PERIOD_RAND_RANGE + 1) - RANGING_PERIOD_RAND_RANGE/2);
 
     int8_t bodyUnitCounter = 0;     // counter for valid bodyunits
@@ -223,7 +227,7 @@ Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
     header->msgSequence = localSendSeqNumber++;
 
     // Tx
-    table_index_t index = rangingTableSet->localSendBuffer;
+    table_index_t index = rangingTableSet->topLocalSendBuffer;
     for(int i = 0; i < MESSAGE_HEAD_TX_SIZE; i++){
         // localSendBuffer --> header->TxTimestamps
         if(rangingTableSet->localSendBuffer[index].timestamp.full != NULL_TIMESTAMP){
@@ -260,7 +264,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
         if((discardCount * RANGING_PERIOD < WARM_UP_TIME) || discardCount < DISCARD_MESSAGE_NUM) {
             DEBUG_PRINT("[processRangingMessage]: Discarding message, discardCount:%d\n",discardCount);
             discardCount++;
-            return;
+            return false;
         }
     #endif
 
@@ -295,14 +299,14 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
 
     RangingTable_t *neighborReceiveBuffer = &rangingTableSet->neighborReceiveBuffer[neighborIndex];
     // first time calling: Tx - null Rx - full
-    table_index_t newReceiveRecordIndex_AdditionalInfo = addTableLinkedList(&neighborReceiveBuffer->receiveBuffer, &firstNode);
+    addTableLinkedList(&neighborReceiveBuffer->receiveBuffer, &firstNode);
 
     // handle new neighbor
     if(neighborIndex == NULL_INDEX) {
         neighborIndex = registerRangingTable(neighborAddress);
         if(neighborIndex == NULL_INDEX) {
             DEBUG_PRINT("Warning: Failed to register new neighbor.\n");
-            return;
+            return false;
         }
     }
 
@@ -323,7 +327,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
             secondNode.localSeq = rangingMessageWithAdditionalInfo->RxTimestamp.seqNumber;
             secondNode.remoteSeq = rangingMessage->header.msgSequence;
             // second time calling: fill in Tx
-            table_index_t newReceiveRecordIndex_Header = addTableLinkedList(&neighborReceiveBuffer->receiveBuffer, &secondNode);
+            addTableLinkedList(&neighborReceiveBuffer->receiveBuffer, &secondNode);
 
             if(neighborReceiveBuffer->validBuffer.sendLength < MAX_INITIAL_CALCULATION){
                 initializeRecordBuffer(&neighborReceiveBuffer->receiveBuffer, &neighborReceiveBuffer->sendBuffer, receiveBufferIndex, &neighborReceiveBuffer->validBuffer, RECEIVER);

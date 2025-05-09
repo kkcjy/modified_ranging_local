@@ -3,6 +3,7 @@
 
 #include "defs.h"
 #include "ranging_table.h"
+#include "ranging_buffer.h"
 #include "nullVal.h"
 #include "local_host.h"
 #include "base_struct.h"
@@ -66,6 +67,7 @@ typedef struct {
 void initRangingTableSet();
 table_index_t registerRangingTable(uint16_t address);
 void unregisterRangingTable(uint16_t address);
+void addLocalSendBuffer(dwTime_t timestamp, Coordinate_Tuple_t TxCoordinate);
 table_index_t findRangingTable(uint16_t address);
 table_index_t findLocalSendBufferNode(uint16_t seq);
 int setPriorityIndex();

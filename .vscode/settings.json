@@ -40,6 +40,7 @@
         "stdio.h": "c",
         "imitate_uwb.h": "c",
         "socket.h": "c",
-        "in.h": "c"
+        "in.h": "c",
+        "socket_frame.h": "c"
     }
 }

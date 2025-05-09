@@ -14,10 +14,10 @@
 
 // LOCAL_HOST_H
 #define         MAX_RANDOM_TIME_OFF         10
+#define         FLIGHT_AREA_BOUND           10                  // (m)
 
 // QUEUE_TASK_LOCK_H
 #define         QUEUE_TASK_LENGTH           3
-#define         UWB_MAX_MESSAGE_LEN         127
 
 // TABLE_LINK_LIST_H
 #define         TABLE_BUFFER_SIZE           10                  // max size of RangingTable_t.sendBuffer and RangingTable_t.receiveBuffer
@@ -38,7 +38,7 @@
 #define         RANGING_PERIOD_MIN          50                  // (ms)
 #define         RANGING_PERIOD_MAX          1000                // (ms)
 #define         RANGING_PERIOD              200                 // (ms)
-#define         RANGING_PERIOD_HIGH         100                 // (ms)
+#define         RANGING_PERIOD_LOW          100                 // (ms)
 #define         RANGING_PERIOD_RAND_RANGE   50                  // (ms)
 #define         M2T(X)                      ((unsigned int)(X))
 #define         WARM_UP_TIME                10000               // time for device to warm up
@@ -50,9 +50,11 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <stddef.h> 
 #include <stdbool.h>
 #include <string.h>
 #include <limits.h>
+#include <math.h>
 #include <time.h>
 #include <pthread.h>
 #include <sys/socket.h>

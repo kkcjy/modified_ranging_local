@@ -2,9 +2,9 @@
 #define RANGING_BUFFER_H
 
 #include "defs.h"
+#include "debug.h"
 #include "base_struct.h"
 #include "table_linked_list.h"
-#include "defs.h"
 #include "nullVal.h"
 
 // for function calculateTof
@@ -62,7 +62,7 @@ typedef struct {
     RangingBufferNode_t receiveBuffer[RANGING_BUFFER_SIZE];
 } __attribute__((packed)) RangingBuffer_t;
 
-
+int64_t getInitTofSum();
 void initRangingBufferNode_t(RangingBufferNode_t *node);
 void initRangingBuffer(RangingBuffer_t *buffer);
 void addRangingBuffer(RangingBuffer_t *buffer, RangingBufferNode_t *node, StatusType status);

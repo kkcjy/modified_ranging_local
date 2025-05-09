@@ -15,7 +15,7 @@
 #define     ID_SIZE         20
 #define     MESSAGE_SIZE    BUFFER_SIZE - ID_SIZE - sizeof(size_t)
 #define     CENTER_PORT     8888
-#define     REJECT_INFO     "REJECT"
+#define     REJECT_INFO     "REJECT"    // number of drones -> MAX_NODES
 
 typedef struct {
     char sender_id[ID_SIZE];

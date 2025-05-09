@@ -133,7 +133,7 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
     dwTime_t Rx = tableNode->RxTimestamp;
     uint16_t localSeq = tableNode->localSeq;
 
-    RangingBufferNode_t* node;
+    RangingBufferNode_t* node = NULL;
     
     table_index_t index = searchRangingBuffer(buffer, checkLocalSeq, status);
     if(index == NULL_INDEX){
@@ -229,7 +229,7 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
         float trueDx = (tableNode->RxCoordinate.x - tableNode->TxCoordinate.x)/10.0;
         float trueDy = (tableNode->RxCoordinate.y - tableNode->TxCoordinate.y)/10.0;
         float trueDz = (tableNode->RxCoordinate.z - tableNode->TxCoordinate.z)/10.0;
-        float trueD = sqrt(trueDx*trueDx + trueDy*trueDy + trueDz*trueDz);
+        float trueD = sqrtf(trueDx*trueDx + trueDy*trueDy + trueDz*trueDz);
         DEBUG_PRINT("[CalculateTof Finished]: modified_D = %f, classic_D = %f, true_D = %f", D, classicD, trueD);
     #endif
 
@@ -338,17 +338,17 @@ void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, 
     table_index_t indexA1 = firstIndex;
     if (indexA1 == NULL_INDEX || listA->tableBuffer[indexA1].TxTimestamp.full == NULL_TIMESTAMP || listA->tableBuffer[indexA1].RxTimestamp.full == NULL_TIMESTAMP || listA->tableBuffer[indexA1].Tf != NULL_TOF) {
         DEBUG_PRINT("Warning: The lastest record in listA is invalid or the record has owned Tof\n");
-        return false;
+        return;
     }
     table_index_t indexB2 = searchTableLinkedList(listB, listA->tableBuffer[indexA1].localSeq);
     if (indexB2 == NULL_INDEX) {
         DEBUG_PRINT("No valid record in listB\n");
-        return false;
+        return;
     }
     table_index_t indexA3 = searchTableLinkedList(listA, listB->tableBuffer[indexB2].localSeq);
     if (indexA3 == NULL_INDEX) {
         DEBUG_PRINT("No valid record in listA\n");
-        return false;
+        return;
     }
 
     /*
@@ -378,7 +378,7 @@ void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, 
 
     if(classicTof < 0){
         DEBUG_PRINT("[firstRecordBuffer]: Tof is less than 0\n");
-        return false;
+        return;
     }
     DEBUG_PRINT("[firstRecordBuffer]: Tof = %lld\n",classicTof);
     

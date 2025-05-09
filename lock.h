@@ -2,6 +2,7 @@
 #define LOCK_H
 
 #include "defs.h"
+#include "debug.h"
 
 typedef struct {
     void *data;
@@ -18,8 +19,10 @@ typedef struct {
 } QueueTaskLock_t;
 
 
-void initQueue(QueueTaskLock_t *queue);
-void QueueTaskTx(QueueTaskLock_t *queue);
+typedef void (*SendFunction)(int, const char*, const char*);
+
+void initQueueTaskLock(QueueTaskLock_t *queue);
+Time_t QueueTaskTx(QueueTaskLock_t *queue, int msgSize, SendFunction send_func, int centerSocket, const char* droneId);
 void QueueTaskRx(QueueTaskLock_t *queue, void *data, size_t data_size);
 bool processFromQueue(QueueTaskLock_t *queue);
 
