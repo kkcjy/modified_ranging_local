@@ -41,6 +41,24 @@
         "imitate_uwb.h": "c",
         "socket.h": "c",
         "in.h": "c",
-        "socket_frame.h": "c"
+        "socket_frame.h": "c",
+        "atomic": "c",
+        "bit": "c",
+        "chrono": "c",
+        "condition_variable": "c",
+        "algorithm": "c",
+        "executor": "c",
+        "memory_resource": "c",
+        "numeric": "c",
+        "random": "c",
+        "socket": "c",
+        "cmath": "c",
+        "future": "c",
+        "istream": "c",
+        "mutex": "c",
+        "ratio": "c",
+        "semaphore": "c",
+        "stop_token": "c",
+        "thread": "c"
     }
 }

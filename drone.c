@@ -3,27 +3,32 @@
 #include "lock.h"
 #include "modified_ranging.h"
 
-const char *local_drone_id;             
-Local_Host_t *localHost;                        // local host
-RangingTableSet_t* rangingTableSet;             // local rangingTableSet
+const char *local_drone_id;            
+extern Local_Host_t *localHost;     
+extern RangingTableSet_t* rangingTableSet;     
+extern uint16_t localSendSeqNumber;
 QueueTaskLock_t queueTaskLock;                  // lock for task
-uint16_t localSendSeqNumber = 1;
-uint8_t *neighborIdxPriorityQueue;              // used for choosing neighbors to sent messages
 #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
     int safeRoundCounter = 0;                   // counter for safe distance
     int dynamicRangingPeriod = RANGING_PERIOD;  // ranging period
 #endif
 #ifdef WARM_UP_WAIT_ENABLE
-    int discardCount = 0;                       // wait for device warming up and discard message
+    extern int discardCount;                    // wait for device warming up and discard message
 #endif
 
 
-void send_to_center(int center_socket, const char *node_id, const char *message) {
+void send_to_center(int center_socket, const char* node_id, const Ranging_Message_t* ranging_msg) {
     NodeMessage msg;
-    strncpy(msg.sender_id, node_id, sizeof(msg.sender_id));
-    msg.data_size = strlen(message) + 1;
-    strncpy(msg.data, message, sizeof(msg.data));
     
+    snprintf(msg.sender_id, sizeof(msg.sender_id), "%s", node_id);
+    
+    msg.data_size = sizeof(Ranging_Message_t);
+    memcpy(msg.data, ranging_msg, sizeof(Ranging_Message_t)); 
+
+    if(sizeof(Ranging_Message_t) > MESSAGE_SIZE) {
+        printf("Warning: %ld > %ld, Ranging_Message_t too large!\n", sizeof(Ranging_Message_t), MESSAGE_SIZE);
+    }
+
     if (send(center_socket, &msg, sizeof(msg), 0) < 0) {
         perror("Send failed");
     }
@@ -63,6 +68,14 @@ void *receive_from_center(void *arg) {
     while (1) {
         //  center_socket -> msg
         ssize_t bytes_received = recv(center_socket, &msg, sizeof(msg), 0);
+
+        // get curTime and curLocation
+        uint64_t curTime = getCurrentTime();
+        #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+            Coordinate_Tuple_t curLocation = getCurrentLocation();
+        #endif
+
+
         if (bytes_received <= 0) {
             printf("Disconnected from Control Center\n");
             break;
@@ -75,10 +88,23 @@ void *receive_from_center(void *arg) {
         
         // don't display messages from self
         if (strcmp(msg.sender_id, local_drone_id) != 0) {
-            // Rx
-            QueueTaskRx(&queueTaskLock, &msg, sizeof(NodeMessage));
+            if (msg.data_size != sizeof(Ranging_Message_t)) {
+                printf("receiving failed, size of data_size does not match\n");
+                return NULL;
+            }
+
+            Ranging_Message_t* ranging_msg = (Ranging_Message_t*)msg.data;
             
-            printf("Received message from %s, added to queue\n", msg.sender_id);
+            Ranging_Message_With_Additional_Info_t full_info;
+
+            full_info.rangingMessage = *ranging_msg;
+            full_info.RxTimestamp.full = curTime;
+            full_info.RxCoordinate = curLocation;
+            
+            // Rx
+            QueueTaskRx(&queueTaskLock, &full_info, sizeof(full_info));
+
+            printf("Received ranging message from %s, added to queue\n", msg.sender_id);
         }
     }
     return NULL;
@@ -94,10 +120,10 @@ int main(int argc, char *argv[]) {
     local_drone_id = argv[2];
 
     // init operation
-    localInit(localHost, *(uint16_t*)local_drone_id);
-    initQueueTaskLock(&queueTaskLock);      // before create pthread
+    localInit(string_to_hash(local_drone_id));
+    initQueueTaskLock(&queueTaskLock);     
     initRangingTableSet();
-    
+
     int center_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (center_socket < 0) {
         perror("Socket creation error");
@@ -143,8 +169,10 @@ int main(int argc, char *argv[]) {
     // main send loop
     while (1) {
         Time_t time_delay = QueueTaskTx(&queueTaskLock, MESSAGE_SIZE, send_to_center, center_socket, local_drone_id);
+        
+        printf("time_delay ===== %d\n", time_delay);
 
-        localSendSeqNumber++;
+        printRangingTableSet();
 
         local_sleep(time_delay);
     }

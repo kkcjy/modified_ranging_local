@@ -71,7 +71,7 @@ table_index_t addTableLinkedList(TableLinkedList_t *list, TableNode_t *node) {
             get Rx for the first time and store it in the list(set Tx null)
             get Tx for the second time, find the corresponding position and store it
         */ 
-        if (list->tableBuffer[index].remoteSeq == node->remoteSeq && node->RxTimestamp.full != NULL_TIMESTAMP) {
+        if (list->tableBuffer[index].localSeq == node->remoteSeq && node->RxTimestamp.full != NULL_TIMESTAMP) {
             list->tableBuffer[index].TxTimestamp = node->TxTimestamp;
             #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
                 list->tableBuffer[index].TxCoordinate = node->TxCoordinate;

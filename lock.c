@@ -2,7 +2,7 @@
 #include "modified_ranging.h"
 
 extern RangingTableSet_t* rangingTableSet;     
-extern Local_Host_t localHost;    
+extern Local_Host_t* localHost; 
 
 
 void initQueueTaskLock(QueueTaskLock_t *queue) {
@@ -40,7 +40,6 @@ Time_t QueueTaskTx(QueueTaskLock_t *queue, int msgSize, SendFunction send_func, 
 
     pthread_mutex_unlock(&queue->mutex);
 
-    // adjust rangingMessage -> char*
     if (send_func) {
         send_func(centerSocket, droneId, rangingMessage);
     }

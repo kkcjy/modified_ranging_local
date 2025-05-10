@@ -30,9 +30,9 @@
 #define         UWB_MAX_TIMESTAMP           1099511627776
 
 // MODIFIED_RANGING_H
-#define         MESSAGE_BODY_RX_SIZE        1                   // length of Rx in bodyUnits(message)
-#define         MESSAGE_HEAD_TX_SIZE        1                   // length of Tx in header(message)
-#define         MESSAGE_BODY_UNIT_SIZE      1                   // max size of bodyUnits(message)
+#define         MESSAGE_BODY_RX_SIZE        3                   // length of Rx in bodyUnits(message)
+#define         MESSAGE_HEAD_TX_SIZE        3                   // length of Tx in header(message)
+#define         MESSAGE_BODY_UNIT_SIZE      3                   // max size of bodyUnits(message)
 #define         TX_BUFFER_POOL_SIZE         TABLE_BUFFER_SIZE   // max size of localSendBuffer(local)
 #define         TABLE_SET_NEIGHBOR_NUM      10                  // number of neighbor recorded(local)
 #define         RANGING_PERIOD_MIN          50                  // (ms)

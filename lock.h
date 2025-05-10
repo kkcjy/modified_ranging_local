@@ -3,6 +3,7 @@
 
 #include "defs.h"
 #include "debug.h"
+#include "modified_ranging.h"
 
 typedef struct {
     void *data;
@@ -19,7 +20,7 @@ typedef struct {
 } QueueTaskLock_t;
 
 
-typedef void (*SendFunction)(int, const char*, const char*);
+typedef void (*SendFunction)(int, const char*, const Ranging_Message_t *);
 
 void initQueueTaskLock(QueueTaskLock_t *queue);
 Time_t QueueTaskTx(QueueTaskLock_t *queue, int msgSize, SendFunction send_func, int centerSocket, const char* droneId);

@@ -6,6 +6,7 @@ CENTER_TARGET = center_control
 CC = gcc
 CFLAGS = -Wall -O2 -g -std=c99
 LDFLAGS = -lpthread
+LDFLAGS = -lpthread -lm 
 
 # Source and object directories
 SRCDIR = .
@@ -15,7 +16,10 @@ INCDIR = .
 
 # Source files for each program
 DRONE_SRCS = $(filter-out $(SRCDIR)/center_control.c, $(wildcard $(SRCDIR)/*.c))
-CENTER_SRCS = $(SRCDIR)/center_control.c  # 仅包含 center_control.c
+CENTER_SRCS = $(filter-out $(SRCDIR)/drone.c, $(wildcard $(SRCDIR)/*.c))
+# CENTER_SRCS = $(SRCDIR)/center_control.c 
+# CENTER_SRCS = $(SRCDIR)/center_control.c \
+#               $(SRCDIR)/modified_ranging.c 
 
 # Object files
 DRONE_OBJS = $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(DRONE_SRCS))

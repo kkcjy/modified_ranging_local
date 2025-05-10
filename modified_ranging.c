@@ -1,28 +1,27 @@
 #include "modified_ranging.h"
 
-extern Local_Host_t localHost;
-extern RangingTableSet_t* rangingTableSet;     
-
-extern uint16_t localSendSeqNumber;
-extern uint8_t *neighborIdxPriorityQueue;       // used for choosing neighbors to sent messages
+Local_Host_t *localHost;                        // local host
+RangingTableSet_t* rangingTableSet;             // local rangingTableSet
+uint16_t localSendSeqNumber = 1;           
 #ifdef WARM_UP_WAIT_ENABLE
-    extern int discardCount;                    // wait for device warming up and discard message
+    int discardCount = 0;                       // wait for device warming up and discard message
 #endif
-
 
 void initRangingTableSet() {
     rangingTableSet = (RangingTableSet_t*)malloc(sizeof(RangingTableSet_t));
     rangingTableSet->counter = 0;
-    // rangingTableSet->mutex = xSemaphoreCreateMutex();
-    rangingTableSet->topLocalSendBuffer = NULL_INDEX;
-    for (table_index_t i = 0; i < TABLE_BUFFER_SIZE; i++) {
+    rangingTableSet->topLocalSendBuffer = 0;
+    for (table_index_t i = 0; i < TX_BUFFER_POOL_SIZE; i++) {
         rangingTableSet->localSendBuffer[i].timestamp.full = NULL_TIMESTAMP;
         rangingTableSet->localSendBuffer[i].seqNumber = NULL_SEQ;
+        #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+            rangingTableSet->localSendBuffer[i].TxCoordinate = nullCoordinate;
+        #endif
     }
     for (int i = 0; i < TABLE_SET_NEIGHBOR_NUM; i++) {
+        rangingTableSet->neighborIdxPriorityQueue[i] = NULL_INDEX;
         initRangingTable(&rangingTableSet->neighborReceiveBuffer[i]);
     }
-    neighborIdxPriorityQueue = (uint8_t*)malloc(sizeof(uint8_t) * TABLE_SET_NEIGHBOR_NUM);
     DEBUG_PRINT("[initRangingTableSet]: RangingTableSet is ready\n");
 }
 
@@ -95,16 +94,16 @@ int setPriorityIndex() {
     int topIndex = 0;
     for(int i = 0; i < rangingTableSet->counter; i++) {
         if(rangingTableSet->neighborReceiveBuffer[i].state == USING) {
-            neighborIdxPriorityQueue[topIndex++] = i;
+            rangingTableSet->neighborIdxPriorityQueue[topIndex++] = i;
         }
     }
 
     for(int i = 1; i < topIndex; i++) {
-        for(int j = i; j > 0 && compareTablePriority(&rangingTableSet->neighborReceiveBuffer[neighborIdxPriorityQueue[j]], 
-            &rangingTableSet->neighborReceiveBuffer[neighborIdxPriorityQueue[j - 1]]); j--) {
-                int temp = neighborIdxPriorityQueue[j];
-                neighborIdxPriorityQueue[j] = neighborIdxPriorityQueue[j - 1];
-                neighborIdxPriorityQueue[j - 1] = temp;
+        for(int j = i; j > 0 && compareTablePriority(&rangingTableSet->neighborReceiveBuffer[rangingTableSet->neighborIdxPriorityQueue[j]], 
+            &rangingTableSet->neighborReceiveBuffer[rangingTableSet->neighborIdxPriorityQueue[j - 1]]); j--) {
+                int temp = rangingTableSet->neighborIdxPriorityQueue[j];
+                rangingTableSet->neighborIdxPriorityQueue[j] = rangingTableSet->neighborIdxPriorityQueue[j - 1];
+                rangingTableSet->neighborIdxPriorityQueue[j - 1] = temp;
         }
     }
     return topIndex;
@@ -164,9 +163,11 @@ void printLocalSendBuffer() {
 void printRangingTableSet() {
     DEBUG_PRINT("====================START DEBUG_PRINT RANGINGTABLESET====================\n");
     printLocalSendBuffer();
+    DEBUG_PRINT("--------------------START DEBUG_PRINT NEIGHBORRECEIVEBUFFER--------------------\n");
     for (table_index_t i = 0; i < rangingTableSet->counter; i++) {
         printRangingTable(&rangingTableSet->neighborReceiveBuffer[i]);
     }
+    DEBUG_PRINT("--------------------END DEBUG_PRINT NEIGHBORRECEIVEBUFFER--------------------\n");
     DEBUG_PRINT("====================START DEBUG_PRINT RANGINGTABLESET====================\n");
 }
 
@@ -185,7 +186,7 @@ Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
     */
     while(bodyUnitCounter < MESSAGE_BODY_UNIT_SIZE && bodyUnitCounter < topIndex) {
         // push the message of rangingTable into bodyUnit
-        RangingTable_t *rangingTable = &rangingTableSet->neighborReceiveBuffer[neighborIdxPriorityQueue[bodyUnitCounter]];
+        RangingTable_t *rangingTable = &rangingTableSet->neighborReceiveBuffer[rangingTableSet->neighborIdxPriorityQueue[bodyUnitCounter]];
         Message_Body_Unit_t *bodyUnit = &rangingMessage->bodyUnits[bodyUnitCounter];
         // dest
         bodyUnit->dest = rangingTable->address;
@@ -220,8 +221,9 @@ Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
         srcAddress(local address) + msgSequence(localseq) + Tx(statuses during the last MESSAGE_HEAD_TX_SIZE times of message sending) + msgLength
     */
     Message_Header_t *header = &rangingMessage->header;
+
     // srcAddress
-    header->srcAddress = localHost.localAddress;
+    header->srcAddress = localHost->localAddress;
 
     // msgSequence
     header->msgSequence = localSendSeqNumber++;
@@ -280,7 +282,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
     // node: Tx <-- null, Rx <-- AdditionalInfo
     TableNode_t firstNode;
     firstNode.TxTimestamp = nullTimeStamp;
-    firstNode.RxTimestamp = rangingMessageWithAdditionalInfo->RxTimestamp.timestamp;
+    firstNode.RxTimestamp = rangingMessageWithAdditionalInfo->RxTimestamp;
     #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
         firstNode.TxCoordinate = nullCoordinate;
         firstNode.RxCoordinate.x = rangingMessageWithAdditionalInfo->RxCoordinate.x;
@@ -288,8 +290,10 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
         firstNode.RxCoordinate.z = rangingMessageWithAdditionalInfo->RxCoordinate.z;
     #endif
     firstNode.Tf = NULL_TOF;
-    firstNode.localSeq = rangingMessageWithAdditionalInfo->RxTimestamp.seqNumber;
-    firstNode.remoteSeq = rangingMessage->header.msgSequence;
+    firstNode.localSeq = rangingMessage->header.msgSequence;
+    firstNode.remoteSeq = NULL_SEQ;
+    firstNode.pre = NULL_INDEX;
+    firstNode.next = NULL_INDEX;
     
     /* process header
         srcAddress + msgSequence + Tx
@@ -324,8 +328,8 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
                 secondNode.RxCoordinate = nullCoordinate;
             #endif
             secondNode.Tf = NULL_TOF;
-            secondNode.localSeq = rangingMessageWithAdditionalInfo->RxTimestamp.seqNumber;
-            secondNode.remoteSeq = rangingMessage->header.msgSequence;
+            secondNode.localSeq = NULL_SEQ;
+            secondNode.remoteSeq = rangingMessage->header.TxTimestamps[i].seqNumber;
             // second time calling: fill in Tx
             addTableLinkedList(&neighborReceiveBuffer->receiveBuffer, &secondNode);
 
@@ -364,7 +368,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
         dest + Rx
     */
     for (int i = 0; i < MESSAGE_BODY_UNIT_SIZE; i++) {
-        if (rangingMessage->bodyUnits[i].dest == localHost.localAddress) {
+        if (rangingMessage->bodyUnits[i].dest == localHost->localAddress) {
             // RxTimestamp with larger seqNumber come first when generating message
             for (int j = MESSAGE_BODY_RX_SIZE - 1; j >= 0 ; j--) {
                 if (rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber != NULL_SEQ) {

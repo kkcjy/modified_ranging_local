@@ -14,4 +14,4 @@ Start the Control Center
 ./center_control
 
 Start the Drone Simulator
-./drone "port" "local_address"
+./drone "port(127.0.0.1)" "local_address"

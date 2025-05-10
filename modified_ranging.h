@@ -7,7 +7,6 @@
 #include "nullVal.h"
 #include "local_host.h"
 #include "base_struct.h"
-#include "lock.h"
 
 typedef struct {
     uint16_t dest;          // fill in the address of neighbor                                  
@@ -41,7 +40,7 @@ typedef struct {
 */
 typedef struct {
     Ranging_Message_t rangingMessage;
-    Timestamp_Tuple_t RxTimestamp;          // local timestamp when message is received
+    dwTime_t RxTimestamp;                   // local timestamp when message is received
     #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
     Coordinate_Tuple_t RxCoordinate;        // local cooedinate when message is received
     #endif
@@ -56,11 +55,11 @@ typedef struct {
 } __attribute__((packed)) LocalSendBufferNode_t;
 
 typedef struct {
-    int counter;                // number of neighbors                                   
-    QueueTaskLock_t mutex;            
+    int counter;                                                    // number of neighbors                                   
     table_index_t topLocalSendBuffer;
     LocalSendBufferNode_t localSendBuffer[TX_BUFFER_POOL_SIZE]; 
-    RangingTable_t neighborReceiveBuffer[TABLE_SET_NEIGHBOR_NUM];      
+    uint8_t neighborIdxPriorityQueue[TABLE_SET_NEIGHBOR_NUM];       // used for choosing neighbors to sent messages
+    RangingTable_t neighborReceiveBuffer[TABLE_SET_NEIGHBOR_NUM];
 } __attribute__((packed)) RangingTableSet_t;
 
 
