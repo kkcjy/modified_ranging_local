@@ -34,32 +34,6 @@ void send_to_center(int center_socket, const char* node_id, const Ranging_Messag
     }
 }
 
-// for processing
-void *process_messages(void *arg) {
-    while (1) {
-        bool unSafe = processFromQueue(&queueTaskLock);
-        /*
-            unsafe -> set RANGING_PERIOD_LOW
-            safe more than SAFE_DISTANCE_ROUND_BORDER -> set RANGING_PERIOD
-        */
-        if (unSafe) {
-            #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
-                dynamicRangingPeriod = RANGING_PERIOD_LOW;
-                safeRoundCounter = 0;
-            #endif
-            printf("Warning: Unsafe condition detected!\n");
-        }
-        else {
-            safeRoundCounter++;
-            if(safeRoundCounter == SAFE_DISTANCE_ROUND_BORDER) {
-                dynamicRangingPeriod = RANGING_PERIOD;
-            }
-        }
-        local_sleep(10);                      
-    }
-    return NULL;
-}
-
 // for Rx
 void *receive_from_center(void *arg) {
     int center_socket = *(int *)arg;
@@ -104,6 +78,35 @@ void *receive_from_center(void *arg) {
             printf("[DRONE]: Received ranging message from %s, added to queue\n", msg.sender_id);
             QueueTaskRx(&queueTaskLock, &full_info, sizeof(full_info));
         }
+    }
+    return NULL;
+}
+
+// for processing
+void *process_messages(void *arg) {
+    while (1) {
+        bool unSafe = processFromQueue(&queueTaskLock);
+        
+        printRangingTableSet(0);
+
+        /*
+            unsafe -> set RANGING_PERIOD_LOW
+            safe more than SAFE_DISTANCE_ROUND_BORDER -> set RANGING_PERIOD
+        */
+        if (unSafe) {
+            #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
+                dynamicRangingPeriod = RANGING_PERIOD_LOW;
+                safeRoundCounter = 0;
+            #endif
+            printf("Warning: Unsafe condition detected!\n");
+        }
+        else {
+            safeRoundCounter++;
+            if(safeRoundCounter == SAFE_DISTANCE_ROUND_BORDER) {
+                dynamicRangingPeriod = RANGING_PERIOD;
+            }
+        }
+        local_sleep(10);                      
     }
     return NULL;
 }
@@ -168,9 +171,9 @@ int main(int argc, char *argv[]) {
     while (1) {
         Time_t time_delay = QueueTaskTx(&queueTaskLock, MESSAGE_SIZE, send_to_center, center_socket, local_drone_id);
         
-        printRangingTableSet();
+        printRangingTableSet(1);
 
-        local_sleep(time_delay + 3000);
+        local_sleep(time_delay + 500);
     }
 
     pthread_join(receive_thread, NULL);

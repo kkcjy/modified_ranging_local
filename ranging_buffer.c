@@ -38,7 +38,7 @@ void initRangingBuffer(RangingBuffer_t *buffer) {
     initTofSum = 0;
 }
 
-// add RangingBufferNode_t to RangingBuffer_t(send/receive)
+// add RangingBufferNode_t to RangingBuffer_t(send/receive) in validBuffer
 void addRangingBuffer(RangingBuffer_t *buffer, RangingBufferNode_t *node, StatusType status) {
     if (status == SENDER) {
         buffer->topSendBuffer = (buffer->topSendBuffer + 1) % RANGING_BUFFER_SIZE;

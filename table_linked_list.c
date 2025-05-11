@@ -26,6 +26,7 @@ table_index_t pop(FreeQueue_t *queue) {
         return NULL_INDEX;
     }
     table_index_t index = queue->freeIndex[queue->head];
+    queue->freeIndex[queue->head] = NULL_INDEX;
     queue->head = (queue->head + 1) % FREE_QUEUE_SIZE;
     queue->room--;
     return index;
@@ -66,14 +67,12 @@ table_index_t addTableLinkedList(TableLinkedList_t *list, TableNode_t *node) {
 
     // fill in record
     while (index != NULL_INDEX) {
-        // DEBUG_PRINT("[addTableLinkedList]: index = %d\n", index);
-
         /* this node has been recorded and is not complete
             during the processing of Ranging_Message_With_Additional_Info_t
             get Rx for the first time and store it in the list(set Tx null)
             get Tx for the second time, find the corresponding position and store it
         */ 
-        if (list->tableBuffer[index].localSeq == node->remoteSeq && node->RxTimestamp.full != NULL_TIMESTAMP) {
+        if (list->tableBuffer[index].localSeq == node->remoteSeq) {
             list->tableBuffer[index].TxTimestamp = node->TxTimestamp;
             #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
                 list->tableBuffer[index].TxCoordinate = node->TxCoordinate;
@@ -82,7 +81,7 @@ table_index_t addTableLinkedList(TableLinkedList_t *list, TableNode_t *node) {
             return index;
         }
         index = list->tableBuffer[index].next;
-    } 
+    }
 
     // freequeue is empty, remove the last record
     if (isEmpty(&list->freeQueue)) {
@@ -139,7 +138,6 @@ void deleteTail(TableLinkedList_t *list) {
     list->tableBuffer[index].remoteSeq = NULL_SEQ;
     list->tableBuffer[index].next = NULL_INDEX;
     list->tableBuffer[index].pre = NULL_INDEX;
-    // DEBUG_PRINT("Delete last record, index: %d\n", index);
     push(&list->freeQueue, index);
 }
 
