@@ -42,12 +42,12 @@ Time_t QueueTaskTx(QueueTaskLock_t *queue, int msgSize, SendFunction send_func, 
 
     if (send_func) {
         send_func(centerSocket, droneId, rangingMessage);
+        DEBUG_PRINT("[QueueTaskTx]: send the message\n");
     }
 
     free(rangingMessage);
     rangingMessage = NULL; 
 
-    DEBUG_PRINT("[QueueTaskTx]: sent the message\n");
     return timeDelay;
 }
 
@@ -98,7 +98,9 @@ GET:
     goto GET;
 
 PROCESS:
-    // adjust char* -> Ranging_Message_With_Additional_Info_t
+
+    DEBUG_PRINT("[processFromQueue]: start processing the message\n");
+
     Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo = (Ranging_Message_With_Additional_Info_t*)queue->queueTask[queue->head].data;
 
     #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE

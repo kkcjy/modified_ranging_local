@@ -35,7 +35,6 @@ bool compareTablePriority(RangingTable_t *tableA, RangingTable_t *tableB) {
 }
 
 void printRangingTable(RangingTable_t *table) {
-    DEBUG_PRINT("--------------------START DEBUG_PRINT NEIBORRECEIVEBUFFER--------------------\n");
     DEBUG_PRINT("State: %s\n", (table->state == NULL_STATE) ? "NOT_USING" : "USING");
     DEBUG_PRINT("Address: %d\n", table->address);
     if (table->state == USING) {
@@ -59,5 +58,4 @@ void printRangingTable(RangingTable_t *table) {
         }
     }
     printRangingBuffer(&table->validBuffer);
-    DEBUG_PRINT("--------------------END DEBUG_PRINT NEIBORRECEIVEBUFFER--------------------\n");
 }

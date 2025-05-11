@@ -48,18 +48,14 @@ void *handle_node_connection(void *arg) {
 
     NodeMessage msg;
     while ((bytes_received = recv(node_socket, &msg, sizeof(msg), 0)) > 0) {
-        printf("[%s] %.*s\n", node_id, (int)msg.data_size, msg.data);
-
         // Print function
-        printf("****************************************\n");
         Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo = (Ranging_Message_With_Additional_Info_t*)msg.data;
-        printf("[%s] \n", node_id);
+        printf("\n********************[%s]********************\n", node_id);
         printf("Rxtime = %ld\n", rangingMessageWithAdditionalInfo->RxTimestamp.full);
         printf("Rxlocation = (%d,%d,%d)\n", rangingMessageWithAdditionalInfo->RxCoordinate.x, rangingMessageWithAdditionalInfo->RxCoordinate.y, rangingMessageWithAdditionalInfo->RxCoordinate.z);
         printRangingMessage(&rangingMessageWithAdditionalInfo->rangingMessage);
-        printf("****************************************\n");
+        printf("********************[%s]********************\n", node_id);
 
-        
         // Immediately broadcast received message to all nodes
         broadcast_to_nodes(&msg);
     }

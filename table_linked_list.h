@@ -3,6 +3,7 @@
 
 #include "defs.h"
 #include "dwTypes.h"
+#include "debug.h"
 #include "base_struct.h"
 #include "nullVal.h"
 
@@ -53,7 +54,8 @@ void initTableLinkedList(TableLinkedList_t *list);
 table_index_t addTableLinkedList(TableLinkedList_t *list, TableNode_t *node);
 void deleteTail(TableLinkedList_t *list);
 table_index_t searchTableLinkedList(TableLinkedList_t *list, uint16_t localSeq);
-table_index_t findLocalSeqIndex(TableLinkedList_t *list, uint16_t localSeq);
 table_index_t findRemoteSeqIndex(TableLinkedList_t *list, uint16_t remoteSeq);
+void printTableNode(TableNode_t *node);
+void printTableLinkedList(TableLinkedList_t *list);
 
 # endif

@@ -38,7 +38,7 @@ void send_to_center(int center_socket, const char* node_id, const Ranging_Messag
 void *process_messages(void *arg) {
     while (1) {
         bool unSafe = processFromQueue(&queueTaskLock);
-        /*  
+        /*
             unsafe -> set RANGING_PERIOD_LOW
             safe more than SAFE_DISTANCE_ROUND_BORDER -> set RANGING_PERIOD
         */
@@ -75,7 +75,6 @@ void *receive_from_center(void *arg) {
             Coordinate_Tuple_t curLocation = getCurrentLocation();
         #endif
 
-
         if (bytes_received <= 0) {
             printf("Disconnected from Control Center\n");
             break;
@@ -85,11 +84,11 @@ void *receive_from_center(void *arg) {
             printf("Connection rejected: Maximum drones reached (%d)\n", MAX_NODES);
             exit(1);
         }
-        
+
         // don't display messages from self
         if (strcmp(msg.sender_id, local_drone_id) != 0) {
             if (msg.data_size != sizeof(Ranging_Message_t)) {
-                printf("receiving failed, size of data_size does not match\n");
+                printf("Receiving failed, size of data_size does not match\n");
                 return NULL;
             }
 
@@ -102,9 +101,8 @@ void *receive_from_center(void *arg) {
             full_info.RxCoordinate = curLocation;
             
             // Rx
+            printf("[DRONE]: Received ranging message from %s, added to queue\n", msg.sender_id);
             QueueTaskRx(&queueTaskLock, &full_info, sizeof(full_info));
-
-            printf("Received ranging message from %s, added to queue\n", msg.sender_id);
         }
     }
     return NULL;
@@ -170,11 +168,9 @@ int main(int argc, char *argv[]) {
     while (1) {
         Time_t time_delay = QueueTaskTx(&queueTaskLock, MESSAGE_SIZE, send_to_center, center_socket, local_drone_id);
         
-        printf("time_delay ===== %d\n", time_delay);
-
         printRangingTableSet();
 
-        local_sleep(time_delay);
+        local_sleep(time_delay + 3000);
     }
 
     pthread_join(receive_thread, NULL);

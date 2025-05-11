@@ -66,6 +66,8 @@ table_index_t addTableLinkedList(TableLinkedList_t *list, TableNode_t *node) {
 
     // fill in record
     while (index != NULL_INDEX) {
+        // DEBUG_PRINT("[addTableLinkedList]: index = %d\n", index);
+
         /* this node has been recorded and is not complete
             during the processing of Ranging_Message_With_Additional_Info_t
             get Rx for the first time and store it in the list(set Tx null)
@@ -76,6 +78,7 @@ table_index_t addTableLinkedList(TableLinkedList_t *list, TableNode_t *node) {
             #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
                 list->tableBuffer[index].TxCoordinate = node->TxCoordinate;
             #endif
+            list->tableBuffer[index].remoteSeq = node->remoteSeq;
             return index;
         }
         index = list->tableBuffer[index].next;
@@ -140,6 +143,7 @@ void deleteTail(TableLinkedList_t *list) {
     push(&list->freeQueue, index);
 }
 
+// search for index of tableNode whose localSeq < seq and which has complete Tx and Rx
 table_index_t searchTableLinkedList(TableLinkedList_t *list, uint16_t seq) {
     table_index_t index = list->head;
     table_index_t ans = NULL_INDEX;
@@ -157,11 +161,11 @@ table_index_t searchTableLinkedList(TableLinkedList_t *list, uint16_t seq) {
     return ans;
 }
 
-// find the index of specified localSeq record
-table_index_t findLocalSeqIndex(TableLinkedList_t *list, uint16_t localSeq) {
+// find the index of specified remoteSeq record(local received)
+table_index_t findRemoteSeqIndex(TableLinkedList_t *list, uint16_t remoteSeq){
     table_index_t index = list->head;
     while (index != NULL_INDEX) {
-        if (list->tableBuffer[index].localSeq == localSeq) {
+        if (list->tableBuffer[index].localSeq == remoteSeq) {
             return index;
         }
         index = list->tableBuffer[index].next;
@@ -169,14 +173,16 @@ table_index_t findLocalSeqIndex(TableLinkedList_t *list, uint16_t localSeq) {
     return NULL_INDEX;
 }
 
-// find the index of specified remoteSeq record
-table_index_t findRemoteSeqIndex(TableLinkedList_t *list, uint16_t remoteSeq){
-    table_index_t index = list->head;
-    while (index != NULL_INDEX) {
-        if (list->tableBuffer[index].remoteSeq == remoteSeq) {
-            return index;
-        }
-        index = list->tableBuffer[index].next;
+void printTableNode(TableNode_t *node) {
+    DEBUG_PRINT("TxTimestamp: %ld, RxTimestamp: %ld, Tf: %ld, localSeq: %d, remoteSeq: %d\n", 
+        node->TxTimestamp.full, node->RxTimestamp.full, node->Tf, node->localSeq, node->remoteSeq);
+}
+
+void printTableLinkedList(TableLinkedList_t *list) {
+    DEBUG_PRINT("--------------------START DEBUG_PRINT TABLELINKEDLIST--------------------\n");
+    for(int i = list->head; i <= list->tail && list->head != NULL_INDEX; i++) {
+        DEBUG_PRINT("TxTimestamp: %ld, RxTimestamp: %ld, Tf: %ld, localSeq: %d, remoteSeq: %d\n", 
+            list->tableBuffer[i].TxTimestamp.full, list->tableBuffer[i].RxTimestamp.full, list->tableBuffer[i].Tf, list->tableBuffer[i].localSeq, list->tableBuffer[i].remoteSeq);
     }
-    return NULL_INDEX;
+    DEBUG_PRINT("--------------------END DEBUG_PRINT TABLELINKEDLIST--------------------\n");
 }

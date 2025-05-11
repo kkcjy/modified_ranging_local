@@ -10,7 +10,7 @@
 #define         SAFE_DISTANCE               1                   // (m)should enable DYNAMIC_RANGING_FREQUENCY_ENABLE
 #define         SAFE_DISTANCE_ROUND_BORDER  2                   // should enable DYNAMIC_RANGING_FREQUENCY_ENABLE
 // #define         CLASSIC_TOF_ENABLE                              // allow classicTof if ratioes not satisfy(used in calculateTof)
-#define         WARM_UP_WAIT_ENABLE
+// #define         WARM_UP_WAIT_ENABLE
 
 // LOCAL_HOST_H
 #define         MAX_RANDOM_TIME_OFF         10

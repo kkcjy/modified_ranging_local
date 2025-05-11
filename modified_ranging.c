@@ -22,7 +22,7 @@ void initRangingTableSet() {
         rangingTableSet->neighborIdxPriorityQueue[i] = NULL_INDEX;
         initRangingTable(&rangingTableSet->neighborReceiveBuffer[i]);
     }
-    DEBUG_PRINT("[initRangingTableSet]: RangingTableSet is ready\n");
+    // DEBUG_PRINT("[initRangingTableSet]: init RangingTableSet successfully\n");
 }
 
 // activate a RangingTable for the new neighbor
@@ -41,6 +41,7 @@ table_index_t registerRangingTable(uint16_t address) {
         DEBUG_PRINT("[registerRangingTable]: RangingTableSet is full, cannot register new table\n");
         return NULL_INDEX;
     }
+    // DEBUG_PRINT("[registerRangingTable]: register RangingTable successfully\n");
     return index;
 }
 
@@ -56,6 +57,7 @@ void unregisterRangingTable(uint16_t address) {
     }
     disableRangingTable(&rangingTableSet->neighborReceiveBuffer[rangingTableSet->counter - 1]);
     rangingTableSet->counter--;
+    DEBUG_PRINT("[unregisterRangingTable]: unregister RangingTable successfully\n");
 }
 
 void addLocalSendBuffer(dwTime_t timestamp, Coordinate_Tuple_t TxCoordinate) {
@@ -110,7 +112,6 @@ int setPriorityIndex() {
 }
 
 void printRangingMessage(Ranging_Message_t* rangingMessage) {
-    DEBUG_PRINT("====================START DEBUG_PRINT RANGINGMESSAGE====================\n");
     DEBUG_PRINT("[Header]:\n");
     DEBUG_PRINT("srcAddress: %u\n", rangingMessage->header.srcAddress);
     DEBUG_PRINT("msgSequence: %u\n", rangingMessage->header.msgSequence);
@@ -139,11 +140,10 @@ void printRangingMessage(Ranging_Message_t* rangingMessage) {
             #endif
         }
     }
-    DEBUG_PRINT("====================END DEBUG_PRINT RANGINGMESSAGE====================\n");
 }
 
 void printLocalSendBuffer() {
-    DEBUG_PRINT("--------------------START DEBUG_PRINT LOCALSENDBUFFER--------------------\n");
+    DEBUG_PRINT("-----------------------------LOCALSENDBUFFER-----------------------------\n");
     table_index_t index = rangingTableSet->topLocalSendBuffer;
     int count = 0;
     while (index != NULL_INDEX && count < TABLE_BUFFER_SIZE) {
@@ -157,18 +157,18 @@ void printLocalSendBuffer() {
         index = (index - 1 + TABLE_BUFFER_SIZE) % TABLE_BUFFER_SIZE;
         count++;
     }
-    DEBUG_PRINT("--------------------END DEBUG_PRINT LOCALSENDBUFFER--------------------\n");
+    DEBUG_PRINT("-----------------------------LOCALSENDBUFFER-----------------------------\n");
 }
 
 void printRangingTableSet() {
-    DEBUG_PRINT("====================START DEBUG_PRINT RANGINGTABLESET====================\n");
+    DEBUG_PRINT("\n=============================RANGINGTABLESET=============================\n");
     printLocalSendBuffer();
-    DEBUG_PRINT("--------------------START DEBUG_PRINT NEIGHBORRECEIVEBUFFER--------------------\n");
+    DEBUG_PRINT("\n--------------------------NEIGHBORRECEIVEBUFFER--------------------------\n");
     for (table_index_t i = 0; i < rangingTableSet->counter; i++) {
         printRangingTable(&rangingTableSet->neighborReceiveBuffer[i]);
     }
-    DEBUG_PRINT("--------------------END DEBUG_PRINT NEIGHBORRECEIVEBUFFER--------------------\n");
-    DEBUG_PRINT("====================START DEBUG_PRINT RANGINGTABLESET====================\n");
+    DEBUG_PRINT("--------------------------NEIGHBORRECEIVEBUFFER--------------------------\n");
+    DEBUG_PRINT("=============================RANGINGTABLESET=============================\n\n");
 }
 
 Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
@@ -255,7 +255,9 @@ Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
     // msgLength
     header->msgLength = sizeof(Message_Header_t) + sizeof(Message_Body_Unit_t) * bodyUnitCounter;
     
+    DEBUG_PRINT("\n********************[generateRangingMessage]********************\n");
     printRangingMessage(rangingMessage);
+    DEBUG_PRINT("********************[generateRangingMessage]********************\n\n");
 
     return taskDelay;
 }
@@ -276,6 +278,10 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
 
     Ranging_Message_t *rangingMessage = &rangingMessageWithAdditionalInfo->rangingMessage;
 
+    DEBUG_PRINT("\n********************[processRangingMessage]********************\n");
+    printRangingMessage(rangingMessage);
+    DEBUG_PRINT("********************[processRangingMessage]********************\n\n");
+
     /* process additionalinfo
         RxTimestamp + RxCoordinate  
     */
@@ -294,16 +300,13 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
     firstNode.remoteSeq = NULL_SEQ;
     firstNode.pre = NULL_INDEX;
     firstNode.next = NULL_INDEX;
-    
+
     /* process header
         srcAddress + msgSequence + Tx
     */
     uint16_t neighborAddress = rangingMessage->header.srcAddress;
-    table_index_t neighborIndex = findRangingTable(neighborAddress);
 
-    RangingTable_t *neighborReceiveBuffer = &rangingTableSet->neighborReceiveBuffer[neighborIndex];
-    // first time calling: Tx - null Rx - full
-    addTableLinkedList(&neighborReceiveBuffer->receiveBuffer, &firstNode);
+    table_index_t neighborIndex = findRangingTable(neighborAddress);
 
     // handle new neighbor
     if(neighborIndex == NULL_INDEX) {
@@ -314,9 +317,20 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
         }
     }
 
+    RangingTable_t *neighborReceiveBuffer = &rangingTableSet->neighborReceiveBuffer[neighborIndex];
+
+    // DEBUG_PRINT("[firstNode]: ");
+    // printTableNode(&firstNode);
+
+    // first time calling(localSeq): Tx - null Rx - full
+    addTableLinkedList(&neighborReceiveBuffer->receiveBuffer, &firstNode);
+
     // find corresponding Rx to calculate
     for (int i = 0; i < MESSAGE_HEAD_TX_SIZE; i++) {
         table_index_t receiveBufferIndex = findRemoteSeqIndex(&neighborReceiveBuffer->receiveBuffer, rangingMessage->header.TxTimestamps[i].seqNumber);
+        
+        printf("[findRemoteSeqIndex]:  receiveBufferIndex = %d\n", receiveBufferIndex);
+
         if (receiveBufferIndex != NULL_INDEX) {
             TableNode_t secondNode;
             secondNode.TxTimestamp = rangingMessage->header.TxTimestamps[i].timestamp;
@@ -330,7 +344,11 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
             secondNode.Tf = NULL_TOF;
             secondNode.localSeq = NULL_SEQ;
             secondNode.remoteSeq = rangingMessage->header.TxTimestamps[i].seqNumber;
-            // second time calling: fill in Tx
+
+            // DEBUG_PRINT("[secondNode]: ");
+            // printTableNode(&secondNode);
+
+            // second time calling(remoteSeq): fill in Tx
             addTableLinkedList(&neighborReceiveBuffer->receiveBuffer, &secondNode);
 
             if(neighborReceiveBuffer->validBuffer.sendLength < MAX_INITIAL_CALCULATION){
@@ -392,6 +410,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
                     node.Tf = NULL_TOF;
                     node.localSeq = rangingTableSet->localSendBuffer[sendBufferIndex].seqNumber;
                     node.remoteSeq = rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber;
+                    // Tx - null Rx - full
                     table_index_t newReceiveRecordIndex_BodyUnit = addTableLinkedList(&neighborReceiveBuffer->sendBuffer, &node);
 
                     if(neighborReceiveBuffer->validBuffer.receiveLength < MAX_INITIAL_CALCULATION){
@@ -423,8 +442,6 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
             break;
         }
     }
-
-    printRangingTableSet();
 
     #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
         return TofMin * VELOCITY < SAFE_DISTANCE;
