@@ -119,7 +119,7 @@ void deleteTail(TableLinkedList_t *list) {
     if (list->tail == NULL_INDEX) {
         return;
     }
-
+    
     table_index_t index = list->tail;
     list->tail = list->tableBuffer[index].pre;
     if (list->tail != NULL_INDEX) {
@@ -159,10 +159,14 @@ table_index_t searchTableLinkedList(TableLinkedList_t *list, uint16_t seq) {
     return ans;
 }
 
-// find the index of specified remoteSeq record(local received)
+// find the index of specified remoteSeq record
 table_index_t findRemoteSeqIndex(TableLinkedList_t *list, uint16_t remoteSeq){
     table_index_t index = list->head;
     while (index != NULL_INDEX) {
+        // have processed
+        if (list->tableBuffer[index].remoteSeq == remoteSeq) {
+            return NULL_DONE_INDEX;
+        }
         if (list->tableBuffer[index].localSeq == remoteSeq) {
             return index;
         }

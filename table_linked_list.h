@@ -54,6 +54,7 @@ void initTableLinkedList(TableLinkedList_t *list);
 table_index_t addTableLinkedList(TableLinkedList_t *list, TableNode_t *node);
 void deleteTail(TableLinkedList_t *list);
 table_index_t searchTableLinkedList(TableLinkedList_t *list, uint16_t localSeq);
+table_index_t findsentRemoteSeqIndex(TableLinkedList_t *list, uint16_t remoteSeq);
 table_index_t findRemoteSeqIndex(TableLinkedList_t *list, uint16_t remoteSeq);
 void printTableNode(TableNode_t *node);
 void printTableLinkedList(TableLinkedList_t *list);

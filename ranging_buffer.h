@@ -29,13 +29,7 @@ typedef struct {
     int64_t T1;
     int64_t T2;
     int64_t sumTof;
-    /*         sender                         receiver
-        Tx1             Rx2                 Rx1     Tx2
-            Rx1     Tx2                 Tx1             Rx2
-    preLocalSeq     localSeq        preLocalSeq     localSeq
-    */
     uint16_t localSeq;
-    uint16_t preLocalSeq; 
 
     #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
     Coordinate_Tuple_t sendTxCoordinate; 

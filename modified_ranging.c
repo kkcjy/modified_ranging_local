@@ -206,7 +206,7 @@ Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
         table_index_t index = rangingTable->receiveBuffer.head;
         for(int i = 0; i < MESSAGE_BODY_RX_SIZE; i++){
             // receiveBuffer --> bodyUnit->RxTimestamps
-            if(index != NULL_INDEX){
+            if(index != NULL_INDEX) {
                 bodyUnit->RxTimestamps[i].seqNumber = rangingTable->receiveBuffer.tableBuffer[index].localSeq;
                 bodyUnit->RxTimestamps[i].timestamp = rangingTable->receiveBuffer.tableBuffer[index].RxTimestamp;
                 #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
@@ -337,9 +337,16 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
     addTableLinkedList(&neighborReceiveBuffer->receiveBuffer, &firstNode);
 
     // find corresponding Rx to calculate
-    for (int i = 0; i < MESSAGE_HEAD_TX_SIZE && rangingMessage->header.TxTimestamps[i].seqNumber != NULL_SEQ; i++) {
+    for (int i = MESSAGE_HEAD_TX_SIZE - 1; i >= 0; i--) {
+        if(rangingMessage->header.TxTimestamps[i].seqNumber == NULL_SEQ) {
+            continue;
+        }
         table_index_t receiveBufferIndex = findRemoteSeqIndex(&neighborReceiveBuffer->receiveBuffer, rangingMessage->header.TxTimestamps[i].seqNumber);
-        
+        if(receiveBufferIndex == NULL_DONE_INDEX) {
+            DEBUG_PRINT("Warning: have processed this node\n");
+            continue;
+        }
+        // received
         if (receiveBufferIndex != NULL_INDEX) {
             TableNode_t secondNode;
             secondNode.TxTimestamp = rangingMessage->header.TxTimestamps[i].timestamp;
@@ -362,7 +369,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
 
             if(neighborReceiveBuffer->validBuffer.sendLength < MAX_INITIAL_CALCULATION){
                 initializeRecordBuffer(&neighborReceiveBuffer->receiveBuffer, &neighborReceiveBuffer->sendBuffer, receiveBufferIndex, &neighborReceiveBuffer->validBuffer, RECEIVER);
-                if(neighborReceiveBuffer->validBuffer.sendLength == MAX_INITIAL_CALCULATION){
+                if(neighborReceiveBuffer->validBuffer.sendLength >= MAX_INITIAL_CALCULATION){
                     // finish calling initializeRecordBuffer, update Tof
                     int64_t initTof = getInitTofSum() / MAX_INITIAL_CALCULATION;
                     for (int i = 0; i < neighborReceiveBuffer->validBuffer.sendLength; i++) {
@@ -386,8 +393,9 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
                 }
             }
         }
+        // missed or processed
         else{
-            DEBUG_PRINT("Warning: Cannot find corresponding Rx timestamp for Tx timestamp while processing rangingMessage->header\n");
+            DEBUG_PRINT("Warning: Cannot find corresponding Tx timestamp for Rx timestamp while processing rangingMessage->bodyUnit\n");
         }
     }
 
@@ -398,59 +406,64 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
         if (rangingMessage->bodyUnits[i].dest == localHost->localAddress) {
             // RxTimestamp with larger seqNumber come first when generating message
             for (int j = MESSAGE_BODY_RX_SIZE - 1; j >= 0 ; j--) {
-                if (rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber != NULL_SEQ) {
+                if(rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber == NULL_SEQ) {
+                    continue;
+                }
 
-                    table_index_t sendBufferIndex = findLocalSendBufferNode(rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber);
+                table_index_t sendBufferIndex = findLocalSendBufferNode(rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber);
+                if (sendBufferIndex == NULL_INDEX) {
+                    DEBUG_PRINT("Warning: Cannot find corresponding Tx timestamp for Rx timestamp while processing rangingMessage->bodyUnit\n");
+                    continue;
+                }
 
-                    if (sendBufferIndex == NULL_INDEX) {
-                        DEBUG_PRINT("Warning: Cannot find corresponding Tx timestamp for Rx timestamp while processing rangingMessage->bodyUnit\n");
-                        continue;
-                    }
+                if(findRemoteSeqIndex(&neighborReceiveBuffer->sendBuffer, rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber) == NULL_DONE_INDEX) {
+                    DEBUG_PRINT("Warning: have processed this node\n");
+                    continue;
+                }
 
-                    TableNode_t fullNode;
-                    fullNode.TxTimestamp = rangingTableSet->localSendBuffer[sendBufferIndex].timestamp;
-                    fullNode.RxTimestamp = rangingMessage->bodyUnits[i].RxTimestamps[j].timestamp;
-                    #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
-                        fullNode.TxCoordinate.x = rangingTableSet->localSendBuffer[sendBufferIndex].TxCoordinate.x;
-                        fullNode.TxCoordinate.y = rangingTableSet->localSendBuffer[sendBufferIndex].TxCoordinate.y;
-                        fullNode.TxCoordinate.z = rangingTableSet->localSendBuffer[sendBufferIndex].TxCoordinate.z;
-                        fullNode.RxCoordinate.x = rangingMessage->bodyUnits[i].RxCoodinates[j].x;
-                        fullNode.RxCoordinate.y = rangingMessage->bodyUnits[i].RxCoodinates[j].y;
-                        fullNode.RxCoordinate.z = rangingMessage->bodyUnits[i].RxCoodinates[j].z;
-                    #endif
-                    fullNode.Tf = NULL_TOF;
-                    fullNode.localSeq = rangingTableSet->localSendBuffer[sendBufferIndex].seqNumber;
-                    fullNode.remoteSeq = rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber;
+                TableNode_t fullNode;
+                fullNode.TxTimestamp = rangingTableSet->localSendBuffer[sendBufferIndex].timestamp;
+                fullNode.RxTimestamp = rangingMessage->bodyUnits[i].RxTimestamps[j].timestamp;
+                #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+                    fullNode.TxCoordinate.x = rangingTableSet->localSendBuffer[sendBufferIndex].TxCoordinate.x;
+                    fullNode.TxCoordinate.y = rangingTableSet->localSendBuffer[sendBufferIndex].TxCoordinate.y;
+                    fullNode.TxCoordinate.z = rangingTableSet->localSendBuffer[sendBufferIndex].TxCoordinate.z;
+                    fullNode.RxCoordinate.x = rangingMessage->bodyUnits[i].RxCoodinates[j].x;
+                    fullNode.RxCoordinate.y = rangingMessage->bodyUnits[i].RxCoodinates[j].y;
+                    fullNode.RxCoordinate.z = rangingMessage->bodyUnits[i].RxCoodinates[j].z;
+                #endif
+                fullNode.Tf = NULL_TOF;
+                fullNode.localSeq = rangingTableSet->localSendBuffer[sendBufferIndex].seqNumber;
+                fullNode.remoteSeq = rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber;
 
-                    // DEBUG_PRINT("[fullNode]: ");
-                    // printTableNode(&fullNode);
+                // DEBUG_PRINT("[fullNode]: ");
+                // printTableNode(&fullNode);
 
-                    // Tx - null Rx - full
-                    table_index_t newReceiveRecordIndex_BodyUnit = addTableLinkedList(&neighborReceiveBuffer->sendBuffer, &fullNode);
+                // Tx - null Rx - full
+                table_index_t newReceiveRecordIndex_BodyUnit = addTableLinkedList(&neighborReceiveBuffer->sendBuffer, &fullNode);
 
-                    if(neighborReceiveBuffer->validBuffer.receiveLength < MAX_INITIAL_CALCULATION){
-                        initializeRecordBuffer(&neighborReceiveBuffer->sendBuffer, &neighborReceiveBuffer->receiveBuffer, newReceiveRecordIndex_BodyUnit, &neighborReceiveBuffer->validBuffer, SENDER);
-                        if(neighborReceiveBuffer->validBuffer.receiveLength == MAX_INITIAL_CALCULATION){
-                            int64_t initTof = getInitTofSum() / MAX_INITIAL_CALCULATION;
-                            for (int i = 0; i < neighborReceiveBuffer->validBuffer.receiveLength; i++) {
-                                neighborReceiveBuffer->validBuffer.receiveBuffer[i].sumTof = initTof*2;
-                                neighborReceiveBuffer->validBuffer.receiveBuffer[i].T1 = initTof;
-                                neighborReceiveBuffer->validBuffer.receiveBuffer[i].T2 = initTof;
-                            }
-                            DEBUG_PRINT("initTof:%lld\n",initTof);
+                if(neighborReceiveBuffer->validBuffer.receiveLength < MAX_INITIAL_CALCULATION){
+                    initializeRecordBuffer(&neighborReceiveBuffer->sendBuffer, &neighborReceiveBuffer->receiveBuffer, newReceiveRecordIndex_BodyUnit, &neighborReceiveBuffer->validBuffer, SENDER);
+                    if(neighborReceiveBuffer->validBuffer.receiveLength == MAX_INITIAL_CALCULATION){
+                        int64_t initTof = getInitTofSum() / MAX_INITIAL_CALCULATION;
+                        for (int i = 0; i < neighborReceiveBuffer->validBuffer.receiveLength; i++) {
+                            neighborReceiveBuffer->validBuffer.receiveBuffer[i].sumTof = initTof*2;
+                            neighborReceiveBuffer->validBuffer.receiveBuffer[i].T1 = initTof;
+                            neighborReceiveBuffer->validBuffer.receiveBuffer[i].T2 = initTof;
                         }
+                        DEBUG_PRINT("initTof:%lld\n",initTof);
+                    }
+                }
+                else {
+                    double D = calculateTof(&neighborReceiveBuffer->validBuffer, &neighborReceiveBuffer->sendBuffer.tableBuffer[newReceiveRecordIndex_BodyUnit],
+                        neighborReceiveBuffer->sendBuffer.tableBuffer[newReceiveRecordIndex_BodyUnit].localSeq, SENDER, true);
+                    if(D == -1){
+                        DEBUG_PRINT("Warning: Failed to calculate TOF.\n");
                     }
                     else {
-                        double D = calculateTof(&neighborReceiveBuffer->validBuffer, &neighborReceiveBuffer->sendBuffer.tableBuffer[newReceiveRecordIndex_BodyUnit],
-                            neighborReceiveBuffer->sendBuffer.tableBuffer[newReceiveRecordIndex_BodyUnit].localSeq, SENDER, true);
-                        if(D == -1){
-                            DEBUG_PRINT("Warning: Failed to calculate TOF.\n");
-                        }
-                        else {
-                            #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
-                                TofMin = D < TofMin ? D : TofMin;
-                            #endif
-                        }
+                        #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
+                            TofMin = D < TofMin ? D : TofMin;
+                        #endif
                     }
                 }
             }

@@ -6,6 +6,7 @@
 
 #define         NULL_ADDR               0
 #define         NULL_INDEX              -1
+#define         NULL_DONE_INDEX         -2
 #define         NULL_SEQ                0
 #define         NULL_TIMESTAMP          0
 #define         NULL_TOF                0
