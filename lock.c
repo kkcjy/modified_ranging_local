@@ -18,7 +18,7 @@ void initQueueTaskLock(QueueTaskLock_t *queue) {
 }
 
 // generate data and Tx
-Time_t QueueTaskTx(QueueTaskLock_t *queue, int msgSize, SendFunction send_func, int centerSocket, const char* droneId) {
+Time_t QueueTaskTx(QueueTaskLock_t *queue, int msgSize, SendFunction send_to_center, int centerSocket, const char* droneId) {
     pthread_mutex_lock(&queue->mutex);
 
     Ranging_Message_t *rangingMessage = (Ranging_Message_t*)malloc(msgSize);
@@ -30,19 +30,10 @@ Time_t QueueTaskTx(QueueTaskLock_t *queue, int msgSize, SendFunction send_func, 
 
     Time_t timeDelay = generateRangingMessage(rangingMessage);
 
-    dwTime_t curTime;
-    curTime.full = getCurrentTime(&localHost);
-
-    // adjust - have not updated location yet
-    Coordinate_Tuple_t curLocation = getCurrentLocation(&localHost);
-
-    addLocalSendBuffer(curTime, curLocation);
-
     pthread_mutex_unlock(&queue->mutex);
 
-    if (send_func) {
-        send_func(centerSocket, droneId, rangingMessage);
-        DEBUG_PRINT("[QueueTaskTx]: send the message\n");
+    if (send_to_center) {
+        send_to_center(centerSocket, droneId, rangingMessage);
     }
 
     free(rangingMessage);
@@ -77,9 +68,8 @@ void QueueTaskRx(QueueTaskLock_t *queue, void *data, size_t data_size) {
 
     queue->tail = (queue->tail + 1) % QUEUE_TASK_LENGTH;
     queue->count++;
-    pthread_mutex_unlock(&queue->countMutex);
 
-    DEBUG_PRINT("[QueueTaskRx]: receive the message\n");
+    pthread_mutex_unlock(&queue->countMutex);
 }
 
 // process
@@ -98,9 +88,6 @@ GET:
     goto GET;
 
 PROCESS:
-
-    DEBUG_PRINT("[processFromQueue]: start processing the message\n");
-
     Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo = (Ranging_Message_With_Additional_Info_t*)queue->queueTask[queue->head].data;
 
     #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE

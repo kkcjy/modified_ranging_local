@@ -22,7 +22,6 @@ void initRangingTableSet() {
         rangingTableSet->neighborIdxPriorityQueue[i] = NULL_INDEX;
         initRangingTable(&rangingTableSet->neighborReceiveBuffer[i]);
     }
-    DEBUG_PRINT("[initRangingTableSet]: init RangingTableSet successfully\n");
 }
 
 // activate a RangingTable for the new neighbor
@@ -41,7 +40,7 @@ table_index_t registerRangingTable(uint16_t address) {
         DEBUG_PRINT("[registerRangingTable]: RangingTableSet is full, cannot register new table\n");
         return NULL_INDEX;
     }
-    DEBUG_PRINT("[registerRangingTable]: register RangingTable successfully\n");
+    // DEBUG_PRINT("[registerRangingTable]: register RangingTable successfully\n");
     return index;
 }
 
@@ -57,12 +56,13 @@ void unregisterRangingTable(uint16_t address) {
     }
     disableRangingTable(&rangingTableSet->neighborReceiveBuffer[rangingTableSet->counter - 1]);
     rangingTableSet->counter--;
-    DEBUG_PRINT("[unregisterRangingTable]: unregister RangingTable successfully\n");
+    // DEBUG_PRINT("[unregisterRangingTable]: unregister RangingTable successfully\n");
 }
 
 void addLocalSendBuffer(dwTime_t timestamp, Coordinate_Tuple_t TxCoordinate) {
     rangingTableSet->topLocalSendBuffer = (rangingTableSet->topLocalSendBuffer + 1) % TX_BUFFER_POOL_SIZE;
-    rangingTableSet->localSendBuffer[rangingTableSet->topLocalSendBuffer].seqNumber = localSendSeqNumber;
+    // localSendSeqNumber has updated
+    rangingTableSet->localSendBuffer[rangingTableSet->topLocalSendBuffer].seqNumber = localSendSeqNumber - 1;
     rangingTableSet->localSendBuffer[rangingTableSet->topLocalSendBuffer].timestamp = timestamp;
     rangingTableSet->localSendBuffer[rangingTableSet->topLocalSendBuffer].TxCoordinate = TxCoordinate;
 }
@@ -266,9 +266,9 @@ Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
     // msgLength
     header->msgLength = sizeof(Message_Header_t) + sizeof(Message_Body_Unit_t) * bodyUnitCounter;
     
-    DEBUG_PRINT("\n*************************[generateRangingMessage]************************\n");
-    printRangingMessage(rangingMessage);
-    DEBUG_PRINT("*************************[generateRangingMessage]************************\n\n");
+    // DEBUG_PRINT("\n*************************[generateRangingMessage]************************\n");
+    // printRangingMessage(rangingMessage);
+    // DEBUG_PRINT("*************************[generateRangingMessage]************************\n\n");
 
     return taskDelay;
 }
@@ -343,7 +343,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
         }
         table_index_t receiveBufferIndex = findRemoteSeqIndex(&neighborReceiveBuffer->receiveBuffer, rangingMessage->header.TxTimestamps[i].seqNumber);
         if(receiveBufferIndex == NULL_DONE_INDEX) {
-            DEBUG_PRINT("Warning: have processed this node\n");
+            // DEBUG_PRINT("Warning: have processed this node\n");
             continue;
         }
         // received
@@ -384,7 +384,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
                 double D = calculateTof(&neighborReceiveBuffer->validBuffer, &neighborReceiveBuffer->receiveBuffer.tableBuffer[receiveBufferIndex],
                     neighborReceiveBuffer->receiveBuffer.tableBuffer[receiveBufferIndex].localSeq, RECEIVER, true);
                 if(D == -1) {
-                    DEBUG_PRINT("[calculateTof]: Failed to calculate TOF\n");
+                    DEBUG_PRINT("Warning: Failed to calculate TOF.\n");
                 }
                 else {
                     #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
@@ -417,7 +417,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
                 }
 
                 if(findRemoteSeqIndex(&neighborReceiveBuffer->sendBuffer, rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber) == NULL_DONE_INDEX) {
-                    DEBUG_PRINT("Warning: have processed this node\n");
+                    // DEBUG_PRINT("Warning: have processed this node\n");
                     continue;
                 }
 
@@ -451,14 +451,14 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
                             neighborReceiveBuffer->validBuffer.receiveBuffer[i].T1 = initTof;
                             neighborReceiveBuffer->validBuffer.receiveBuffer[i].T2 = initTof;
                         }
-                        DEBUG_PRINT("initTof:%lld\n",initTof);
+                        DEBUG_PRINT("[initializeRecordBuffer]: finish calling, initTof = %lld\n",initTof);
                     }
                 }
                 else {
                     double D = calculateTof(&neighborReceiveBuffer->validBuffer, &neighborReceiveBuffer->sendBuffer.tableBuffer[newReceiveRecordIndex_BodyUnit],
                         neighborReceiveBuffer->sendBuffer.tableBuffer[newReceiveRecordIndex_BodyUnit].localSeq, SENDER, true);
                     if(D == -1){
-                        DEBUG_PRINT("Warning: Failed to calculate TOF.\n");
+                        DEBUG_PRINT("Warning: Failed to calculate TOF\n");
                     }
                     else {
                         #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE

@@ -29,6 +29,16 @@ void send_to_center(int center_socket, const char* node_id, const Ranging_Messag
         printf("Warning: %ld > %ld, Ranging_Message_t too large!\n", sizeof(Ranging_Message_t), MESSAGE_SIZE);
     }
 
+    dwTime_t curTime;
+    curTime.full = getCurrentTime();
+
+    // adjust - have not updated location yet
+    #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+        Coordinate_Tuple_t curLocation = getCurrentLocation();
+    #endif
+
+    addLocalSendBuffer(curTime, curLocation);
+
     if (send(center_socket, &msg, sizeof(msg), 0) < 0) {
         perror("Send failed");
     }
@@ -38,16 +48,10 @@ void send_to_center(int center_socket, const char* node_id, const Ranging_Messag
 void *receive_from_center(void *arg) {
     int center_socket = *(int *)arg;
     NodeMessage msg;
-    
+
     while (1) {
         //  center_socket -> msg
         ssize_t bytes_received = recv(center_socket, &msg, sizeof(msg), 0);
-
-        // get curTime and curLocation
-        uint64_t curTime = getCurrentTime();
-        #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
-            Coordinate_Tuple_t curLocation = getCurrentLocation();
-        #endif
 
         if (bytes_received <= 0) {
             printf("Disconnected from Control Center\n");
@@ -66,6 +70,12 @@ void *receive_from_center(void *arg) {
                 return NULL;
             }
 
+            // get curTime and curLocation
+            uint64_t curTime = getCurrentTime();
+            #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+                Coordinate_Tuple_t curLocation = getCurrentLocation();
+            #endif
+
             Ranging_Message_t* ranging_msg = (Ranging_Message_t*)msg.data;
             
             Ranging_Message_With_Additional_Info_t full_info;
@@ -75,7 +85,7 @@ void *receive_from_center(void *arg) {
             full_info.RxCoordinate = curLocation;
             
             // Rx
-            printf("[DRONE]: Received ranging message from %s, added to queue\n", msg.sender_id);
+            DEBUG_PRINT("[QueueTaskRx]: receive the message[%d] from %s at %ld\n", ranging_msg->header.msgSequence, msg.sender_id, curTime);
             QueueTaskRx(&queueTaskLock, &full_info, sizeof(full_info));
         }
     }
@@ -122,8 +132,12 @@ int main(int argc, char *argv[]) {
 
     // init operation
     localInit(string_to_hash(local_drone_id));
+    DEBUG_PRINT("[localInit]: localHost is ready: droneId = %s, localAddress = %d, x = %d, y = %d, z = %d, randOffTime = %ld\n", 
+        local_drone_id, localHost->localAddress, localHost->location.x, localHost->location.y, localHost->location.z, localHost->randOffTime);
     initQueueTaskLock(&queueTaskLock);     
+    DEBUG_PRINT("[initQueueTaskLock]: QueueTaskLock is ready\n");
     initRangingTableSet();
+    DEBUG_PRINT("[initRangingTableSet]: RangingTableSet is ready\n");
 
     int center_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (center_socket < 0) {
@@ -157,6 +171,16 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+    int64_t worldBaseTime;
+    ssize_t bytes_received = recv(center_socket, &worldBaseTime, sizeof(worldBaseTime), 0);
+    if (bytes_received != sizeof(worldBaseTime)) {
+        perror("Failed to receive timestamp");
+        close(center_socket);
+        return -1;
+    }
+
+    localHost->baseTime = worldBaseTime;
+
     // start receive
     pthread_t receive_thread;
     if (pthread_create(&receive_thread, NULL, receive_from_center, &center_socket)) {
@@ -169,11 +193,12 @@ int main(int argc, char *argv[]) {
 
     // main send loop
     while (1) {
+        DEBUG_PRINT("[QueueTaskTx]: send the message[%d] from %s at %ld\n", localSendSeqNumber, local_drone_id, getCurrentTime());
         Time_t time_delay = QueueTaskTx(&queueTaskLock, MESSAGE_SIZE, send_to_center, center_socket, local_drone_id);
         
-        printRangingTableSet(1);
+        // printRangingTableSet(1);
 
-        local_sleep(time_delay + 500);
+        local_sleep(time_delay + 200); 
     }
 
     pthread_join(receive_thread, NULL);

@@ -57,8 +57,8 @@ void addRangingBuffer(RangingBuffer_t *buffer, RangingBufferNode_t *node, Status
             buffer->sendBuffer[buffer->topSendBuffer].receiveRxCoordinate = node->receiveRxCoordinate;
         #endif
 
-        DEBUG_PRINT("[SENDBUFFER_ADD]: sendTx:%llu,sendRx:%llu,receiveTx:%llu,receiveRx:%llu,sumTof:%lld,localSeq:%d\n"
-            ,node->sendTx.full,node->sendRx.full,node->receiveTx.full,node->receiveRx.full,node->sumTof,node->localSeq);
+        // DEBUG_PRINT("[SENDBUFFER_ADD]: sendTx:%llu,sendRx:%llu,receiveTx:%llu,receiveRx:%llu,sumTof:%lld,localSeq:%d\n"
+        //     ,node->sendTx.full,node->sendRx.full,node->receiveTx.full,node->receiveRx.full,node->sumTof,node->localSeq);
     }
     else if (status == RECEIVER) {
         buffer->topReceiveBuffer = (buffer->topReceiveBuffer + 1) % RANGING_BUFFER_SIZE;
@@ -78,8 +78,8 @@ void addRangingBuffer(RangingBuffer_t *buffer, RangingBufferNode_t *node, Status
             buffer->receiveBuffer[buffer->topReceiveBuffer].receiveRxCoordinate = node->receiveRxCoordinate;
         #endif
 
-        DEBUG_PRINT("[RECEIVEBUFFER_ADD]: sendTx:%llu,sendRx:%llu,receiveTx:%llu,receiveRx:%llu,sumTof:%lld,localSeq:%d\n"
-            ,node->sendTx.full,node->sendRx.full,node->receiveTx.full,node->receiveRx.full,node->sumTof,node->localSeq);
+        // DEBUG_PRINT("[RECEIVEBUFFER_ADD]: sendTx:%llu,sendRx:%llu,receiveTx:%llu,receiveRx:%llu,sumTof:%lld,localSeq:%d\n"
+        //     ,node->sendTx.full,node->sendRx.full,node->receiveTx.full,node->receiveRx.full,node->sumTof,node->localSeq);
     }
 }
 
@@ -168,12 +168,12 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
     }
     int64_t T12 = node->sumTof;
     int64_t T23 = 0;
-    DEBUG_PRINT("[CalculateTof]: status:%d,T12:%lld,Ra:%lld,Rb:%lld,Da:%lld,Db:%lld\n", status,T12,Ra, Rb, Da, Db);
+    // DEBUG_PRINT("[CalculateTof]: status:%d,T12:%lld,Ra:%lld,Rb:%lld,Da:%lld,Db:%lld\n", status,T12,Ra, Rb, Da, Db);
     float Ra_Da = (float)Ra/Da;
     float Rb_Db = (float)Rb/Db;
     int64_t diffA = Ra - Da;
     int64_t diffB = Rb - Db;
-    DEBUG_PRINT("[CalculateTof]: Ra_Da:%f,Rb_Db:%f\n", Ra_Da, Rb_Db);
+    // DEBUG_PRINT("[CalculateTof]: Ra_Da:%f,Rb_Db:%f\n", Ra_Da, Rb_Db);
 
     if(Ra_Da < CONVERGENCE_THRESHOLD || Rb_Db < CONVERGENCE_THRESHOLD) {
         if(Ra_Da < Rb_Db) {
@@ -227,7 +227,7 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
         float trueDy = (tableNode->RxCoordinate.y - tableNode->TxCoordinate.y)/10.0;
         float trueDz = (tableNode->RxCoordinate.z - tableNode->TxCoordinate.z)/10.0;
         float trueD = sqrtf(trueDx*trueDx + trueDy*trueDy + trueDz*trueDz);
-        DEBUG_PRINT("[CalculateTof Finished]: modified_D = %f, classic_D = %f, true_D = %f", D, classicD, trueD);
+        DEBUG_PRINT("[CalculateTof]: modified_D = %f, classic_D = %f, true_D = %f", D, classicD, trueD);
     #endif
 
     /* adjust

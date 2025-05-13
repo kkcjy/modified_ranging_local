@@ -17,13 +17,13 @@ uint16_t string_to_hash(const char *str) {
     return hash;
 }
 
-// set localAddress initTime and randOffTime(ms)
+// set localAddress and randOffTime(ms)
 void localInit(uint16_t address) {
     localHost = (Local_Host_t*)malloc(sizeof(Local_Host_t));
     localHost->localAddress = address;
-    localHost->initTime = get_current_milliseconds();
+    localHost->baseTime = 0;
 
-    srand((unsigned int)(localHost->initTime));
+    srand((unsigned int)(get_current_milliseconds()));
 
     #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
         localHost->location.x = rand() % (FLIGHT_AREA_BOUND + 1);
@@ -32,14 +32,15 @@ void localInit(uint16_t address) {
     #endif
 
     localHost->randOffTime = rand() % (MAX_RANDOM_TIME_OFF + 1);
-
-    DEBUG_PRINT("[localInit]: localHost is ready: localAddress = %d, initTime = %ld, x = %d, y = %d, z = %d, randOffTime = %ld\n", 
-        localHost->localAddress, localHost->initTime, localHost->location.x, localHost->location.y, localHost->location.z, localHost->randOffTime);
 }
 
 // return current time(ms)
 uint64_t getCurrentTime() {
-    return (get_current_milliseconds() - localHost->initTime) + localHost->randOffTime;
+    #ifdef RANDOM_DIFF_TIME_ENABLE
+        return (get_current_milliseconds() - localHost->baseTime) + localHost->randOffTime;
+    #else
+        return (get_current_milliseconds() - localHost->baseTime);
+    #endif
 }
 
 Coordinate_Tuple_t getCurrentLocation() {
