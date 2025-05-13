@@ -141,17 +141,26 @@ void deleteTail(TableLinkedList_t *list) {
     push(&list->freeQueue, index);
 }
 
-// search for index of tableNode whose localSeq < seq and which has complete Tx and Rx
-table_index_t searchTableLinkedList(TableLinkedList_t *list, uint16_t seq) {
+// search for index of tableNode whose Rx/Tx time is closest and which has complete Tx and Rx
+table_index_t searchTableLinkedList(TableLinkedList_t *list, dwTime_t timeStamp, StatusType status) {
     table_index_t index = list->head;
     table_index_t ans = NULL_INDEX;
     while (index != NULL_INDEX) {
         // Rx、Tx is full
-        if (list->tableBuffer[index].localSeq < seq 
+        if(status == RECEIVER 
+            && list->tableBuffer[index].TxTimestamp.full != NULL_TIMESTAMP 
             && list->tableBuffer[index].RxTimestamp.full != NULL_TIMESTAMP 
-            && list->tableBuffer[index].TxTimestamp.full != NULL_TIMESTAMP) {
-            if (ans == NULL_INDEX || list->tableBuffer[index].localSeq > list->tableBuffer[ans].localSeq) {
-                ans = index;
+            && list->tableBuffer[index].TxTimestamp.full < timeStamp.full) {
+                if (ans == NULL_INDEX || list->tableBuffer[index].TxTimestamp.full > list->tableBuffer[ans].TxTimestamp.full) {
+                    ans = index;
+            }
+        }
+        if(status == SENDER
+            && list->tableBuffer[index].RxTimestamp.full != NULL_TIMESTAMP 
+            && list->tableBuffer[index].TxTimestamp.full != NULL_TIMESTAMP 
+            && list->tableBuffer[index].RxTimestamp.full < timeStamp.full) {
+                if (ans == NULL_INDEX || list->tableBuffer[index].RxTimestamp.full > list->tableBuffer[ans].RxTimestamp.full) {
+                    ans = index;
             }
         }
         index = list->tableBuffer[index].next;
@@ -182,9 +191,12 @@ void printTableNode(TableNode_t *node) {
 
 void printTableLinkedList(TableLinkedList_t *list) {
     DEBUG_PRINT("--------------------START DEBUG_PRINT TABLELINKEDLIST--------------------\n");
-    for(int i = list->head; i <= list->tail && list->head != NULL_INDEX; i++) {
+    table_index_t index = list->head;
+    while (index != NULL_INDEX)
+    {
         DEBUG_PRINT("TxTimestamp: %ld, RxTimestamp: %ld, Tf: %ld, localSeq: %d, remoteSeq: %d\n", 
-            list->tableBuffer[i].TxTimestamp.full, list->tableBuffer[i].RxTimestamp.full, list->tableBuffer[i].Tf, list->tableBuffer[i].localSeq, list->tableBuffer[i].remoteSeq);
+            list->tableBuffer[index].TxTimestamp.full, list->tableBuffer[index].RxTimestamp.full, list->tableBuffer[index].Tf, list->tableBuffer[index].localSeq, list->tableBuffer[index].remoteSeq);
+        index = list->tableBuffer[index].next;
     }
     DEBUG_PRINT("--------------------END DEBUG_PRINT TABLELINKEDLIST--------------------\n");
 }

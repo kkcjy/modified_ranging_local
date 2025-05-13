@@ -345,7 +345,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
         }
         table_index_t receiveBufferIndex = findRemoteSeqIndex(&neighborReceiveBuffer->receiveBuffer, rangingMessage->header.TxTimestamps[i].seqNumber);
         if(receiveBufferIndex == NULL_DONE_INDEX) {
-            // DEBUG_PRINT("Warning: have processed this node\n");
+            DEBUG_PRINT("Warning: have processed this node\n");
             continue;
         }
         // received
@@ -362,6 +362,8 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
             secondNode.Tf = NULL_TOF;
             secondNode.localSeq = NULL_SEQ;
             secondNode.remoteSeq = rangingMessage->header.TxTimestamps[i].seqNumber;
+            secondNode.pre = NULL_INDEX;
+            secondNode.next = NULL_INDEX;
 
             // DEBUG_PRINT("[secondNode]: ");
             // printTableNode(&secondNode);
