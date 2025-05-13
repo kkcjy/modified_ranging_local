@@ -2,7 +2,8 @@
 
 Local_Host_t *localHost;                        // local host
 RangingTableSet_t* rangingTableSet;             // local rangingTableSet
-uint16_t localSendSeqNumber = 1;           
+uint16_t localSendSeqNumber = 1;                // seqNumber of message local sent  
+int RangingPeriod = RANGING_PERIOD;             // period of sending
 #ifdef WARM_UP_WAIT_ENABLE
     int discardCount = 0;                       // wait for device warming up and discard message
 #endif
@@ -183,7 +184,8 @@ void printRangingTableSet(int flag) {
 }
 
 Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
-    Time_t taskDelay = M2T(RANGING_PERIOD + rand()%(RANGING_PERIOD_RAND_RANGE + 1) - RANGING_PERIOD_RAND_RANGE/2);
+    // (175 ~ 225)
+    Time_t taskDelay = M2T(RangingPeriod + rand()%(RANGING_PERIOD_RAND_RANGE + 1) - RANGING_PERIOD_RAND_RANGE/2);
 
     int8_t bodyUnitCounter = 0;     // counter for valid bodyunits
 

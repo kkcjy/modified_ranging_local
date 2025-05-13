@@ -25,7 +25,7 @@ Time_t QueueTaskTx(QueueTaskLock_t *queue, int msgSize, SendFunction send_to_cen
     if (!rangingMessage) {
         DEBUG_PRINT("[QueueTaskTx]: malloc failed\n");
         pthread_mutex_unlock(&queue->mutex);
-        return RANGING_PERIOD;
+        return NULL_TIMESTAMP;
     }
 
     Time_t timeDelay = generateRangingMessage(rangingMessage);

@@ -223,11 +223,11 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
     float classicD = classicTof * VELOCITY;
 
     #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-        float trueDx = (tableNode->RxCoordinate.x - tableNode->TxCoordinate.x)/10.0;
-        float trueDy = (tableNode->RxCoordinate.y - tableNode->TxCoordinate.y)/10.0;
-        float trueDz = (tableNode->RxCoordinate.z - tableNode->TxCoordinate.z)/10.0;
+        float trueDx = (tableNode->RxCoordinate.x - tableNode->TxCoordinate.x);
+        float trueDy = (tableNode->RxCoordinate.y - tableNode->TxCoordinate.y);
+        float trueDz = (tableNode->RxCoordinate.z - tableNode->TxCoordinate.z);
         float trueD = sqrtf(trueDx*trueDx + trueDy*trueDy + trueDz*trueDz);
-        DEBUG_PRINT("[CalculateTof]: modified_D = %f, classic_D = %f, true_D = %f", D, classicD, trueD);
+        DEBUG_PRINT("[CalculateTof]: modified_D = %f, classic_D = %f, true_D = %f\n", D, classicD, trueD);
     #endif
 
     /* adjust

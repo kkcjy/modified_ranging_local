@@ -7,10 +7,10 @@ const char *local_drone_id;
 extern Local_Host_t *localHost;     
 extern RangingTableSet_t* rangingTableSet;     
 extern uint16_t localSendSeqNumber;
+extern int RangingPeriod;
 QueueTaskLock_t queueTaskLock;                  // lock for task
 #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
     int safeRoundCounter = 0;                   // counter for safe distance
-    int dynamicRangingPeriod = RANGING_PERIOD;  // ranging period
 #endif
 #ifdef WARM_UP_WAIT_ENABLE
     extern int discardCount;                    // wait for device warming up and discard message
@@ -19,23 +19,24 @@ QueueTaskLock_t queueTaskLock;                  // lock for task
 
 void send_to_center(int center_socket, const char* node_id, const Ranging_Message_t* ranging_msg) {
     NodeMessage msg;
-    
-    snprintf(msg.sender_id, sizeof(msg.sender_id), "%s", node_id);
-    
-    msg.data_size = sizeof(Ranging_Message_t);
-    memcpy(msg.data, ranging_msg, sizeof(Ranging_Message_t)); 
 
-    if(sizeof(Ranging_Message_t) > MESSAGE_SIZE) {
+    if(sizeof(MessageWithLocation) > MESSAGE_SIZE) {
         printf("Warning: %ld > %ld, Ranging_Message_t too large!\n", sizeof(Ranging_Message_t), MESSAGE_SIZE);
     }
 
+    snprintf(msg.sender_id, sizeof(msg.sender_id), "%s", node_id);  
+
+    MessageWithLocation modified_msg;
+    memcpy(&modified_msg.rangingMessage, ranging_msg, sizeof(*ranging_msg));
     dwTime_t curTime;
     curTime.full = getCurrentTime();
-
-    // adjust - have not updated location yet
     #ifdef COMMUNICATION_SEND_POSITION_ENABLE
         Coordinate_Tuple_t curLocation = getCurrentLocation();
     #endif
+    modified_msg.location = curLocation;
+    memcpy(msg.data, &modified_msg, sizeof(MessageWithLocation)); 
+
+    msg.data_size = sizeof(MessageWithLocation);
 
     addLocalSendBuffer(curTime, curLocation);
 
@@ -70,25 +71,35 @@ void *receive_from_center(void *arg) {
                 int random_value = ((rand() * 2654435761U) / getpid()) % 100;
 
                 if (random_value < PACKET_LOSS_RATE) {
-                    Ranging_Message_With_Additional_Info_t *full_info = (Ranging_Message_With_Additional_Info_t*)msg.data;
-                    printf("[QueueTaskRx]: message[%d] from %s dropped(rate = %d%%)\n",full_info->rangingMessage.header.msgSequence , msg.sender_id, PACKET_LOSS_RATE);
+                    MessageWithLocation *modified_msg = (MessageWithLocation*)msg.data;
+                    Ranging_Message_t *ranging_msg = &modified_msg->rangingMessage;
+                    printf("[QueueTaskRx]: message[%d] from %s dropped(rate = %d%%)\n",ranging_msg->header.msgSequence , msg.sender_id, PACKET_LOSS_RATE);
                     continue;
                 }
             #endif
 
-            if (msg.data_size != sizeof(Ranging_Message_t)) {
+            if (msg.data_size != sizeof(MessageWithLocation)) {
                 printf("Receiving failed, size of data_size does not match\n");
                 return NULL;
             }
 
+            MessageWithLocation *modified_msg = (MessageWithLocation*)msg.data;
+
+            Ranging_Message_t *ranging_msg = &modified_msg->rangingMessage;
+
             // get curTime and curLocation
-            uint64_t curTime = getCurrentTime();
             #ifdef COMMUNICATION_SEND_POSITION_ENABLE
                 Coordinate_Tuple_t curLocation = getCurrentLocation();
+                Coordinate_Tuple_t remoteLocation = modified_msg->location;
+                printf("[local]: x = %d, y = %d, z = %d\n[remote]: x = %d, y = %d, z = %d\n", curLocation.x, curLocation.y, curLocation.z, remoteLocation.x, remoteLocation.y, remoteLocation.z);
+                double distance = sqrt(pow((curLocation.x - remoteLocation.x), 2) + pow((curLocation.y - remoteLocation.y), 2) + pow((curLocation.z - remoteLocation.z), 2));
+                double Tof = distance / VELOCITY;
+                printf("[%s -> %s][%d]: D = %f, TOF  = %f\n", msg.sender_id, local_drone_id, ranging_msg->header.msgSequence, distance, Tof);
+                local_sleep(Tof);
             #endif
 
-            Ranging_Message_t* ranging_msg = (Ranging_Message_t*)msg.data;
-            
+            uint64_t curTime = getCurrentTime();
+
             Ranging_Message_With_Additional_Info_t full_info;
 
             full_info.rangingMessage = *ranging_msg;
@@ -106,29 +117,31 @@ void *receive_from_center(void *arg) {
 // for processing
 void *process_messages(void *arg) {
     while (1) {
-        bool unSafe = processFromQueue(&queueTaskLock);
-        
-        // if(localSendSeqNumber % 10 == 1) {
-        //     printRangingTableSet(0);
-        // }
-
-        /*
-            unsafe -> set RANGING_PERIOD_LOW
-            safe more than SAFE_DISTANCE_ROUND_BORDER -> set RANGING_PERIOD
-        */
-        if (unSafe) {
-            #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
-                dynamicRangingPeriod = RANGING_PERIOD_LOW;
+        #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
+            bool unSafe = processFromQueue(&queueTaskLock);
+            /*
+                unsafe -> set RANGING_PERIOD_LOW
+                safe more than SAFE_DISTANCE_ROUND_BORDER -> set RANGING_PERIOD
+            */
+            if (unSafe) {
+                RangingPeriod = RANGING_PERIOD_LOW;
                 safeRoundCounter = 0;
-            #endif
-            printf("Warning: Unsafe condition detected!\n");
-        }
-        else {
-            safeRoundCounter++;
-            if(safeRoundCounter == SAFE_DISTANCE_ROUND_BORDER) {
-                dynamicRangingPeriod = RANGING_PERIOD;
+                printf("Warning: Unsafe condition detected!\n");
             }
+            else {
+                safeRoundCounter++;
+                if(safeRoundCounter == SAFE_DISTANCE_ROUND_BORDER) {
+                    RangingPeriod = RANGING_PERIOD;
+                }
+            }
+        #else
+            processFromQueue(&queueTaskLock);
+        #endif
+        
+        if(localSendSeqNumber % 10 == 1) {
+            printRangingTableSet(0);
         }
+
         local_sleep(10);                      
     }
     return NULL;
@@ -215,7 +228,7 @@ int main(int argc, char *argv[]) {
         //     printRangingTableSet(1);
         // }
 
-        local_sleep(time_delay + 200); 
+        local_sleep(time_delay); 
     }
 
     pthread_join(receive_thread, NULL);

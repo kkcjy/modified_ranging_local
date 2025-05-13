@@ -5,21 +5,22 @@
 #define         table_index_t               int8_t
 #define         Time_t                      uint32_t
 
-#define         COMMUNICATION_SEND_POSITION_ENABLE              // enable drones to send position
-#define         DYNAMIC_RANGING_FREQUENCY_ENABLE                // enable dynamic ranging frequency(RANGING_PERIOD_LOW/RANGING_PERIOD)
+// ENABLE_MODE
+#define         COMMUNICATION_SEND_POSITION_ENABLE              // enable drones to send position(Warning: open)
+// #define         DYNAMIC_RANGING_FREQUENCY_ENABLE                // enable dynamic ranging frequency(RANGING_PERIOD_LOW/RANGING_PERIOD)
 #define         SAFE_DISTANCE               1                   // distance < SAFE_DISTANCE -> RANGING_PERIOD_LOW(set DYNAMIC_RANGING_FREQUENCY_ENABLE)
 #define         SAFE_DISTANCE_ROUND_BORDER  2                   // distance < SAFE_DISTANCE more than SAFE_DISTANCE_ROUND_BORDER -> RANGING_PERIOD(set DYNAMIC_RANGING_FREQUENCY_ENABLE)
 // #define         CLASSIC_TOF_ENABLE                              // allow classicTof if ratioes not satisfy
 // #define         WARM_UP_WAIT_ENABLE                             // discard first DISCARD_MESSAGE_NUM message
-#define         RANDOM_DIFF_TIME_ENABLE                         // enable diff(0 ~ MAX_RANDOM_TIME_OFF) time between drones
-#define         PACKET_LOSS_ENABLE                              // simulate packet loss
+// #define         RANDOM_DIFF_TIME_ENABLE                         // enable diff(0 ~ MAX_RANDOM_TIME_OFF) time between drones
+// #define         PACKET_LOSS_ENABLE                              // simulate packet loss
 #define         PACKET_LOSS_RATE            25                  // rate of packet loss(0~100)
 
 // LOCAL_HOST_H
 #define         MAX_RANDOM_TIME_OFF         10
 #define         FLIGHT_AREA_BOUND           10                  // space of area for drones to fly
 
-// QUEUE_TASK_LOCK_H
+// LOCK_H
 #define         QUEUE_TASK_LENGTH           3
 
 // TABLE_LINK_LIST_H

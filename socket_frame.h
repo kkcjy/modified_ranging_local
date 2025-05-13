@@ -10,6 +10,8 @@
 #include <netinet/in.h>
 #include <pthread.h>
 
+#include "modified_ranging.h"
+
 #define     MAX_NODES       10
 #define     BUFFER_SIZE     1024
 #define     ID_SIZE         20
@@ -22,6 +24,11 @@ typedef struct {
     char data[MESSAGE_SIZE];
     size_t data_size;
 } NodeMessage;
+
+typedef struct {
+    Ranging_Message_t rangingMessage;
+    Coordinate_Tuple_t location;
+} __attribute__((packed)) MessageWithLocation;
 
 typedef struct {
     int socket;

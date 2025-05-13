@@ -32,6 +32,7 @@ void *handle_node_connection(void *arg) {
     if (node_count < MAX_NODES) {
         if(node_count == 0) {
             worldBaseTime = get_current_milliseconds();
+            printf("set worldBaseTime = %ld\n", worldBaseTime);
         }
         nodes[node_count].socket = node_socket;
         strncpy(nodes[node_count].node_id, node_id, sizeof(nodes[node_count].node_id));
@@ -56,7 +57,8 @@ void *handle_node_connection(void *arg) {
     NodeMessage msg;
     while ((bytes_received = recv(node_socket, &msg, sizeof(msg), 0)) > 0) {
         // Print function
-        Ranging_Message_t *rangingMessage = (Ranging_Message_t*)msg.data;
+        MessageWithLocation *modified_msg = (MessageWithLocation*)msg.data; 
+        Ranging_Message_t *rangingMessage = &modified_msg->rangingMessage;
         // printf("\n********************[%s]********************\n", node_id);
         // printRangingMessage(rangingMessage);
         // printf("********************[%s]********************\n", node_id);

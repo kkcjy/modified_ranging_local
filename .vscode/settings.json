@@ -59,6 +59,7 @@
         "ratio": "c",
         "semaphore": "c",
         "stop_token": "c",
-        "thread": "c"
+        "thread": "c",
+        "inet.h": "c"
     }
 }

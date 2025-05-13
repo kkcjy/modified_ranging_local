@@ -1,11 +1,12 @@
 #include "local_host.h"
 
 
-// get current time(ms) - should not be called
+// get current time(ms) 
 uint64_t get_current_milliseconds() {
     struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ((uint64_t)ts.tv_sec * 1000000 + (uint64_t)ts.tv_nsec / 1000) / 1000;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    // clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t)ts.tv_sec * 1000 + (uint64_t)ts.tv_nsec / 1000000;
 }
 
 // convert local address by hash
