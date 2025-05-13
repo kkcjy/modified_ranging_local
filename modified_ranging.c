@@ -14,7 +14,7 @@ void initRangingTableSet() {
     for (table_index_t i = 0; i < TX_BUFFER_POOL_SIZE; i++) {
         rangingTableSet->localSendBuffer[i].timestamp.full = NULL_TIMESTAMP;
         rangingTableSet->localSendBuffer[i].seqNumber = NULL_SEQ;
-        #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
             rangingTableSet->localSendBuffer[i].TxCoordinate = nullCoordinate;
         #endif
     }
@@ -120,7 +120,7 @@ void printRangingMessage(Ranging_Message_t* rangingMessage) {
     for(int i = 0; i < MESSAGE_HEAD_TX_SIZE; i++) {
         DEBUG_PRINT("\tseqNumber: %u, timestamp: %llu",
         rangingMessage->header.TxTimestamps[i].seqNumber, rangingMessage->header.TxTimestamps[i].timestamp.full);
-        #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
             DEBUG_PRINT(", coordinate:(%u,%u,%u)\n",rangingMessage->header.TxCoodinates[i].x, rangingMessage->header.TxCoodinates[i].y, rangingMessage->header.TxCoodinates[i].z);
         #else
             DEBUG_PRINT("\n");
@@ -133,7 +133,7 @@ void printRangingMessage(Ranging_Message_t* rangingMessage) {
         for(int j = 0; j < MESSAGE_BODY_RX_SIZE; j++){
             DEBUG_PRINT("\tseqNumber: %u, timestamp: %llu",
             rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber, rangingMessage->bodyUnits[i].RxTimestamps[j].timestamp.full);
-            #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+            #ifdef COMMUNICATION_SEND_POSITION_ENABLE
                 DEBUG_PRINT(", coordinate:(%u,%u,%u)\n",rangingMessage->bodyUnits[i].RxCoodinates[j].x, rangingMessage->bodyUnits[i].RxCoodinates[j].y, rangingMessage->bodyUnits[i].RxCoodinates[j].z);
             #else
                 DEBUG_PRINT("\n");
@@ -149,7 +149,7 @@ void printLocalSendBuffer() {
     while (count < TABLE_BUFFER_SIZE) {
         DEBUG_PRINT("seq: %d,Tx: %lld", 
             rangingTableSet->localSendBuffer[index].seqNumber, rangingTableSet->localSendBuffer[index].timestamp.full);
-        #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
             DEBUG_PRINT(", coordinate:(%u,%u,%u)\n",rangingTableSet->localSendBuffer[index].TxCoordinate.x, rangingTableSet->localSendBuffer[index].TxCoordinate.y, rangingTableSet->localSendBuffer[index].TxCoordinate.z);
         #else
             DEBUG_PRINT("\n");
@@ -209,7 +209,7 @@ Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
             if(index != NULL_INDEX) {
                 bodyUnit->RxTimestamps[i].seqNumber = rangingTable->receiveBuffer.tableBuffer[index].localSeq;
                 bodyUnit->RxTimestamps[i].timestamp = rangingTable->receiveBuffer.tableBuffer[index].RxTimestamp;
-                #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+                #ifdef COMMUNICATION_SEND_POSITION_ENABLE
                     bodyUnit->RxCoodinates[i].x = rangingTable->receiveBuffer.tableBuffer[index].RxCoordinate.x;
                     bodyUnit->RxCoodinates[i].y = rangingTable->receiveBuffer.tableBuffer[index].RxCoordinate.y;
                     bodyUnit->RxCoodinates[i].z = rangingTable->receiveBuffer.tableBuffer[index].RxCoordinate.z;
@@ -220,7 +220,7 @@ Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
             else{
                 bodyUnit->RxTimestamps[i].seqNumber = NULL_SEQ;
                 bodyUnit->RxTimestamps[i].timestamp.full = NULL_TIMESTAMP;
-                #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+                #ifdef COMMUNICATION_SEND_POSITION_ENABLE
                     bodyUnit->RxCoodinates[i] = nullCoordinate;
                 #endif
             }
@@ -246,7 +246,7 @@ Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
         if(rangingTableSet->localSendBuffer[index].timestamp.full != NULL_TIMESTAMP){
             rangingMessage->header.TxTimestamps[i].seqNumber = rangingTableSet->localSendBuffer[index].seqNumber;
             rangingMessage->header.TxTimestamps[i].timestamp = rangingTableSet->localSendBuffer[index].timestamp;
-            #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+            #ifdef COMMUNICATION_SEND_POSITION_ENABLE
                 rangingMessage->header.TxCoodinates[i].x = rangingTableSet->localSendBuffer[index].TxCoordinate.x;
                 rangingMessage->header.TxCoodinates[i].y = rangingTableSet->localSendBuffer[index].TxCoordinate.y;
                 rangingMessage->header.TxCoodinates[i].z = rangingTableSet->localSendBuffer[index].TxCoordinate.z;
@@ -257,7 +257,7 @@ Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
         else{
             rangingMessage->header.TxTimestamps[i].seqNumber = NULL_SEQ;
             rangingMessage->header.TxTimestamps[i].timestamp.full = NULL_TIMESTAMP;
-            #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+            #ifdef COMMUNICATION_SEND_POSITION_ENABLE
                 rangingMessage->header.TxCoodinates[i] = nullCoordinate;
             #endif
         }
@@ -289,9 +289,9 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
 
     Ranging_Message_t *rangingMessage = &rangingMessageWithAdditionalInfo->rangingMessage;
 
-    DEBUG_PRINT("\n*************************[processRangingMessage]*************************\n");
-    printRangingMessage(rangingMessage);
-    DEBUG_PRINT("*************************[processRangingMessage]*************************\n\n");
+    // DEBUG_PRINT("\n*************************[processRangingMessage]*************************\n");
+    // printRangingMessage(rangingMessage);
+    // DEBUG_PRINT("*************************[processRangingMessage]*************************\n\n");
 
     /* process additionalinfo
         RxTimestamp + RxCoordinate  
@@ -300,7 +300,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
     TableNode_t firstNode;
     firstNode.TxTimestamp = nullTimeStamp;
     firstNode.RxTimestamp = rangingMessageWithAdditionalInfo->RxTimestamp;
-    #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
         firstNode.TxCoordinate = nullCoordinate;
         firstNode.RxCoordinate.x = rangingMessageWithAdditionalInfo->RxCoordinate.x;
         firstNode.RxCoordinate.y = rangingMessageWithAdditionalInfo->RxCoordinate.y;
@@ -351,7 +351,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
             TableNode_t secondNode;
             secondNode.TxTimestamp = rangingMessage->header.TxTimestamps[i].timestamp;
             secondNode.RxTimestamp = nullTimeStamp;
-            #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+            #ifdef COMMUNICATION_SEND_POSITION_ENABLE
                 secondNode.TxCoordinate.x = rangingMessage->header.TxCoodinates[i].x;
                 secondNode.TxCoordinate.y = rangingMessage->header.TxCoodinates[i].y;
                 secondNode.TxCoordinate.z = rangingMessage->header.TxCoodinates[i].z;
@@ -424,7 +424,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
                 TableNode_t fullNode;
                 fullNode.TxTimestamp = rangingTableSet->localSendBuffer[sendBufferIndex].timestamp;
                 fullNode.RxTimestamp = rangingMessage->bodyUnits[i].RxTimestamps[j].timestamp;
-                #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+                #ifdef COMMUNICATION_SEND_POSITION_ENABLE
                     fullNode.TxCoordinate.x = rangingTableSet->localSendBuffer[sendBufferIndex].TxCoordinate.x;
                     fullNode.TxCoordinate.y = rangingTableSet->localSendBuffer[sendBufferIndex].TxCoordinate.y;
                     fullNode.TxCoordinate.z = rangingTableSet->localSendBuffer[sendBufferIndex].TxCoordinate.z;

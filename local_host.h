@@ -8,7 +8,7 @@
 typedef struct {
     uint16_t localAddress;              // local address
     uint64_t baseTime;                  // local base time(ms)  —— for a same world time
-    #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
     Coordinate_Tuple_t location;        // local location
     #endif
     uint64_t randOffTime;               // rand time(ms)        —— for diff between drones

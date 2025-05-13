@@ -31,7 +31,7 @@ typedef struct {
     int64_t sumTof;
     uint16_t localSeq;
 
-    #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
     Coordinate_Tuple_t sendTxCoordinate; 
     Coordinate_Tuple_t sendRxCoordinate; 
     Coordinate_Tuple_t receiveTxCoordinate;

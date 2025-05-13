@@ -33,7 +33,7 @@ void send_to_center(int center_socket, const char* node_id, const Ranging_Messag
     curTime.full = getCurrentTime();
 
     // adjust - have not updated location yet
-    #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
         Coordinate_Tuple_t curLocation = getCurrentLocation();
     #endif
 
@@ -63,8 +63,19 @@ void *receive_from_center(void *arg) {
             exit(1);
         }
 
-        // don't display messages from self
+        // don't display messages from essage dropped randomly (probabself
         if (strcmp(msg.sender_id, local_drone_id) != 0) {
+            #ifdef PACKET_LOSS_ENABLE
+                // for random
+                int random_value = ((rand() * 2654435761U) / getpid()) % 100;
+
+                if (random_value < PACKET_LOSS_RATE) {
+                    Ranging_Message_With_Additional_Info_t *full_info = (Ranging_Message_With_Additional_Info_t*)msg.data;
+                    printf("[QueueTaskRx]: message[%d] from %s dropped(rate = %d%%)\n",full_info->rangingMessage.header.msgSequence , msg.sender_id, PACKET_LOSS_RATE);
+                    continue;
+                }
+            #endif
+
             if (msg.data_size != sizeof(Ranging_Message_t)) {
                 printf("Receiving failed, size of data_size does not match\n");
                 return NULL;
@@ -72,7 +83,7 @@ void *receive_from_center(void *arg) {
 
             // get curTime and curLocation
             uint64_t curTime = getCurrentTime();
-            #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+            #ifdef COMMUNICATION_SEND_POSITION_ENABLE
                 Coordinate_Tuple_t curLocation = getCurrentLocation();
             #endif
 
@@ -97,7 +108,9 @@ void *process_messages(void *arg) {
     while (1) {
         bool unSafe = processFromQueue(&queueTaskLock);
         
-        printRangingTableSet(0);
+        // if(localSendSeqNumber % 10 == 1) {
+        //     printRangingTableSet(0);
+        // }
 
         /*
             unsafe -> set RANGING_PERIOD_LOW
@@ -181,6 +194,8 @@ int main(int argc, char *argv[]) {
 
     localHost->baseTime = worldBaseTime;
 
+    srand((unsigned int)(get_current_milliseconds()));
+
     // start receive
     pthread_t receive_thread;
     if (pthread_create(&receive_thread, NULL, receive_from_center, &center_socket)) {
@@ -196,7 +211,9 @@ int main(int argc, char *argv[]) {
         DEBUG_PRINT("[QueueTaskTx]: send the message[%d] from %s at %ld\n", localSendSeqNumber, local_drone_id, getCurrentTime());
         Time_t time_delay = QueueTaskTx(&queueTaskLock, MESSAGE_SIZE, send_to_center, center_socket, local_drone_id);
         
-        // printRangingTableSet(1);
+        // if(localSendSeqNumber % 10 == 1) {
+        //     printRangingTableSet(1);
+        // }
 
         local_sleep(time_delay + 200); 
     }

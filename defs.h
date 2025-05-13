@@ -5,17 +5,19 @@
 #define         table_index_t               int8_t
 #define         Time_t                      uint32_t
 
-#define         UWB_COMMUNICATION_SEND_POSITION_ENABLE          // enable sending position
-#define         DYNAMIC_RANGING_FREQUENCY_ENABLE                // enable dynamic ranging frequency
-#define         SAFE_DISTANCE               1                   // (m)should enable DYNAMIC_RANGING_FREQUENCY_ENABLE
-#define         SAFE_DISTANCE_ROUND_BORDER  2                   // should enable DYNAMIC_RANGING_FREQUENCY_ENABLE
-// #define         CLASSIC_TOF_ENABLE                              // allow classicTof if ratioes not satisfy(used in calculateTof)
-// #define         WARM_UP_WAIT_ENABLE
-// #define         RANDOM_DIFF_TIME_ENABLE
+#define         COMMUNICATION_SEND_POSITION_ENABLE              // enable drones to send position
+#define         DYNAMIC_RANGING_FREQUENCY_ENABLE                // enable dynamic ranging frequency(RANGING_PERIOD_LOW/RANGING_PERIOD)
+#define         SAFE_DISTANCE               1                   // distance < SAFE_DISTANCE -> RANGING_PERIOD_LOW(set DYNAMIC_RANGING_FREQUENCY_ENABLE)
+#define         SAFE_DISTANCE_ROUND_BORDER  2                   // distance < SAFE_DISTANCE more than SAFE_DISTANCE_ROUND_BORDER -> RANGING_PERIOD(set DYNAMIC_RANGING_FREQUENCY_ENABLE)
+// #define         CLASSIC_TOF_ENABLE                              // allow classicTof if ratioes not satisfy
+// #define         WARM_UP_WAIT_ENABLE                             // discard first DISCARD_MESSAGE_NUM message
+#define         RANDOM_DIFF_TIME_ENABLE                         // enable diff(0 ~ MAX_RANDOM_TIME_OFF) time between drones
+#define         PACKET_LOSS_ENABLE                              // simulate packet loss
+#define         PACKET_LOSS_RATE            25                  // rate of packet loss(0~100)
 
 // LOCAL_HOST_H
 #define         MAX_RANDOM_TIME_OFF         10
-#define         FLIGHT_AREA_BOUND           10                  // (m)
+#define         FLIGHT_AREA_BOUND           10                  // space of area for drones to fly
 
 // QUEUE_TASK_LOCK_H
 #define         QUEUE_TASK_LENGTH           3
@@ -41,10 +43,10 @@
 #define         RANGING_PERIOD              200                 // (ms)
 #define         RANGING_PERIOD_LOW          100                 // (ms)
 #define         RANGING_PERIOD_RAND_RANGE   50                  // (ms)
-#define         M2T(X)                      ((unsigned int)(X))
 #define         WARM_UP_TIME                10000               // time for device to warm up
 #define         DISCARD_MESSAGE_NUM         25                  // number of message thrown during device warming up
-#define         MAX_INITIAL_CALCULATION     6                   // number of times initializeRecordBuffer called(no more than RANGING_BUFFER_SIZE)
+#define         MAX_INITIAL_CALCULATION     6                   // number of times initializeRecordBuffer called(Warning: no more than RANGING_BUFFER_SIZE)
+#define         M2T(X)                      ((unsigned int)(X))
 
 
 #include <stdio.h>

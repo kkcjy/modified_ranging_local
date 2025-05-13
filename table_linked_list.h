@@ -25,7 +25,7 @@ typedef struct {
 typedef struct{
     dwTime_t TxTimestamp;         
     dwTime_t RxTimestamp;            
-    #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
     Coordinate_Tuple_t TxCoordinate;    
     Coordinate_Tuple_t RxCoordinate;   
     #endif

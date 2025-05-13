@@ -25,7 +25,7 @@ void localInit(uint16_t address) {
 
     srand((unsigned int)(get_current_milliseconds()));
 
-    #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
         localHost->location.x = rand() % (FLIGHT_AREA_BOUND + 1);
         localHost->location.y = rand() % (FLIGHT_AREA_BOUND + 1);
         localHost->location.z = rand() % (FLIGHT_AREA_BOUND + 1);

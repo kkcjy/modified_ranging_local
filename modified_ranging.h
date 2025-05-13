@@ -11,7 +11,7 @@
 typedef struct {
     uint16_t dest;          // fill in the address of neighbor                                  
     Timestamp_Tuple_t RxTimestamps[MESSAGE_BODY_RX_SIZE]; 
-    #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
     Coordinate_Tuple_t RxCoodinates[MESSAGE_BODY_RX_SIZE];
     #endif
 } __attribute__((packed)) Message_Body_Unit_t;
@@ -20,7 +20,7 @@ typedef struct {
     uint16_t srcAddress;    // address of the source of message                             
     uint16_t msgSequence;   // the msgSequence-th message sent from local                         
     Timestamp_Tuple_t TxTimestamps[MESSAGE_HEAD_TX_SIZE];
-    #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
     Coordinate_Tuple_t TxCoodinates[MESSAGE_HEAD_TX_SIZE];
     #endif
     uint16_t msgLength;                                      
@@ -41,7 +41,7 @@ typedef struct {
 typedef struct {
     Ranging_Message_t rangingMessage;
     dwTime_t RxTimestamp;                   // local timestamp when message is received
-    #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
     Coordinate_Tuple_t RxCoordinate;        // local cooedinate when message is received
     #endif
 } __attribute__((packed)) Ranging_Message_With_Additional_Info_t;
@@ -49,7 +49,7 @@ typedef struct {
 typedef struct { 
     uint16_t seqNumber;  
     dwTime_t timestamp;
-    #ifdef UWB_COMMUNICATION_SEND_POSITION_ENABLE
+    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
     Coordinate_Tuple_t TxCoordinate; 
     #endif
 } __attribute__((packed)) LocalSendBufferNode_t;
