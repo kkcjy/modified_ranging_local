@@ -15,11 +15,12 @@ typedef enum {
 } FLAG;
 
 /* for a round-trip communication(RangingBufferNode_t)
-send                  T1
-                Tx   --->   Rx
+                   RECEIVER                                       SENDEDR
+send                  T1                    receive                 T1
+                Tx   --->   Rx                                Rx   <---   Tx
 
-receive               T2
-                Rx   <---   Tx
+receive               T2                    send                    T2
+                Rx   <---   Tx                                Tx   --->   Rx
 */
 typedef struct {
     dwTime_t sendTx;    
@@ -29,7 +30,8 @@ typedef struct {
     int64_t T1;
     int64_t T2;
     int64_t sumTof;
-    uint16_t localSeq;
+    uint16_t TxSeq;
+    uint16_t RxSeq;
 
     #ifdef COMMUNICATION_SEND_POSITION_ENABLE
     Coordinate_Tuple_t sendTxCoordinate; 

@@ -15,7 +15,8 @@ void initRangingBufferNode_t(RangingBufferNode_t *node) {
     node->T1 = NULL_TOF;
     node->T2 = NULL_TOF;
     node->sumTof = NULL_TOF;
-    node->localSeq = NULL_SEQ;
+    node->TxSeq = NULL_SEQ;
+    node->RxSeq = NULL_SEQ;
 
     #ifdef COMMUNICATION_SEND_POSITION_ENABLE
         node->sendTxCoordinate = nullCoordinate;
@@ -49,7 +50,8 @@ void addRangingBuffer(RangingBuffer_t *buffer, RangingBufferNode_t *node, Status
         buffer->sendBuffer[buffer->topSendBuffer].T1 = node->T1;
         buffer->sendBuffer[buffer->topSendBuffer].T2 = node->T2;
         buffer->sendBuffer[buffer->topSendBuffer].sumTof = node->sumTof;
-        buffer->sendBuffer[buffer->topSendBuffer].localSeq = node->localSeq;
+        buffer->sendBuffer[buffer->topSendBuffer].TxSeq = node->TxSeq;
+        buffer->sendBuffer[buffer->topSendBuffer].RxSeq = node->RxSeq;
         #ifdef COMMUNICATION_SEND_POSITION_ENABLE
             buffer->sendBuffer[buffer->topSendBuffer].sendTxCoordinate = node->sendTxCoordinate;
             buffer->sendBuffer[buffer->topSendBuffer].sendRxCoordinate = node->sendRxCoordinate;
@@ -57,8 +59,8 @@ void addRangingBuffer(RangingBuffer_t *buffer, RangingBufferNode_t *node, Status
             buffer->sendBuffer[buffer->topSendBuffer].receiveRxCoordinate = node->receiveRxCoordinate;
         #endif
 
-        // DEBUG_PRINT("[SENDBUFFER_ADD]: sendTx:%llu,sendRx:%llu,receiveTx:%llu,receiveRx:%llu,sumTof:%lld,localSeq:%d\n"
-        //     ,node->sendTx.full,node->sendRx.full,node->receiveTx.full,node->receiveRx.full,node->sumTof,node->localSeq);
+        DEBUG_PRINT("[SENDBUFFER_ADD]: sendTx:%llu,sendRx:%llu,receiveTx:%llu,receiveRx:%llu,sumTof:%lld,TxSeq:%d,RxSeq:%d\n"
+            ,node->sendTx.full,node->sendRx.full,node->receiveTx.full,node->receiveRx.full,node->sumTof,node->TxSeq,node->RxSeq);
     }
     else if (status == RECEIVER) {
         buffer->topReceiveBuffer = (buffer->topReceiveBuffer + 1) % RANGING_BUFFER_SIZE;
@@ -70,7 +72,8 @@ void addRangingBuffer(RangingBuffer_t *buffer, RangingBufferNode_t *node, Status
         buffer->receiveBuffer[buffer->topReceiveBuffer].T1 = node->T1;
         buffer->receiveBuffer[buffer->topReceiveBuffer].T2 = node->T2;
         buffer->receiveBuffer[buffer->topReceiveBuffer].sumTof = node->sumTof;
-        buffer->receiveBuffer[buffer->topReceiveBuffer].localSeq = node->localSeq;
+        buffer->receiveBuffer[buffer->topReceiveBuffer].TxSeq = node->TxSeq;
+        buffer->receiveBuffer[buffer->topReceiveBuffer].RxSeq = node->RxSeq;
         #ifdef COMMUNICATION_SEND_POSITION_ENABLE
             buffer->receiveBuffer[buffer->topReceiveBuffer].sendTxCoordinate = node->sendTxCoordinate;
             buffer->receiveBuffer[buffer->topReceiveBuffer].sendRxCoordinate = node->sendRxCoordinate;
@@ -78,8 +81,8 @@ void addRangingBuffer(RangingBuffer_t *buffer, RangingBufferNode_t *node, Status
             buffer->receiveBuffer[buffer->topReceiveBuffer].receiveRxCoordinate = node->receiveRxCoordinate;
         #endif
 
-        // DEBUG_PRINT("[RECEIVEBUFFER_ADD]: sendTx:%llu,sendRx:%llu,receiveTx:%llu,receiveRx:%llu,sumTof:%lld,localSeq:%d\n"
-        //     ,node->sendTx.full,node->sendRx.full,node->receiveTx.full,node->receiveRx.full,node->sumTof,node->localSeq);
+        DEBUG_PRINT("[RECEIVEBUFFER_ADD]: sendTx:%llu,sendRx:%llu,receiveTx:%llu,receiveRx:%llu,sumTof:%lld,TxSeq:%d,RxSeq:%d\n"
+            ,node->sendTx.full,node->sendRx.full,node->receiveTx.full,node->receiveRx.full,node->sumTof,node->TxSeq,node->RxSeq);
     }
 }
 
@@ -89,13 +92,13 @@ select the index closest to localSeq from receiveBuffer
 RECEIVER
 select the index closest to localSeq from sendBuffer
 */
-table_index_t searchRangingBuffer(RangingBuffer_t *buffer, uint16_t localSeq, StatusType status) {
+table_index_t searchRangingBuffer(RangingBuffer_t *buffer, uint16_t seq, StatusType status) {
     table_index_t index = NULL_INDEX;
     if(status == SENDER) {
         table_index_t i = buffer->topReceiveBuffer;
         for (int j = 0; j < buffer->receiveLength; j++) {
-            if(buffer->receiveBuffer[i].localSeq < localSeq) {
-                if(index == NULL_INDEX || buffer->receiveBuffer[i].localSeq > buffer->receiveBuffer[index].localSeq) {
+            if(buffer->receiveBuffer[i].TxSeq < seq) {
+                if(index == NULL_INDEX || buffer->receiveBuffer[i].TxSeq > buffer->receiveBuffer[index].TxSeq) {
                     index = i;
                 }
             }
@@ -105,8 +108,8 @@ table_index_t searchRangingBuffer(RangingBuffer_t *buffer, uint16_t localSeq, St
     else if(status == RECEIVER) {
         table_index_t i = buffer->topSendBuffer;
         for (int j = 0; j < buffer->sendLength; j++) {
-            if(buffer->sendBuffer[i].localSeq < localSeq) {
-                if(index == NULL_INDEX || buffer->sendBuffer[i].localSeq > buffer->sendBuffer[index].localSeq) {
+            if(buffer->sendBuffer[i].RxSeq < seq) {
+                if(index == NULL_INDEX || buffer->sendBuffer[i].RxSeq > buffer->sendBuffer[index].RxSeq) {
                     index = i;
                 }
             }
@@ -194,7 +197,12 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
             DEBUG_PRINT("Warning: Ra/Da and Rb/Db are both greater than CONVERGENCE_THRESHOLD(%f)\n",CONVERGENCE_THRESHOLD);
             if(flag) {
                 DEBUG_PRINT("Warning: The latest record in rangingbuffer fails, and an attempt is made to recalculate the Tof using the next most recent valid record\n");
-                return calculateTof(buffer, tableNode, node->localSeq, status, SECOND_CALCULATE_UNQUALIFIED);
+                if(status == SENDER) {
+                    return calculateTof(buffer, tableNode, node->TxSeq, status, SECOND_CALCULATE_UNQUALIFIED);
+                }
+                else if(status == RECEIVER) {
+                    return calculateTof(buffer, tableNode, node->RxSeq, status, SECOND_CALCULATE_UNQUALIFIED);
+                }
             }
             else {
                 DEBUG_PRINT("Warning: Recalculate Tof failed\n");
@@ -210,7 +218,12 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
         DEBUG_PRINT("Warning: D = %f is out of range(0,1000)\n",D);
         if(flag){
             DEBUG_PRINT("Warning: The latest record in rangingbuffer fails, and an attempt is made to recalculate the Tof using the next most recent valid record\n");
-            return calculateTof(buffer, tableNode, node->localSeq, status, SECOND_CALCULATE_ABNORMAL);
+            if(status == SENDER) {
+                return calculateTof(buffer, tableNode, node->TxSeq, status, SECOND_CALCULATE_UNQUALIFIED);
+            }
+            else if(status == RECEIVER) {
+                return calculateTof(buffer, tableNode, node->RxSeq, status, SECOND_CALCULATE_UNQUALIFIED);
+            }
         }
         else{
             DEBUG_PRINT("Warning: Recalculate Tof failed\n");
@@ -254,13 +267,16 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
         table_index_t last = searchRangingBuffer(buffer, localSeq, status);
         newNode.sendTx = Tx;
         newNode.sendRx = Rx;
+        newNode.TxSeq = tableNode->localSeq;
         if(flag == FIRST_CALCULATE || flag == SECOND_CALCULATE_UNQUALIFIED) {
             newNode.receiveTx = buffer->receiveBuffer[last].receiveTx;
             newNode.receiveRx = buffer->receiveBuffer[last].receiveRx;
+            newNode.RxSeq = buffer->receiveBuffer[last].RxSeq;
         }
         else if (flag == SECOND_CALCULATE_ABNORMAL) {
             newNode.receiveTx = node->receiveTx;
             newNode.receiveRx = node->receiveRx;
+            newNode.RxSeq = node->RxSeq;
         }
         #ifdef COMMUNICATION_SEND_POSITION_ENABLE
             newNode.sendTxCoordinate = tableNode->TxCoordinate;
@@ -274,7 +290,6 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
                 newNode.receiveTxCoordinate = node->receiveTxCoordinate;
             }
         #endif
-        newNode.localSeq = localSeq;
         newNode.sumTof = T23;
         newNode.T1 = node->T2;
         newNode.T2 = T23 - newNode.T1;
@@ -290,13 +305,16 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
         if(flag == FIRST_CALCULATE || flag == SECOND_CALCULATE_UNQUALIFIED) {
             newNode.sendTx = buffer->sendBuffer[last].sendTx;
             newNode.sendRx = buffer->sendBuffer[last].sendRx;
+            newNode.TxSeq = buffer->sendBuffer[last].TxSeq;
         }
         else if (flag == SECOND_CALCULATE_ABNORMAL) {
             newNode.sendTx = node->sendTx;
             newNode.sendRx = node->sendRx;
+            newNode.TxSeq = node->TxSeq;
         }
         newNode.receiveTx = Tx;
         newNode.receiveRx = Rx;
+        newNode.RxSeq = tableNode->localSeq;
         #ifdef COMMUNICATION_SEND_POSITION_ENABLE
             if(flag == FIRST_CALCULATE || flag == SECOND_CALCULATE_UNQUALIFIED) {
                 newNode.sendTxCoordinate = buffer->sendBuffer[last].sendTxCoordinate;
@@ -309,7 +327,6 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
             newNode.receiveRxCoordinate = tableNode->RxCoordinate;
             newNode.receiveTxCoordinate = tableNode->TxCoordinate;
         #endif
-        newNode.localSeq = localSeq;
         newNode.sumTof = T23;
         newNode.T1 = node->T2;
         newNode.T2 = T23 - newNode.T1;
@@ -380,8 +397,9 @@ void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, 
         newNode1.sendRx = listA->tableBuffer[indexA3].RxTimestamp;
         newNode1.receiveTx = listB->tableBuffer[indexB2].TxTimestamp;
         newNode1.receiveRx = listB->tableBuffer[indexB2].RxTimestamp;
-        newNode1.localSeq = listB->tableBuffer[indexB2].localSeq;
-        newNode1.sumTof = classicTof*2;
+        newNode1.TxSeq = listA->tableBuffer[indexA3].localSeq;
+        newNode1.RxSeq = listB->tableBuffer[indexB2].localSeq;
+        newNode1.sumTof = classicTof * 2;
         newNode1.T1 = classicTof;
         newNode1.T2 = classicTof;
         #ifdef COMMUNICATION_SEND_POSITION_ENABLE
@@ -396,8 +414,9 @@ void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, 
         newNode2.sendRx = listA->tableBuffer[indexA1].RxTimestamp;
         newNode2.receiveTx = listB->tableBuffer[indexB2].TxTimestamp;
         newNode2.receiveRx = listB->tableBuffer[indexB2].RxTimestamp;
-        newNode2.localSeq = listA->tableBuffer[indexA1].localSeq;
-        newNode2.sumTof = classicTof*2;
+        newNode2.TxSeq = listA->tableBuffer[indexA1].localSeq;
+        newNode2.RxSeq = listB->tableBuffer[indexB2].localSeq;
+        newNode2.sumTof = classicTof * 2;
         newNode2.T1 = classicTof;
         newNode2.T2 = classicTof;
         #ifdef COMMUNICATION_SEND_POSITION_ENABLE
@@ -418,7 +437,8 @@ void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, 
         newNode1.sendRx = listB->tableBuffer[indexB2].RxTimestamp;
         newNode1.receiveTx = listA->tableBuffer[indexA3].TxTimestamp;
         newNode1.receiveRx = listA->tableBuffer[indexA3].RxTimestamp;
-        newNode1.localSeq = listB->tableBuffer[indexB2].localSeq;
+        newNode1.TxSeq = listB->tableBuffer[indexB2].localSeq;
+        newNode1.RxSeq = listA->tableBuffer[indexA3].localSeq;
         newNode1.sumTof = classicTof*2;
         newNode1.T1 = classicTof;
         newNode1.T2 = classicTof;
@@ -434,7 +454,8 @@ void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, 
         newNode2.sendRx = listB->tableBuffer[indexB2].RxTimestamp;
         newNode2.receiveTx = listA->tableBuffer[indexA1].TxTimestamp;
         newNode2.receiveRx = listA->tableBuffer[indexA1].RxTimestamp;
-        newNode2.localSeq = listA->tableBuffer[indexA1].localSeq;
+        newNode2.TxSeq = listB->tableBuffer[indexB2].localSeq;
+        newNode2.RxSeq = listA->tableBuffer[indexA1].localSeq;
         newNode2.sumTof = classicTof*2;
         newNode2.T1 = classicTof;
         newNode2.T2 = classicTof;
