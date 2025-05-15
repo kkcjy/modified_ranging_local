@@ -95,7 +95,7 @@ void *receive_from_center(void *arg) {
                 // printf("[local]:  x = %d, y = %d, z = %d\n[remote]: x = %d, y = %d, z = %d\n", curLocation.x, curLocation.y, curLocation.z, remoteLocation.x, remoteLocation.y, remoteLocation.z);
                 double distance = sqrt(pow((curLocation.x - remoteLocation.x), 2) + pow((curLocation.y - remoteLocation.y), 2) + pow((curLocation.z - remoteLocation.z), 2));
                 double Tof = distance / VELOCITY;
-                printf("[%s -> %s][%d]: D = %f, TOF  = %f\n", msg.sender_id, local_drone_id, ranging_msg->header.msgSequence, distance, Tof);
+                // printf("[%s -> %s][%d]: D = %f, TOF  = %f\n", msg.sender_id, local_drone_id, ranging_msg->header.msgSequence, distance, Tof);
                 local_sleep(Tof);
             #endif
 
@@ -108,7 +108,7 @@ void *receive_from_center(void *arg) {
             full_info.RxCoordinate = curLocation;
             
             // Rx
-            DEBUG_PRINT("[QueueTaskRx]: receive the message[%d] from %s at %ld\n", ranging_msg->header.msgSequence, msg.sender_id, curTime);
+            // DEBUG_PRINT("[QueueTaskRx]: receive the message[%d] from %s at %ld\n", ranging_msg->header.msgSequence, msg.sender_id, curTime);
             QueueTaskRx(&queueTaskLock, &full_info, sizeof(full_info));
         }
     }
@@ -139,9 +139,9 @@ void *process_messages(void *arg) {
             processFromQueue(&queueTaskLock);
         #endif
         
-        // if(localSendSeqNumber % 10 == 1) {
-        //     printRangingTableSet(0);
-        // }
+        if(localSendSeqNumber % 10 == 1) {
+            printRangingTableSet(RECEIVER);
+        }
 
         local_sleep(10);                      
     }
@@ -222,11 +222,11 @@ int main(int argc, char *argv[]) {
 
     // main send loop
     while (1) {
-        DEBUG_PRINT("[QueueTaskTx]: send the message[%d] from %s at %ld\n", localSendSeqNumber, local_drone_id, getCurrentTime());
+        // DEBUG_PRINT("[QueueTaskTx]: send the message[%d] from %s at %ld\n", localSendSeqNumber, local_drone_id, getCurrentTime());
         Time_t time_delay = QueueTaskTx(&queueTaskLock, MESSAGE_SIZE, send_to_center, center_socket, local_drone_id);
         
         // if(localReceivedSeqNumber % 10 == 1) {
-        //     printRangingTableSet(1);
+        //     printRangingTableSet(SENDER);
         // }
 
         local_sleep(time_delay); 

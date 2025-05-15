@@ -29,7 +29,7 @@
 
 // RANGING_BUFFER_H
 #define         RANGING_BUFFER_SIZE         6                   // max size of RangingTable_t.validBuffer
-#define         CONVERGENCE_THRESHOLD       0.7    
+#define         CONVERGENCE_THRESHOLD       0.99    
 #define         VELOCITY                    0.4691763978616     
 #define         UWB_MAX_TIMESTAMP           1099511627776
 

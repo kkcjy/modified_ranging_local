@@ -162,11 +162,11 @@ void printLocalSendBuffer() {
 }
 
 // flag == 1 -> generate, flag == 0 -> process
-void printRangingTableSet(int flag) {
-    if(flag == 1) {
+void printRangingTableSet(StatusType type) {
+    if(type == SENDER) {
         DEBUG_PRINT("\n==========================GENERATE_RANGINGTABLESET=======================\n");
     }
-    else if(flag == 0) {
+    else if(type == RECEIVER) {
         DEBUG_PRINT("\n=========================PROCESS_RANGINGTABLESET=========================\n");
     }
     printLocalSendBuffer();
@@ -175,10 +175,10 @@ void printRangingTableSet(int flag) {
         printRangingTable(&rangingTableSet->neighborReceiveBuffer[i]);
     }
     DEBUG_PRINT("--------------------------NEIGHBORRECEIVEBUFFER--------------------------\n");
-    if(flag == 1) {
+    if(type == SENDER) {
         DEBUG_PRINT("==========================GENERATE_RANGINGTABLESET=======================\n\n");
     }
-    else if(flag == 0) {
+    else if(type == RECEIVER) {
         DEBUG_PRINT("=========================PROCESS_RANGINGTABLESET=========================\n\n");
     }
 }
@@ -345,7 +345,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
         }
         table_index_t receiveBufferIndex = findRemoteSeqIndex(&neighborReceiveBuffer->receiveBuffer, rangingMessage->header.TxTimestamps[i].seqNumber);
         if(receiveBufferIndex == NULL_DONE_INDEX) {
-            DEBUG_PRINT("Warning: have processed this node\n");
+            // DEBUG_PRINT("Warning: have processed this node\n");
             continue;
         }
         // received
@@ -381,12 +381,12 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
                         neighborReceiveBuffer->validBuffer.sendBuffer[i].T1 = initTof;
                         neighborReceiveBuffer->validBuffer.sendBuffer[i].T2 = initTof;
                     }
-                    DEBUG_PRINT("[initializeRecordBuffer]: finish calling, initTof = %lld\n",initTof);
+                    // DEBUG_PRINT("[initializeRecordBuffer]: finish calling, initTof = %lld\n",initTof);
                 }
             }
             else{
                 double D = calculateTof(&neighborReceiveBuffer->validBuffer, &neighborReceiveBuffer->receiveBuffer.tableBuffer[receiveBufferIndex],
-                    neighborReceiveBuffer->receiveBuffer.tableBuffer[receiveBufferIndex].localSeq, RECEIVER, true);
+                    neighborReceiveBuffer->receiveBuffer.tableBuffer[receiveBufferIndex].localSeq, RECEIVER, FIRST_CALCULATE);
                 if(D == -1) {
                     DEBUG_PRINT("Warning: Failed to calculate TOF.\n");
                 }
@@ -397,9 +397,9 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
                 }
             }
         }
-        // missed or processed
+        // missed
         else{
-            DEBUG_PRINT("Warning: Cannot find corresponding Tx timestamp for Rx timestamp while processing rangingMessage->bodyUnit\n");
+            DEBUG_PRINT("Warning: Cannot find corresponding Rx timestamp for Tx[%d] timestamp while processing rangingMessage->header\n", rangingMessage->header.TxTimestamps[i].seqNumber);
         }
     }
 
@@ -416,7 +416,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
 
                 table_index_t sendBufferIndex = findLocalSendBufferNode(rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber);
                 if (sendBufferIndex == NULL_INDEX) {
-                    DEBUG_PRINT("Warning: Cannot find corresponding Tx timestamp for Rx timestamp while processing rangingMessage->bodyUnit\n");
+                    DEBUG_PRINT("Warning: Cannot find corresponding Tx timestamp for Rx[%d] timestamp while processing rangingMessage->bodyUnit\n", rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber);
                     continue;
                 }
 
@@ -455,12 +455,12 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
                             neighborReceiveBuffer->validBuffer.receiveBuffer[i].T1 = initTof;
                             neighborReceiveBuffer->validBuffer.receiveBuffer[i].T2 = initTof;
                         }
-                        DEBUG_PRINT("[initializeRecordBuffer]: finish calling, initTof = %lld\n",initTof);
+                        // DEBUG_PRINT("[initializeRecordBuffer]: finish calling, initTof = %lld\n",initTof);
                     }
                 }
                 else {
                     double D = calculateTof(&neighborReceiveBuffer->validBuffer, &neighborReceiveBuffer->sendBuffer.tableBuffer[newReceiveRecordIndex_BodyUnit],
-                        neighborReceiveBuffer->sendBuffer.tableBuffer[newReceiveRecordIndex_BodyUnit].localSeq, SENDER, true);
+                        neighborReceiveBuffer->sendBuffer.tableBuffer[newReceiveRecordIndex_BodyUnit].localSeq, SENDER, FIRST_CALCULATE);
                     if(D == -1){
                         DEBUG_PRINT("Warning: Failed to calculate TOF\n");
                     }

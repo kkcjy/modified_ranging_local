@@ -59,8 +59,8 @@ void addRangingBuffer(RangingBuffer_t *buffer, RangingBufferNode_t *node, Status
             buffer->sendBuffer[buffer->topSendBuffer].receiveRxCoordinate = node->receiveRxCoordinate;
         #endif
 
-        DEBUG_PRINT("[SENDBUFFER_ADD]: sendTx:%llu,sendRx:%llu,receiveTx:%llu,receiveRx:%llu,sumTof:%lld,TxSeq:%d,RxSeq:%d\n"
-            ,node->sendTx.full,node->sendRx.full,node->receiveTx.full,node->receiveRx.full,node->sumTof,node->TxSeq,node->RxSeq);
+        // DEBUG_PRINT("[SENDBUFFER_ADD]: sendTx:%llu,sendRx:%llu,receiveTx:%llu,receiveRx:%llu,sumTof:%lld,TxSeq:%d,RxSeq:%d\n"
+        //     ,node->sendTx.full,node->sendRx.full,node->receiveTx.full,node->receiveRx.full,node->sumTof,node->TxSeq,node->RxSeq);
     }
     else if (status == RECEIVER) {
         buffer->topReceiveBuffer = (buffer->topReceiveBuffer + 1) % RANGING_BUFFER_SIZE;
@@ -81,8 +81,8 @@ void addRangingBuffer(RangingBuffer_t *buffer, RangingBufferNode_t *node, Status
             buffer->receiveBuffer[buffer->topReceiveBuffer].receiveRxCoordinate = node->receiveRxCoordinate;
         #endif
 
-        DEBUG_PRINT("[RECEIVEBUFFER_ADD]: sendTx:%llu,sendRx:%llu,receiveTx:%llu,receiveRx:%llu,sumTof:%lld,TxSeq:%d,RxSeq:%d\n"
-            ,node->sendTx.full,node->sendRx.full,node->receiveTx.full,node->receiveRx.full,node->sumTof,node->TxSeq,node->RxSeq);
+        // DEBUG_PRINT("[RECEIVEBUFFER_ADD]: sendTx:%llu,sendRx:%llu,receiveTx:%llu,receiveRx:%llu,sumTof:%lld,TxSeq:%d,RxSeq:%d\n"
+        //     ,node->sendTx.full,node->sendRx.full,node->receiveTx.full,node->receiveRx.full,node->sumTof,node->TxSeq,node->RxSeq);
     }
 }
 
@@ -128,7 +128,6 @@ table_index_t searchRangingBuffer(RangingBuffer_t *buffer, uint16_t seq, StatusT
         recalculate the Tof using the next most recent valid record
 */
 double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t checkLocalSeq, StatusType status, FLAG flag) {
-    // calculate D
     dwTime_t Tx = tableNode->TxTimestamp;
     dwTime_t Rx = tableNode->RxTimestamp;
     uint16_t localSeq = tableNode->localSeq;
@@ -195,7 +194,7 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
         #else
             // calculate T23 with the data of the time before latest in modified method
             DEBUG_PRINT("Warning: Ra/Da and Rb/Db are both greater than CONVERGENCE_THRESHOLD(%f)\n",CONVERGENCE_THRESHOLD);
-            if(flag) {
+            if(flag == FIRST_CALCULATE) {
                 DEBUG_PRINT("Warning: The latest record in rangingbuffer fails, and an attempt is made to recalculate the Tof using the next most recent valid record\n");
                 if(status == SENDER) {
                     return calculateTof(buffer, tableNode, node->TxSeq, status, SECOND_CALCULATE_UNQUALIFIED);
@@ -205,7 +204,6 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
                 }
             }
             else {
-                DEBUG_PRINT("Warning: Recalculate Tof failed\n");
                 return -1;
             }
         #endif
@@ -216,7 +214,7 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
     float D = Tof * VELOCITY;
     if(D < 0 || D > 1000){
         DEBUG_PRINT("Warning: D = %f is out of range(0,1000)\n",D);
-        if(flag){
+        if(flag == FIRST_CALCULATE){
             DEBUG_PRINT("Warning: The latest record in rangingbuffer fails, and an attempt is made to recalculate the Tof using the next most recent valid record\n");
             if(status == SENDER) {
                 return calculateTof(buffer, tableNode, node->TxSeq, status, SECOND_CALCULATE_UNQUALIFIED);
@@ -226,7 +224,6 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
             }
         }
         else{
-            DEBUG_PRINT("Warning: Recalculate Tof failed\n");
             return -1;
         }
     }
@@ -240,7 +237,7 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
         float trueDy = (tableNode->RxCoordinate.y - tableNode->TxCoordinate.y);
         float trueDz = (tableNode->RxCoordinate.z - tableNode->TxCoordinate.z);
         float trueD = sqrtf(trueDx*trueDx + trueDy*trueDy + trueDz*trueDz);
-        DEBUG_PRINT("[CalculateTof]: modified_D = %f, classic_D = %f, true_D = %f\n", D, classicD, trueD);
+        DEBUG_PRINT("[CalculateTof%s%s]: modified_D = %f, classic_D = %f, true_D = %f\n", status == 0 ? "_SENDER" : "_RECEIVER", flag == FIRST_CALCULATE ? "_FIRST" : "_SECOND", D, classicD, trueD);
     #endif
 
     /* adjust
@@ -358,15 +355,15 @@ void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, 
 
                 A3.Rx  <--Db-->  B2.Tx              <--Rb-->              A1.Rx
     */
-    int64_t A3TX = (listA->tableBuffer[indexA3].TxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
-    int64_t A3RX = (listA->tableBuffer[indexA3].RxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
-    int64_t B2TX = (listB->tableBuffer[indexB2].TxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
-    int64_t B2RX = (listB->tableBuffer[indexB2].RxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
-    int64_t A1TX = (listA->tableBuffer[indexA1].TxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
-    int64_t A1RX = (listA->tableBuffer[indexA1].RxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
+    // int64_t A3TX = (listA->tableBuffer[indexA3].TxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
+    // int64_t A3RX = (listA->tableBuffer[indexA3].RxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
+    // int64_t B2TX = (listB->tableBuffer[indexB2].TxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
+    // int64_t B2RX = (listB->tableBuffer[indexB2].RxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
+    // int64_t A1TX = (listA->tableBuffer[indexA1].TxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
+    // int64_t A1RX = (listA->tableBuffer[indexA1].RxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
 
-    DEBUG_PRINT("[initializeRecordBuffer]: A3TX:%lld,B2RX:%lld,A1TX:%lld\n",A3TX,B2RX,A1TX);
-    DEBUG_PRINT("[initializeRecordBuffer]: A3RX:%lld,B2TX:%lld,A1RX:%lld\n",A3RX,B2TX,A1RX);
+    // DEBUG_PRINT("[initializeRecordBuffer]: A3TX:%lld,B2RX:%lld,A1TX:%lld\n",A3TX,B2RX,A1TX);
+    // DEBUG_PRINT("[initializeRecordBuffer]: A3RX:%lld,B2TX:%lld,A1RX:%lld\n",A3RX,B2TX,A1RX);
 
     int64_t Ra = (listB->tableBuffer[indexB2].RxTimestamp.full - listA->tableBuffer[indexA3].TxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
     int64_t Db = (listB->tableBuffer[indexB2].TxTimestamp.full - listA->tableBuffer[indexA3].RxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
