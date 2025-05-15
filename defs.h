@@ -1,14 +1,16 @@
 #ifndef DEFS_H
 #define DEFS_H
-#define _POSIX_C_SOURCE 200809L
 
+
+
+// BASIC
 #define         table_index_t               int8_t
-#define         Time_t                      uint32_t
+#define         Time_t                      uint64_t
 
 // ENABLE_MODE
 #define         COMMUNICATION_SEND_POSITION_ENABLE              // enable drones to send position(Warning: open)
 // #define         DYNAMIC_RANGING_FREQUENCY_ENABLE                // enable dynamic ranging frequency(RANGING_PERIOD_LOW/RANGING_PERIOD)
-#define         SAFE_DISTANCE               1                   // distance < SAFE_DISTANCE -> RANGING_PERIOD_LOW(set DYNAMIC_RANGING_FREQUENCY_ENABLE)
+#define         SAFE_DISTANCE               1000                // distance < SAFE_DISTANCE -> RANGING_PERIOD_LOW(set DYNAMIC_RANGING_FREQUENCY_ENABLE)
 #define         SAFE_DISTANCE_ROUND_BORDER  2                   // distance < SAFE_DISTANCE more than SAFE_DISTANCE_ROUND_BORDER -> RANGING_PERIOD(set DYNAMIC_RANGING_FREQUENCY_ENABLE)
 // #define         CLASSIC_TOF_ENABLE                              // allow classicTof if ratioes not satisfy
 // #define         WARM_UP_WAIT_ENABLE                             // discard first DISCARD_MESSAGE_NUM message
@@ -17,8 +19,8 @@
 #define         PACKET_LOSS_RATE            25                  // rate of packet loss(0~100)
 
 // LOCAL_HOST_H
-#define         MAX_RANDOM_TIME_OFF         10
-#define         FLIGHT_AREA_BOUND           10                  // space of area for drones to fly
+#define         MAX_RANDOM_TIME_OFF         50                  // (ns)
+#define         FLIGHT_AREA_BOUND           10000               // (mm)space of area for drones to fly
 
 // LOCK_H
 #define         QUEUE_TASK_LENGTH           3
@@ -29,8 +31,8 @@
 
 // RANGING_BUFFER_H
 #define         RANGING_BUFFER_SIZE         6                   // max size of RangingTable_t.validBuffer
-#define         CONVERGENCE_THRESHOLD       0.7    
-#define         VELOCITY                    0.4691763978616     
+#define         CONVERGENCE_THRESHOLD       1
+#define         VELOCITY                    3000                // m/s 
 #define         UWB_MAX_TIMESTAMP           1099511627776
 
 // MODIFIED_RANGING_H
@@ -50,6 +52,8 @@
 #define         M2T(X)                      ((unsigned int)(X))
 
 
+
+#include <sched.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -63,5 +67,6 @@
 #include <time.h>
 #include <pthread.h>
 #include <sys/socket.h>
+#include <x86intrin.h>  
 
 #endif

@@ -60,6 +60,10 @@
         "semaphore": "c",
         "stop_token": "c",
         "thread": "c",
-        "inet.h": "c"
+        "inet.h": "c",
+        "sched.h": "c",
+        "stdatomic.h": "c",
+        "math.h": "c",
+        "limits.h": "c"
     }
 }

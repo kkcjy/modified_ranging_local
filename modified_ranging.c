@@ -345,7 +345,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
         }
         table_index_t receiveBufferIndex = findRemoteSeqIndex(&neighborReceiveBuffer->receiveBuffer, rangingMessage->header.TxTimestamps[i].seqNumber);
         if(receiveBufferIndex == NULL_DONE_INDEX) {
-            DEBUG_PRINT("Warning: have processed this node\n");
+            // DEBUG_PRINT("Warning: have processed this node\n");
             continue;
         }
         // received
@@ -381,7 +381,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
                         neighborReceiveBuffer->validBuffer.sendBuffer[i].T1 = initTof;
                         neighborReceiveBuffer->validBuffer.sendBuffer[i].T2 = initTof;
                     }
-                    DEBUG_PRINT("[initializeRecordBuffer]: finish calling, initTof = %lld\n",initTof);
+                    // DEBUG_PRINT("[initializeRecordBuffer]: finish calling, initTof = %lld\n",initTof);
                 }
             }
             else{
@@ -397,9 +397,8 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
                 }
             }
         }
-        // missed or processed
         else{
-            DEBUG_PRINT("Warning: Cannot find corresponding Tx timestamp for Rx timestamp while processing rangingMessage->bodyUnit\n");
+            DEBUG_PRINT("Warning: Cannot find corresponding Rx timestamp for Tx timestamp while processing rangingMessage->header\n");
         }
     }
 
@@ -455,7 +454,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
                             neighborReceiveBuffer->validBuffer.receiveBuffer[i].T1 = initTof;
                             neighborReceiveBuffer->validBuffer.receiveBuffer[i].T2 = initTof;
                         }
-                        DEBUG_PRINT("[initializeRecordBuffer]: finish calling, initTof = %lld\n",initTof);
+                        // DEBUG_PRINT("[initializeRecordBuffer]: finish calling, initTof = %lld\n",initTof);
                     }
                 }
                 else {
@@ -476,7 +475,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
     }
 
     #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
-        return TofMin * VELOCITY < SAFE_DISTANCE;
+        return TofMin * VELOCITY < SAFE_DISTANCE * 1000000;
     #else
         return false;
     #endif

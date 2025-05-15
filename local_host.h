@@ -7,17 +7,17 @@
 
 typedef struct {
     uint16_t localAddress;              // local address
-    uint64_t baseTime;                  // local base time(ms)  —— for a same world time
+    uint64_t baseTime;                  // local base time(ns)  —— for a same world time
     #ifdef COMMUNICATION_SEND_POSITION_ENABLE
     Coordinate_Tuple_t location;        // local location
     #endif
-    uint64_t randOffTime;               // rand time(ms)        —— for diff between drones
+    uint64_t randOffTime;               // rand time(ns)        —— for diff between drones
 } __attribute__((packed)) Local_Host_t;
 
 extern Local_Host_t *localHost;
 
 
-uint64_t get_current_milliseconds();
+uint64_t get_current_actual_time();
 uint16_t string_to_hash(const char *str);
 void localInit(uint16_t address);
 uint64_t getCurrentTime();

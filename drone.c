@@ -27,23 +27,25 @@ void send_to_center(int center_socket, const char* node_id, const Ranging_Messag
 
     snprintf(msg.sender_id, sizeof(msg.sender_id), "%s", node_id);  
 
+    msg.data_size = sizeof(MessageWithLocation);
+
     MessageWithLocation modified_msg;
     memcpy(&modified_msg.rangingMessage, ranging_msg, sizeof(*ranging_msg));
-    dwTime_t curTime;
-    curTime.full = getCurrentTime();
     #ifdef COMMUNICATION_SEND_POSITION_ENABLE
         Coordinate_Tuple_t curLocation = getCurrentLocation();
     #endif
     modified_msg.location = curLocation;
     memcpy(msg.data, &modified_msg, sizeof(MessageWithLocation)); 
 
-    msg.data_size = sizeof(MessageWithLocation);
-
-    addLocalSendBuffer(curTime, curLocation);
-
+    dwTime_t curTime;
+    
     if (send(center_socket, &msg, sizeof(msg), 0) < 0) {
         perror("Send failed");
     }
+
+    curTime.full = getCurrentTime();
+
+    addLocalSendBuffer(curTime, curLocation);
 }
 
 // for Rx
@@ -54,6 +56,8 @@ void *receive_from_center(void *arg) {
     while (1) {
         //  center_socket -> msg
         ssize_t bytes_received = recv(center_socket, &msg, sizeof(msg), 0);
+
+        uint64_t curTime = getCurrentTime();
 
         if (bytes_received <= 0) {
             printf("Disconnected from Control Center\n");
@@ -94,12 +98,10 @@ void *receive_from_center(void *arg) {
                 Coordinate_Tuple_t remoteLocation = modified_msg->location;
                 // printf("[local]:  x = %d, y = %d, z = %d\n[remote]: x = %d, y = %d, z = %d\n", curLocation.x, curLocation.y, curLocation.z, remoteLocation.x, remoteLocation.y, remoteLocation.z);
                 double distance = sqrt(pow((curLocation.x - remoteLocation.x), 2) + pow((curLocation.y - remoteLocation.y), 2) + pow((curLocation.z - remoteLocation.z), 2));
-                double Tof = distance / VELOCITY;
-                printf("[%s -> %s][%d]: D = %f, TOF  = %f\n", msg.sender_id, local_drone_id, ranging_msg->header.msgSequence, distance, Tof);
-                local_sleep(Tof);
+                double Tof = (distance / VELOCITY) * 1000000;
+                printf("[%s -> %s][%d]: D = %fmm, TOF  = %fns\n", msg.sender_id, local_drone_id, ranging_msg->header.msgSequence, distance, Tof);
+                local_sleep(Tof / 1000000);
             #endif
-
-            uint64_t curTime = getCurrentTime();
 
             Ranging_Message_With_Additional_Info_t full_info;
 
@@ -108,7 +110,7 @@ void *receive_from_center(void *arg) {
             full_info.RxCoordinate = curLocation;
             
             // Rx
-            DEBUG_PRINT("[QueueTaskRx]: receive the message[%d] from %s at %ld\n", ranging_msg->header.msgSequence, msg.sender_id, curTime);
+            // DEBUG_PRINT("[QueueTaskRx]: receive the message[%d] from %s at %ld\n", ranging_msg->header.msgSequence, msg.sender_id, curTime);
             QueueTaskRx(&queueTaskLock, &full_info, sizeof(full_info));
         }
     }
@@ -139,9 +141,9 @@ void *process_messages(void *arg) {
             processFromQueue(&queueTaskLock);
         #endif
         
-        // if(localSendSeqNumber % 10 == 1) {
-        //     printRangingTableSet(0);
-        // }
+        if(localSendSeqNumber % 10 == 1) {
+            printRangingTableSet(0);
+        }
 
         local_sleep(10);                      
     }
@@ -208,7 +210,7 @@ int main(int argc, char *argv[]) {
 
     localHost->baseTime = worldBaseTime;
 
-    srand((unsigned int)(get_current_milliseconds()));
+    srand((unsigned int)(get_current_actual_time()));
 
     // start receive
     pthread_t receive_thread;
@@ -222,14 +224,14 @@ int main(int argc, char *argv[]) {
 
     // main send loop
     while (1) {
-        DEBUG_PRINT("[QueueTaskTx]: send the message[%d] from %s at %ld\n", localSendSeqNumber, local_drone_id, getCurrentTime());
+        // DEBUG_PRINT("[QueueTaskTx]: send the message[%d] from %s at %ld\n", localSendSeqNumber, local_drone_id, getCurrentTime());
         Time_t time_delay = QueueTaskTx(&queueTaskLock, MESSAGE_SIZE, send_to_center, center_socket, local_drone_id);
         
         // if(localReceivedSeqNumber % 10 == 1) {
         //     printRangingTableSet(1);
         // }
 
-        local_sleep(time_delay); 
+        local_sleep(time_delay + 500); 
     }
 
     pthread_join(receive_thread, NULL);

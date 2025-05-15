@@ -31,7 +31,7 @@ void *handle_node_connection(void *arg) {
     pthread_mutex_lock(&nodes_mutex);
     if (node_count < MAX_NODES) {
         if(node_count == 0) {
-            worldBaseTime = get_current_milliseconds();
+            worldBaseTime = get_current_actual_time();
             printf("set worldBaseTime = %ld\n", worldBaseTime);
         }
         nodes[node_count].socket = node_socket;
@@ -62,7 +62,7 @@ void *handle_node_connection(void *arg) {
         // printf("\n********************[%s]********************\n", node_id);
         // printRangingMessage(rangingMessage);
         // printf("********************[%s]********************\n", node_id);
-        printf("broadcast [%s], address = %d, msgSeq = %d, time = %ld\n", node_id, rangingMessage->header.srcAddress, rangingMessage->header.msgSequence, get_current_milliseconds() - worldBaseTime);
+        printf("broadcast [%s], address = %d, msgSeq = %d, time = %ld\n", node_id, rangingMessage->header.srcAddress, rangingMessage->header.msgSequence, get_current_actual_time() - worldBaseTime);
 
         // Immediately broadcast received message to all nodes
         broadcast_to_nodes(&msg);
