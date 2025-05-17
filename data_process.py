@@ -26,8 +26,6 @@ def read_data(file_path):
     return np.array(data)
 
 def calculate_offsets(data, left_idx, right_idx):
-    """Calculate the optimal vertical offsets for ModifiedD and ClassicD 
-    relative to TrueD within the specified range."""
     if left_idx < 0 or right_idx >= len(data) or left_idx > right_idx:
         raise ValueError(f"Invalid index range: left={left_idx}, right={right_idx}, data length={len(data)}")
     
@@ -38,7 +36,6 @@ def calculate_offsets(data, left_idx, right_idx):
     return mod_offset, cls_offset
 
 def plot_adjustment(data, left_idx, right_idx):
-    """Plot TrueD and the adjusted ModifiedD and ClassicD lines"""
     plt.figure(figsize=(12, 8))
     
     time = data[:, 3]
@@ -79,13 +76,11 @@ if __name__ == "__main__":
     LEFT_IDX = 0     # Start index (inclusive)
     RIGHT_IDX = 50   # End index (inclusive)
     
-    # Read data
     data = read_data(file_path)
     if len(data) == 0:
         print("Warning: No valid data found!")
         exit()
     
-    # Check index range
     if RIGHT_IDX >= len(data):
         RIGHT_IDX = len(data) - 1
         print(f"Warning: End index ({RIGHT_IDX}) exceeds data range, adjusted to {RIGHT_IDX}")
@@ -98,5 +93,4 @@ if __name__ == "__main__":
         print(f"Warning: Start index ({LEFT_IDX}) is greater than end index ({RIGHT_IDX}), swapped values")
         LEFT_IDX, RIGHT_IDX = RIGHT_IDX, LEFT_IDX
     
-    # Perform alignment and plot
     plot_adjustment(data, LEFT_IDX, RIGHT_IDX)
