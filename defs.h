@@ -15,10 +15,14 @@
 // #define         RANDOM_DIFF_TIME_ENABLE                         // enable diff(0 ~ MAX_RANDOM_TIME_OFF) time between drones
 // #define         PACKET_LOSS_ENABLE                              // simulate packet loss
 #define         PACKET_LOSS_RATE            25                  // rate of packet loss(0~100)
+#define         DRONE_MOVE_ENABLE                               // enable move
+#define         MAX_DRONE_VELOCITY          2                   // (m/s)
+#define         ALIGN_ENABLE                
+#define         ALIGN_ROUNDS                50
 
 // LOCAL_HOST_H
-#define         MAX_RANDOM_TIME_OFF         10
-#define         FLIGHT_AREA_BOUND           10                  // space of area for drones to fly
+#define         MAX_RANDOM_TIME_OFF         10                  // diff time between 
+#define         FLIGHT_AREA_BOUND           10000               // (mm)space of area for drones to fly
 
 // LOCK_H
 #define         QUEUE_TASK_LENGTH           3
@@ -29,8 +33,8 @@
 
 // RANGING_BUFFER_H
 #define         RANGING_BUFFER_SIZE         6                   // max size of RangingTable_t.validBuffer
-#define         CONVERGENCE_THRESHOLD       0.99    
-#define         VELOCITY                    0.4691763978616     
+#define         CONVERGENCE_THRESHOLD       1
+#define         VELOCITY                    0.4691763978616     // (m/s)
 #define         UWB_MAX_TIMESTAMP           1099511627776
 
 // MODIFIED_RANGING_H

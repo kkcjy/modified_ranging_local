@@ -12,7 +12,10 @@ typedef struct {
     Coordinate_Tuple_t location;        // local location
     #endif
     uint64_t randOffTime;               // rand time(ms)        —— for diff between drones
-} __attribute__((packed)) Local_Host_t;
+    #ifdef DRONE_MOVE_ENABLE
+    Velocity_Tuple_t velocity;          // local vilocity
+    #endif
+} Local_Host_t;
 
 extern Local_Host_t *localHost;
 
@@ -22,6 +25,7 @@ uint16_t string_to_hash(const char *str);
 void localInit(uint16_t address);
 uint64_t getCurrentTime();
 Coordinate_Tuple_t getCurrentLocation();
+void modifyLocation(Time_t time_delay);
 void local_sleep(uint64_t milliseconds);
 
 #endif

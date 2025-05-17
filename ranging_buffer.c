@@ -127,7 +127,7 @@ table_index_t searchRangingBuffer(RangingBuffer_t *buffer, uint16_t seq, StatusT
     FLAS = SECOND_CALCULATE_ABNORMAL
         recalculate the Tof using the next most recent valid record
 */
-double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t checkLocalSeq, StatusType status, FLAG flag) {
+double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t checkLocalSeq, StatusType status, FLAG flag, float *Modified, float *Classic, float *True) {
     dwTime_t Tx = tableNode->TxTimestamp;
     dwTime_t Rx = tableNode->RxTimestamp;
     uint16_t localSeq = tableNode->localSeq;
@@ -193,14 +193,14 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
             T23 = (diffA * Rb + diffA * Db + diffB * Ra + diffB * Da) / (Ra + Db + Rb + Da);
         #else
             // calculate T23 with the data of the time before latest in modified method
-            DEBUG_PRINT("Warning: Ra/Da and Rb/Db are both greater than CONVERGENCE_THRESHOLD(%f)\n",CONVERGENCE_THRESHOLD);
+            // DEBUG_PRINT("Warning: Ra/Da and Rb/Db are both greater than CONVERGENCE_THRESHOLD(%d), Ra_Da = %f, Rb_Db = %f\n",CONVERGENCE_THRESHOLD, Ra_Da, Rb_Db);
             if(flag == FIRST_CALCULATE) {
-                DEBUG_PRINT("Warning: The latest record in rangingbuffer fails, and an attempt is made to recalculate the Tof using the next most recent valid record\n");
+                // DEBUG_PRINT("Warning: The latest record in rangingbuffer fails, and an attempt is made to recalculate the Tof using the next most recent valid record\n");
                 if(status == SENDER) {
-                    return calculateTof(buffer, tableNode, node->TxSeq, status, SECOND_CALCULATE_UNQUALIFIED);
+                    return calculateTof(buffer, tableNode, node->TxSeq, status, SECOND_CALCULATE_UNQUALIFIED, Modified, Classic, True);
                 }
                 else if(status == RECEIVER) {
-                    return calculateTof(buffer, tableNode, node->RxSeq, status, SECOND_CALCULATE_UNQUALIFIED);
+                    return calculateTof(buffer, tableNode, node->RxSeq, status, SECOND_CALCULATE_UNQUALIFIED, Modified, Classic, True);
                 }
             }
             else {
@@ -213,14 +213,14 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
     float Tof = T23 / 2;
     float D = Tof * VELOCITY;
     if(D < 0 || D > 1000){
-        DEBUG_PRINT("Warning: D = %f is out of range(0,1000)\n",D);
+        // DEBUG_PRINT("Warning: D = %f is out of range(0,1000)\n",D);
         if(flag == FIRST_CALCULATE){
-            DEBUG_PRINT("Warning: The latest record in rangingbuffer fails, and an attempt is made to recalculate the Tof using the next most recent valid record\n");
+            // DEBUG_PRINT("Warning: The latest record in rangingbuffer fails, and an attempt is made to recalculate the Tof using the next most recent valid record\n");
             if(status == SENDER) {
-                return calculateTof(buffer, tableNode, node->TxSeq, status, SECOND_CALCULATE_UNQUALIFIED);
+                return calculateTof(buffer, tableNode, node->TxSeq, status, SECOND_CALCULATE_UNQUALIFIED, Modified, Classic, True);
             }
             else if(status == RECEIVER) {
-                return calculateTof(buffer, tableNode, node->RxSeq, status, SECOND_CALCULATE_UNQUALIFIED);
+                return calculateTof(buffer, tableNode, node->RxSeq, status, SECOND_CALCULATE_UNQUALIFIED, Modified, Classic, True);
             }
         }
         else{
@@ -236,8 +236,8 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
         float trueDx = (tableNode->RxCoordinate.x - tableNode->TxCoordinate.x);
         float trueDy = (tableNode->RxCoordinate.y - tableNode->TxCoordinate.y);
         float trueDz = (tableNode->RxCoordinate.z - tableNode->TxCoordinate.z);
-        float trueD = sqrtf(trueDx*trueDx + trueDy*trueDy + trueDz*trueDz);
-        DEBUG_PRINT("[CalculateTof%s%s]: modified_D = %f, classic_D = %f, true_D = %f\n", status == 0 ? "_SENDER" : "_RECEIVER", flag == FIRST_CALCULATE ? "_FIRST" : "_SECOND", D, classicD, trueD);
+        float trueD = sqrtf(trueDx*trueDx + trueDy*trueDy + trueDz*trueDz) / 1000;
+        // DEBUG_PRINT("[CalculateTof%s%s]: modified_D = %f, classic_D = %f, true_D = %f\n", status == 0 ? "_SENDER" : "_RECEIVER", flag == FIRST_CALCULATE ? "_FIRST" : "_SECOND", D, classicD, trueD);
     #endif
 
     /* adjust
@@ -329,6 +329,11 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
         newNode.T2 = T23 - newNode.T1;
         addRangingBuffer(buffer, &newNode, status);
     }
+
+    *Modified = D;
+    *Classic = classicD;
+    *True = trueD;
+
     return D;
 }
 

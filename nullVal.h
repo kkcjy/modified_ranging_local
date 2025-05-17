@@ -10,6 +10,7 @@
 #define         NULL_SEQ                0
 #define         NULL_TIMESTAMP          0
 #define         NULL_TOF                0
+#define         NULL_DIS                -1
 
 static const dwTime_t nullTimeStamp = {.full = NULL_TIMESTAMP};
 static const Coordinate_Tuple_t nullCoordinate = {.x = -1, .y = -1, .z = -1};

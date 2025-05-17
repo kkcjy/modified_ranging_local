@@ -33,4 +33,11 @@ typedef struct {
     uint16_t seqNumber;                      
 } __attribute__((packed)) Timestamp_Tuple_t; 
 
+// x y z
+typedef struct {
+    int x;
+    int y;
+    int z;
+} __attribute__((packed)) Velocity_Tuple_t;
+
 #endif

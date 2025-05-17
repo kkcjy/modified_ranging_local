@@ -285,9 +285,15 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
         }
     #endif
 
-    #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
-        int TofMin = INT_MAX;
-    #endif
+    float H_Modified = NULL_DIS;
+    float H_Classic = NULL_DIS;
+    float H_True = NULL_DIS;
+    float B_Modified = NULL_DIS;
+    float B_Classic = NULL_DIS;
+    float B_True = NULL_DIS;
+    float ModifiedD = NULL_DIS;
+    float ClassicD = NULL_DIS;
+    float TrueD = NULL_DIS;
 
     Ranging_Message_t *rangingMessage = &rangingMessageWithAdditionalInfo->rangingMessage;
 
@@ -385,16 +391,9 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
                 }
             }
             else{
-                double D = calculateTof(&neighborReceiveBuffer->validBuffer, &neighborReceiveBuffer->receiveBuffer.tableBuffer[receiveBufferIndex],
-                    neighborReceiveBuffer->receiveBuffer.tableBuffer[receiveBufferIndex].localSeq, RECEIVER, FIRST_CALCULATE);
-                if(D == -1) {
-                    DEBUG_PRINT("Warning: Failed to calculate TOF.\n");
-                }
-                else {
-                    #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
-                        TofMin = D < TofMin ? D : TofMin;
-                    #endif
-                }
+                // from old data to recent data, get the last valid D
+                calculateTof(&neighborReceiveBuffer->validBuffer, &neighborReceiveBuffer->receiveBuffer.tableBuffer[receiveBufferIndex],
+                    neighborReceiveBuffer->receiveBuffer.tableBuffer[receiveBufferIndex].localSeq, RECEIVER, FIRST_CALCULATE, &H_Modified, &H_Classic, &H_True);
             }
         }
         // missed
@@ -402,6 +401,13 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
             DEBUG_PRINT("Warning: Cannot find corresponding Rx timestamp for Tx[%d] timestamp while processing rangingMessage->header\n", rangingMessage->header.TxTimestamps[i].seqNumber);
         }
     }
+
+    // if(H_Modified != NULL_DIS) {
+    //     printf("[Recent]: H_Modified = %f, H_Classic = %f, H_True = %f\n", H_Modified, H_Classic, H_True);
+    // }
+    // else {
+    //     printf("[Recent]: No valid Modified H_Modified calculated\n");
+    // }
 
     /* process bodyUnit
         dest + Rx
@@ -459,25 +465,49 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
                     }
                 }
                 else {
-                    double D = calculateTof(&neighborReceiveBuffer->validBuffer, &neighborReceiveBuffer->sendBuffer.tableBuffer[newReceiveRecordIndex_BodyUnit],
-                        neighborReceiveBuffer->sendBuffer.tableBuffer[newReceiveRecordIndex_BodyUnit].localSeq, SENDER, FIRST_CALCULATE);
-                    if(D == -1){
-                        DEBUG_PRINT("Warning: Failed to calculate TOF\n");
-                    }
-                    else {
-                        #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
-                            TofMin = D < TofMin ? D : TofMin;
-                        #endif
-                    }
+                    calculateTof(&neighborReceiveBuffer->validBuffer, &neighborReceiveBuffer->sendBuffer.tableBuffer[newReceiveRecordIndex_BodyUnit],
+                        neighborReceiveBuffer->sendBuffer.tableBuffer[newReceiveRecordIndex_BodyUnit].localSeq, SENDER, FIRST_CALCULATE, &B_Modified, &B_Classic, &B_True);
                 }
             }
             break;
         }
     }
 
+    // if(B_Modified != NULL_DIS) {
+    //     printf("[Recent]: B_Modified = %f, B_Classic = %f, B_True = %f\n", B_Modified, B_Classic, B_True);
+    // }
+    // else {
+    //     printf("[Recent]: No valid Modified B_Modified calculated\n");
+    // }
+
+    if(H_Modified != NULL_DIS && B_Modified != NULL_DIS) {
+        ModifiedD = (H_Modified + B_Modified) / 2;
+        ClassicD = (H_Classic + B_Classic) / 2;
+        TrueD = (H_True + B_True) / 2;
+    }
+    else if(H_Modified != NULL_DIS) {
+        ModifiedD = H_Modified;
+        ClassicD = H_Classic;
+        TrueD = H_True;
+    }
+    else if(B_Modified != NULL_DIS) {
+        ModifiedD = B_Modified;
+        ClassicD = B_Classic;
+        TrueD = B_True;
+    }
+
+    if(ModifiedD != NULL_DIS) {
+        DEBUG_PRINT("[current]: ModifiedD = %f, ClassicD = %f, TrueD = %f, time = %lld\n", ModifiedD, ClassicD, TrueD, rangingMessageWithAdditionalInfo->RxTimestamp.full);
+    }
+    else {
+        DEBUG_PRINT("[current]: No valid Current distance calculated\n");
+    }
+
     #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
-        return TofMin * VELOCITY < SAFE_DISTANCE;
-    #else
-        return false;
+        if(ModifiedD != NULL_DIS) {
+            return ModifiedD < SAFE_DISTANCE;
+        }
     #endif
+
+    return false;
 }

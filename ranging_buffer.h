@@ -63,7 +63,7 @@ void initRangingBufferNode_t(RangingBufferNode_t *node);
 void initRangingBuffer(RangingBuffer_t *buffer);
 void addRangingBuffer(RangingBuffer_t *buffer, RangingBufferNode_t *node, StatusType status);
 table_index_t searchRangingBuffer(RangingBuffer_t *buffer, uint16_t localSeq, StatusType status);
-double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t checkLocalSeq, StatusType status, FLAG flag);
+double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t checkLocalSeq, StatusType status, FLAG flag, float *Modified, float *Classic, float *True);
 void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, table_index_t firstIndex, RangingBuffer_t* rangingBuffer, StatusType status);
 void printRangingBuffer(RangingBuffer_t *buffer);
 

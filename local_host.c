@@ -43,7 +43,15 @@ void localInit(uint16_t address) {
         localHost->location.z = rand() % (FLIGHT_AREA_BOUND + 1);
     #endif
 
+    #ifdef DRONE_MOVE_ENABLE
+        localHost->velocity.x = rand() % (2 * MAX_DRONE_VELOCITY + 1) - MAX_DRONE_VELOCITY;
+        localHost->velocity.y = rand() % (2 * MAX_DRONE_VELOCITY + 1) - MAX_DRONE_VELOCITY;
+        localHost->velocity.z = rand() % (2 * MAX_DRONE_VELOCITY + 1) - MAX_DRONE_VELOCITY;
+    #endif
+
+    #ifdef RANDOM_DIFF_TIME_ENABLE
     localHost->randOffTime = rand() % (MAX_RANDOM_TIME_OFF + 1);
+    #endif
 }
 
 // return current time(ms)
@@ -57,6 +65,12 @@ uint64_t getCurrentTime() {
 
 Coordinate_Tuple_t getCurrentLocation() {
     return localHost->location;
+}
+
+void modifyLocation(Time_t time_delay) {
+    localHost->location.x += localHost->velocity.x * time_delay;
+    localHost->location.y += localHost->velocity.y * time_delay;
+    localHost->location.z += localHost->velocity.z * time_delay;
 }
 
 void local_sleep(uint64_t milliseconds) {
