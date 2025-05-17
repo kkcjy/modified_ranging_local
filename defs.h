@@ -18,11 +18,12 @@
 #define         DRONE_MOVE_ENABLE                               // enable move
 #define         MAX_DRONE_VELOCITY          2                   // (m/s)
 #define         ALIGN_ENABLE                
-#define         ALIGN_ROUNDS                50
+#define         ALIGN_ROUNDS                50                  // initial rounds with stationary state
 
 // LOCAL_HOST_H
 #define         MAX_RANDOM_TIME_OFF         10                  // diff time between 
-#define         FLIGHT_AREA_BOUND           10000               // (mm)space of area for drones to fly
+#define         FLIGHT_AREA_UPON_BASE       40000               // (mm)upon space of area for drones to fly
+#define         FLIGHT_AREA_LOW_BASE        10000               // (mm)low space of area for drones to fly
 
 // LOCK_H
 #define         QUEUE_TASK_LENGTH           3

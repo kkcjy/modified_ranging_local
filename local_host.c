@@ -38,9 +38,9 @@ void localInit(uint16_t address) {
     srand((unsigned int)(get_current_milliseconds()));
 
     #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-        localHost->location.x = rand() % (FLIGHT_AREA_BOUND + 1);
-        localHost->location.y = rand() % (FLIGHT_AREA_BOUND + 1);
-        localHost->location.z = rand() % (FLIGHT_AREA_BOUND + 1);
+        localHost->location.x = FLIGHT_AREA_LOW_BASE + rand() % (FLIGHT_AREA_UPON_BASE - FLIGHT_AREA_LOW_BASE + 1);
+        localHost->location.y = FLIGHT_AREA_LOW_BASE + rand() % (FLIGHT_AREA_UPON_BASE - FLIGHT_AREA_LOW_BASE + 1);
+        localHost->location.z = FLIGHT_AREA_LOW_BASE + rand() % (FLIGHT_AREA_UPON_BASE - FLIGHT_AREA_LOW_BASE + 1);
     #endif
 
     #ifdef DRONE_MOVE_ENABLE
@@ -67,10 +67,23 @@ Coordinate_Tuple_t getCurrentLocation() {
     return localHost->location;
 }
 
+void reverseVilocity() {
+    if(localHost->location.x < FLIGHT_AREA_LOW_BASE || localHost->location.x > FLIGHT_AREA_UPON_BASE) {
+        localHost->velocity.x -= 2 * localHost->velocity.x;
+    }
+    if(localHost->location.y < FLIGHT_AREA_LOW_BASE || localHost->location.y > FLIGHT_AREA_UPON_BASE) {
+        localHost->velocity.y -= 2 * localHost->velocity.y;
+    }
+    if(localHost->location.z < FLIGHT_AREA_LOW_BASE || localHost->location.z > FLIGHT_AREA_UPON_BASE) {
+        localHost->velocity.z -= 2 * localHost->velocity.z;
+    }
+}
+
 void modifyLocation(Time_t time_delay) {
     localHost->location.x += localHost->velocity.x * time_delay;
     localHost->location.y += localHost->velocity.y * time_delay;
     localHost->location.z += localHost->velocity.z * time_delay;
+    reverseVilocity();
 }
 
 void local_sleep(uint64_t milliseconds) {

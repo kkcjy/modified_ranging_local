@@ -73,8 +73,8 @@ if __name__ == "__main__":
     file_path = 'dataLog.txt'
     
     # Set the data range for alignment (modify these two parameters to select different data segments)
-    LEFT_IDX = 0     # Start index (inclusive)
-    RIGHT_IDX = 50   # End index (inclusive)
+    LEFT_IDX = 0     
+    RIGHT_IDX = 20   
     
     data = read_data(file_path)
     if len(data) == 0:
