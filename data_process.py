@@ -2,7 +2,29 @@ import re
 import numpy as np
 import matplotlib.pyplot as plt
 
-def read_data(file_path):
+# def read_data(file_path):
+#     data = []
+#     current_entry = {}
+#     patterns = {
+#         'ModifiedD': r'ModifiedD\s*=\s*([\d.]+)',
+#         'ClassicD': r'ClassicD\s*=\s*([\d.]+)',
+#         'TrueD': r'TrueD\s*=\s*([\d.]+)',
+#         'time': r'time\s*=\s*(\d+)'
+#     }
+    
+#     with open(file_path, 'r') as f:
+#         for line in f:
+#             line = line.strip()
+#             for key, pattern in patterns.items():
+#                 match = re.search(pattern, line)
+#                 if match:
+#                     value = float(match.group(1)) if key != 'time' else int(match.group(1))
+#                     current_entry[key] = value
+#                     if len(current_entry) == 4:
+#                         data.append(tuple(current_entry.values()))
+#                         current_entry = {}
+#     return np.array(data)
+def read_data(file_path, address=None):  
     data = []
     current_entry = {}
     patterns = {
@@ -11,10 +33,17 @@ def read_data(file_path):
         'TrueD': r'TrueD\s*=\s*([\d.]+)',
         'time': r'time\s*=\s*(\d+)'
     }
-    
+    address_pattern = r'\[current_(\d+)\]:'  
+
     with open(file_path, 'r') as f:
         for line in f:
             line = line.strip()
+            
+            if address is not None:
+                addr_match = re.search(address_pattern, line)
+                if not addr_match or int(addr_match.group(1)) != address:
+                    continue
+            
             for key, pattern in patterns.items():
                 match = re.search(pattern, line)
                 if match:
@@ -75,8 +104,9 @@ if __name__ == "__main__":
     # Set the data range for alignment (modify these two parameters to select different data segments)
     LEFT_IDX = 0     
     RIGHT_IDX = 20   
+    ADDRESS = 34698
     
-    data = read_data(file_path)
+    data = read_data(file_path, address=ADDRESS)
     if len(data) == 0:
         print("Warning: No valid data found!")
         exit()
