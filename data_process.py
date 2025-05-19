@@ -1,30 +1,9 @@
 import re
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
 
-# def read_data(file_path):
-#     data = []
-#     current_entry = {}
-#     patterns = {
-#         'ModifiedD': r'ModifiedD\s*=\s*([\d.]+)',
-#         'ClassicD': r'ClassicD\s*=\s*([\d.]+)',
-#         'TrueD': r'TrueD\s*=\s*([\d.]+)',
-#         'time': r'time\s*=\s*(\d+)'
-#     }
-    
-#     with open(file_path, 'r') as f:
-#         for line in f:
-#             line = line.strip()
-#             for key, pattern in patterns.items():
-#                 match = re.search(pattern, line)
-#                 if match:
-#                     value = float(match.group(1)) if key != 'time' else int(match.group(1))
-#                     current_entry[key] = value
-#                     if len(current_entry) == 4:
-#                         data.append(tuple(current_entry.values()))
-#                         current_entry = {}
-#     return np.array(data)
-def read_data(file_path, address=None):  
+def read_data(file_path, address=None):
     data = []
     current_entry = {}
     patterns = {
@@ -54,15 +33,42 @@ def read_data(file_path, address=None):
                         current_entry = {}
     return np.array(data)
 
+def find_concentrated_region(values, n_clusters=2):
+    if len(values) < n_clusters:
+        return np.ones_like(values, dtype=bool)
+    
+    kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(values.reshape(-1, 1))
+    cluster_counts = np.bincount(kmeans.labels_)
+    main_cluster = np.argmax(cluster_counts)
+    
+    cluster_values = values[kmeans.labels_ == main_cluster]
+    mean = np.mean(cluster_values)
+    std = np.std(cluster_values)
+    
+    in_region = (np.abs(values - mean) <= std) & (kmeans.labels_ == main_cluster)
+    return in_region
+
 def calculate_offsets(data, left_idx, right_idx):
     if left_idx < 0 or right_idx >= len(data) or left_idx > right_idx:
         raise ValueError(f"Invalid index range: left={left_idx}, right={right_idx}, data length={len(data)}")
     
     selected_data = data[left_idx:right_idx+1]
-    mod_offset = np.mean(selected_data[:, 0] - selected_data[:, 2])
-    cls_offset = np.mean(selected_data[:, 1] - selected_data[:, 2])
     
-    return mod_offset, cls_offset
+    mod_mask = find_concentrated_region(selected_data[:, 0])
+    cls_mask = find_concentrated_region(selected_data[:, 1])
+    tru_mask = find_concentrated_region(selected_data[:, 2])
+    
+    common_mask = mod_mask & cls_mask & tru_mask
+    
+    if not np.any(common_mask):
+        common_mask = mod_mask | cls_mask | tru_mask
+        print("Warning: No common concentrated region found, using union of individual regions")
+    
+    mod_offset = np.mean(selected_data[common_mask, 0] - selected_data[common_mask, 2])
+    cls_offset = np.mean(selected_data[common_mask, 1] - selected_data[common_mask, 2])
+    
+    print(f"Used {np.sum(common_mask)}/{len(selected_data)} points in concentrated region")
+    return mod_offset, cls_offset, common_mask
 
 def plot_adjustment(data, left_idx, right_idx):
     plt.figure(figsize=(12, 8))
@@ -72,38 +78,38 @@ def plot_adjustment(data, left_idx, right_idx):
     cls_data = data[:, 1]
     tru_data = data[:, 2]
     
-    # Calculate offsets
-    mod_offset, cls_offset = calculate_offsets(data, left_idx, right_idx)
+    mod_offset, cls_offset, common_mask = calculate_offsets(data, left_idx, right_idx)
     
-    # Apply offsets
     adjusted_mod = mod_data - mod_offset
     adjusted_cls = cls_data - cls_offset
     
-    # Plot the three lines
     plt.plot(time, tru_data, 'g-^', label='TrueD', alpha=0.8, linewidth=1.5)
     plt.plot(time, adjusted_mod, 'b-o', label=f'ModifiedD (Offset={-mod_offset:.2f})', alpha=0.8)
     plt.plot(time, adjusted_cls, 'r-s', label=f'ClassicD (Offset={-cls_offset:.2f})', alpha=0.8)
     
-    # Highlight the alignment region
     plt.axvspan(time[left_idx], time[right_idx], color='yellow', alpha=0.2, label='Alignment Region')
     
-    plt.title('Vertical Alignment Adjustment')
+    selected_times = time[left_idx:right_idx+1]
+    plt.scatter(selected_times[common_mask], tru_data[left_idx:right_idx+1][common_mask],
+               color='purple', marker='*', s=100, label='Concentrated Points')
+    
+    plt.title('Vertical Alignment Using Concentrated Regions')
     plt.xlabel('Time')
     plt.ylabel('Distance')
     plt.legend(loc='upper left')
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.tight_layout()
-    plt.savefig('vertical_alignment.png')
-    print(f"Alignment comparison chart saved: vertical_alignment.png")
+    plt.savefig('vertical_alignment_concentrated.png')
+    print(f"Alignment comparison chart saved: vertical_alignment_concentrated.png")
     print(f"Alignment parameters: ModifiedD Offset = {-mod_offset:.4f}, ClassicD Offset = {-cls_offset:.4f}")
     plt.show()
 
 if __name__ == "__main__":
+    # file_path = 'validData/2.txt'
     file_path = 'dataLog.txt'
     
-    # Set the data range for alignment (modify these two parameters to select different data segments)
     LEFT_IDX = 0     
-    RIGHT_IDX = 20   
+    RIGHT_IDX = 30 
     ADDRESS = 34698
     
     data = read_data(file_path, address=ADDRESS)
