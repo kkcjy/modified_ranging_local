@@ -10,13 +10,16 @@
 // #define         DYNAMIC_RANGING_FREQUENCY_ENABLE                // enable dynamic ranging frequency(RANGING_PERIOD_LOW/RANGING_PERIOD)
 #define         SAFE_DISTANCE               1                   // distance < SAFE_DISTANCE -> RANGING_PERIOD_LOW(set DYNAMIC_RANGING_FREQUENCY_ENABLE)
 #define         SAFE_DISTANCE_ROUND_BORDER  2                   // distance < SAFE_DISTANCE more than SAFE_DISTANCE_ROUND_BORDER -> RANGING_PERIOD(set DYNAMIC_RANGING_FREQUENCY_ENABLE)
-// #define         CLASSIC_TOF_ENABLE                              // allow classicTof if ratioes not satisfy
+#define         CLASSIC_TOF_ENABLE                              // allow classicTof if ratioes not satisfy
 // #define         WARM_UP_WAIT_ENABLE                             // discard first DISCARD_MESSAGE_NUM message
 // #define         RANDOM_DIFF_TIME_ENABLE                         // enable diff(0 ~ MAX_RANDOM_TIME_OFF) time between drones
 // #define         PACKET_LOSS_ENABLE                              // simulate packet loss
 #define         PACKET_LOSS_RATE            25                  // rate of packet loss(0~100)
-#define         DRONE_MOVE_ENABLE                               // enable move
-#define         MAX_DRONE_VELOCITY          2                   // (m/s)
+/* Warning: enable only one of RANDOM_MOVE_ENABLE、OPPOSITE_MOVE_ENABLE */
+#define         RANDOM_MOVE_ENABLE                              // enable random move
+#define         RANDOM_VELOCITY             3                   // vx/vy/vz < RANDOM_VELOCITY(m/s)
+// #define         OPPOSITE_MOVE_ENABLE                            // enable opposite flight
+#define         OPPOSITE_VELOCITY           5                   // vx/vy/vz = OPPOSITE_VELOCITY(m/s) / 0(m/s)
 #define         ALIGN_ENABLE                
 #define         ALIGN_ROUNDS                50                  // initial rounds with stationary state
 

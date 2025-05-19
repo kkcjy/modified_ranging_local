@@ -105,8 +105,8 @@ def plot_adjustment(data, left_idx, right_idx):
     plt.show()
 
 if __name__ == "__main__":
-    # file_path = 'validData/2.txt'
-    file_path = 'dataLog.txt'
+    file_path = 'validData/3.txt'
+    # file_path = 'dataLog.txt'
     
     LEFT_IDX = 0     
     RIGHT_IDX = 30 

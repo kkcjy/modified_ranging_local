@@ -43,10 +43,16 @@ void localInit(uint16_t address) {
         localHost->location.z = FLIGHT_AREA_LOW_BASE + rand() % (FLIGHT_AREA_UPON_BASE - FLIGHT_AREA_LOW_BASE + 1);
     #endif
 
-    #ifdef DRONE_MOVE_ENABLE
-        localHost->velocity.x = rand() % (2 * MAX_DRONE_VELOCITY + 1) - MAX_DRONE_VELOCITY;
-        localHost->velocity.y = rand() % (2 * MAX_DRONE_VELOCITY + 1) - MAX_DRONE_VELOCITY;
-        localHost->velocity.z = rand() % (2 * MAX_DRONE_VELOCITY + 1) - MAX_DRONE_VELOCITY;
+    #ifdef RANDOM_MOVE_ENABLE
+        localHost->velocity.x = rand() % (2 * RANDOM_VELOCITY + 1) - RANDOM_VELOCITY;
+        localHost->velocity.y = rand() % (2 * RANDOM_VELOCITY + 1) - RANDOM_VELOCITY;
+        localHost->velocity.z = rand() % (2 * RANDOM_VELOCITY + 1) - RANDOM_VELOCITY;
+    #endif
+
+    #ifdef OPPOSITE_MOVE_ENABLE
+        localHost->velocity.x = localHost->localAddress % 2 == 0 ? OPPOSITE_VELOCITY : 0;
+        localHost->velocity.y = 0;
+        localHost->velocity.z = 0;
     #endif
 
     #ifdef RANDOM_DIFF_TIME_ENABLE

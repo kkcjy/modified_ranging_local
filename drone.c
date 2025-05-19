@@ -159,8 +159,8 @@ int main(int argc, char *argv[]) {
 
     // init operation
     localInit(string_to_hash(local_drone_id));
-    DEBUG_PRINT("[localInit]: localHost is ready: droneId = %s, localAddress = %d, x = %d, y = %d, z = %d, randOffTime = %ld\n", 
-        local_drone_id, localHost->localAddress, localHost->location.x, localHost->location.y, localHost->location.z, localHost->randOffTime);
+    DEBUG_PRINT("[localInit]: localHost is ready: droneId = %s, localAddress = %d, x = %d, y = %d, z = %d, vx = %d, vy = %d, vz = %d, randOffTime = %ld\n", 
+        local_drone_id, localHost->localAddress, localHost->location.x, localHost->location.y, localHost->location.z, localHost->velocity.x, localHost->velocity.y, localHost->velocity.z, localHost->randOffTime);
     initQueueTaskLock(&queueTaskLock);     
     DEBUG_PRINT("[initQueueTaskLock]: QueueTaskLock is ready\n");
     initRangingTableSet();

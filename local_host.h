@@ -12,7 +12,7 @@ typedef struct {
     Coordinate_Tuple_t location;        // local location
     #endif
     uint64_t randOffTime;               // rand time(ms)        —— for diff between drones
-    #ifdef DRONE_MOVE_ENABLE
+    #if defined(RANDOM_MOVE_ENABLE) || defined(OPPOSITE_MOVE_ENABLE) || defined(SEPARATE_MOVE_ENABLE)
     Velocity_Tuple_t velocity;          // local vilocity
     #endif
 } Local_Host_t;
