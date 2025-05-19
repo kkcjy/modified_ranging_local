@@ -1,0 +1,178 @@
+[localInit]: localHost is ready: droneId = drone2, localAddress = 34698, x = 21269, y = 20193, z = 11825, randOffTime = 0
+[initQueueTaskLock]: QueueTaskLock is ready
+[initRangingTableSet]: RangingTableSet is ready
+[current]: No valid Current distance calculated
+Warning: Cannot find corresponding Rx timestamp for Tx[2] timestamp while processing rangingMessage->header
+Warning: Cannot find corresponding Rx timestamp for Tx[3] timestamp while processing rangingMessage->header
+Warning: Cannot find corresponding Rx timestamp for Tx[4] timestamp while processing rangingMessage->header
+No valid record in listB
+[current]: No valid Current distance calculated
+No valid record in listB
+No valid record in listA
+[current]: No valid Current distance calculated
+Warning: Cannot find corresponding Rx timestamp for Tx[3] timestamp while processing rangingMessage->header
+Warning: Cannot find corresponding Rx timestamp for Tx[4] timestamp while processing rangingMessage->header
+No valid record in listA
+[initializeRecordBuffer]: Tof = 8
+[current]: No valid Current distance calculated
+[initializeRecordBuffer]: Tof = 8
+[initializeRecordBuffer]: Tof = 9
+[current]: No valid Current distance calculated
+Warning: Cannot find corresponding Rx timestamp for Tx[4] timestamp while processing rangingMessage->header
+[initializeRecordBuffer]: Tof = 9
+[initializeRecordBuffer]: Tof = 8
+[current]: No valid Current distance calculated
+[initializeRecordBuffer]: Tof = 8
+[initializeRecordBuffer]: Tof = 8
+[current]: No valid Current distance calculated
+[initializeRecordBuffer]: Tof = 8
+[initializeRecordBuffer]: Tof = 9
+[current]: No valid Current distance calculated
+[initializeRecordBuffer]: Tof = 9
+[initializeRecordBuffer]: Tof = 9
+[current]: No valid Current distance calculated
+[initializeRecordBuffer]: Tof = 9
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 179045
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 179101
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 179227
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 179278
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 179436
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 179485
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 179616
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 179694
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 179817
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 179915
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 180010
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 180098
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 180196
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 180312
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 180416
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 180508
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 180607
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 180719
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 180805
+[current_34697]: ModifiedD = 3.987999, ClassicD = 3.987999, TrueD = 4.084914, time = 180902
+[current_34698]: ModifiedD = 3.753411, ClassicD = 3.987999, TrueD = 4.084914, time = 181020
+[current_34697]: ModifiedD = 3.753411, ClassicD = 3.987999, TrueD = 4.084914, time = 181095
+[current_34698]: ModifiedD = 3.987999, ClassicD = 3.987999, TrueD = 4.084914, time = 181197
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 181296
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 181403
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 181500
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 181619
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 181718
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 181808
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 181920
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 182007
+[current_34697]: ModifiedD = 3.987999, ClassicD = 4.222588, TrueD = 4.084914, time = 182120
+[current_34698]: ModifiedD = 3.987999, ClassicD = 4.222588, TrueD = 4.084914, time = 182214
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 182305
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 182421
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 182507
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 182602
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 182714
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 182801
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 182882
+[current_34698]: ModifiedD = 4.457176, ClassicD = 4.222588, TrueD = 4.084914, time = 182987
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 183070
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 183200
+[current_34697]: ModifiedD = 4.457176, ClassicD = 4.222588, TrueD = 4.084914, time = 183273
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 183371
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 183476
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 183549
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 183648
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 183732
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 183828
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 183937
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 184015
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 184112
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 184224
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 184311
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 184411
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 184508
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 184607
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 184712
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 184800
+[current_34698]: ModifiedD = 3.987999, ClassicD = 4.222588, TrueD = 4.084914, time = 184923
+[current_34697]: ModifiedD = 3.987999, ClassicD = 4.222588, TrueD = 4.084914, time = 185004
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 185124
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 185197
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 185311
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 185367
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 185510
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 185580
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 185719
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 185763
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 185916
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 185988
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 186091
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 186193
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 186267
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 186417
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 186485
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 186638
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 186702
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 186830
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 186927
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 187038
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 187135
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.084914, time = 187253
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.352500, time = 187356
+[current_34697]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.620086, time = 187448
+[current_34698]: ModifiedD = 4.222588, ClassicD = 4.222588, TrueD = 4.838514, time = 187537
+[current_34697]: ModifiedD = 4.457176, ClassicD = 4.222588, TrueD = 5.056943, time = 187660
+[current_34698]: ModifiedD = 5.160940, ClassicD = 4.691764, TrueD = 5.298802, time = 187737
+[current_34697]: ModifiedD = 5.395529, ClassicD = 5.160940, TrueD = 5.540660, time = 187868
+[current_34698]: ModifiedD = 5.630116, ClassicD = 5.395529, TrueD = 5.796212, time = 187949
+[current_34697]: ModifiedD = 6.099293, ClassicD = 5.864705, TrueD = 6.214156, time = 188066
+[current_34698]: ModifiedD = 6.568470, ClassicD = 6.333881, TrueD = 6.534576, time = 188130
+[current_34697]: ModifiedD = 7.272234, ClassicD = 6.803058, TrueD = 6.865770, time = 188254
+[current_34698]: ModifiedD = 7.506823, ClassicD = 7.272234, TrueD = 7.220912, time = 188338
+[current_34697]: ModifiedD = 7.506823, ClassicD = 7.506823, TrueD = 7.620787, time = 188476
+[current_34698]: ModifiedD = 7.741411, ClassicD = 7.506823, TrueD = 8.010606, time = 188538
+[current_34697]: ModifiedD = 8.210587, ClassicD = 7.975999, TrueD = 8.370642, time = 188658
+[current_34698]: ModifiedD = 8.679764, ClassicD = 8.445175, TrueD = 8.747644, time = 188757
+[current_34697]: ModifiedD = 8.679764, ClassicD = 8.210587, TrueD = 9.129177, time = 188838
+[current_34698]: ModifiedD = 8.445175, ClassicD = 8.210587, TrueD = 9.485894, time = 188948
+[current_34697]: ModifiedD = 8.914351, ClassicD = 8.679764, TrueD = 9.866326, time = 189035
+[current_34698]: ModifiedD = 9.618116, ClassicD = 9.148939, TrueD = 10.246908, time = 189143
+[current_34697]: ModifiedD = 10.087292, ClassicD = 9.618116, TrueD = 10.667398, time = 189260
+[current_34698]: ModifiedD = 10.321880, ClassicD = 9.852704, TrueD = 11.104309, time = 189357
+[current_34697]: ModifiedD = 10.556469, ClassicD = 10.087292, TrueD = 11.506969, time = 189452
+[current_34698]: ModifiedD = 11.260234, ClassicD = 10.791058, TrueD = 11.913239, time = 189578
+[current_34697]: ModifiedD = 11.963999, ClassicD = 11.494822, TrueD = 12.341751, time = 189659
+[current_34698]: ModifiedD = 12.198586, ClassicD = 11.729410, TrueD = 12.755598, time = 189783
+[current_34697]: ModifiedD = 12.198586, ClassicD = 11.963999, TrueD = 13.169668, time = 189864
+[current_34698]: ModifiedD = 12.667763, ClassicD = 12.433174, TrueD = 13.579151, time = 189984
+[current_34697]: ModifiedD = 13.136939, ClassicD = 12.667763, TrueD = 13.960949, time = 190043
+[current_34698]: ModifiedD = 13.606115, ClassicD = 12.902351, TrueD = 14.348957, time = 190193
+[current_34697]: ModifiedD = 14.309879, ClassicD = 13.840704, TrueD = 14.765841, time = 190247
+[current_34698]: ModifiedD = 14.779057, ClassicD = 14.779057, TrueD = 15.160158, time = 190380
+[current_34697]: ModifiedD = 15.248234, ClassicD = 15.013645, TrueD = 15.583933, time = 190475
+[current_34698]: ModifiedD = 15.482821, ClassicD = 15.013645, TrueD = 16.025730, time = 190591
+[current_34697]: ModifiedD = 15.482821, ClassicD = 15.013645, TrueD = 16.442451, time = 190680
+[current_34698]: ModifiedD = 15.951998, ClassicD = 15.482821, TrueD = 16.843685, time = 190784
+[current_34697]: ModifiedD = 16.890350, ClassicD = 16.186584, TrueD = 17.221401, time = 190863
+[current_34698]: ModifiedD = 17.594116, ClassicD = 16.655762, TrueD = 17.604298, time = 190984
+[current_34697]: ModifiedD = 17.828703, ClassicD = 17.124939, TrueD = 18.042320, time = 191091
+[current_34698]: ModifiedD = 18.063292, ClassicD = 17.594116, TrueD = 18.483902, time = 191189
+[current_34697]: ModifiedD = 18.063292, ClassicD = 17.828703, TrueD = 18.917393, time = 191311
+[current_34698]: ModifiedD = 18.532467, ClassicD = 18.297878, TrueD = 19.367628, time = 191418
+[current_34697]: ModifiedD = 19.470821, ClassicD = 19.001644, TrueD = 19.774872, time = 191495
+[current_34698]: ModifiedD = 20.174583, ClassicD = 19.236233, TrueD = 20.176670, time = 191639
+[current_34697]: ModifiedD = 20.878349, ClassicD = 19.705410, TrueD = 20.637493, time = 191726
+[current_34698]: ModifiedD = 21.112938, ClassicD = 20.409172, TrueD = 21.090216, time = 191851
+[current_34697]: ModifiedD = 21.112938, ClassicD = 20.643761, TrueD = 21.490929, time = 191913
+[current_34698]: ModifiedD = 21.582115, ClassicD = 21.112938, TrueD = 21.874722, time = 192041
+[current_34697]: ModifiedD = 22.051291, ClassicD = 21.582115, TrueD = 22.267220, time = 192108
+[current_34698]: ModifiedD = 22.755054, ClassicD = 21.816704, TrueD = 22.660778, time = 192234
+[current_34697]: ModifiedD = 23.224232, ClassicD = 22.285879, TrueD = 23.065767, time = 192311
+[current_34698]: ModifiedD = 23.224232, ClassicD = 22.755054, TrueD = 23.464611, time = 192420
+[current_34697]: ModifiedD = 23.224232, ClassicD = 22.989643, TrueD = 23.885786, time = 192530
+[current_34698]: ModifiedD = 23.927996, ClassicD = 23.458820, TrueD = 24.330463, time = 192637
+[current_34697]: ModifiedD = 24.631760, ClassicD = 23.927996, TrueD = 24.776062, time = 192750
+[current_34698]: ModifiedD = 25.100937, ClassicD = 24.162584, TrueD = 25.196842, time = 192823
+[current_34697]: ModifiedD = 25.804703, ClassicD = 24.866348, TrueD = 25.624346, time = 192973
+[current_34698]: ModifiedD = 25.804703, ClassicD = 25.335526, TrueD = 25.912064, time = 193025
+[current_34697]: ModifiedD = 26.508467, ClassicD = 25.804703, TrueD = 26.486252, time = 193183
+[current_34698]: ModifiedD = 26.508467, ClassicD = 25.804703, TrueD = 26.486252, time = 193241
+[current_34697]: ModifiedD = 27.446819, ClassicD = 26.743053, TrueD = 27.332268, time = 193410

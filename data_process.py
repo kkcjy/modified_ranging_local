@@ -1,7 +1,7 @@
 import re
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
+from collections import defaultdict
 
 def read_data(file_path, address=None):
     data = []
@@ -33,44 +33,97 @@ def read_data(file_path, address=None):
                         current_entry = {}
     return np.array(data)
 
-def find_concentrated_region(values, n_clusters=2):
-    if len(values) < n_clusters:
-        return np.ones_like(values, dtype=bool)
+def find_most_common_equal_values(data, precision=2):
+    rounded_data = np.round(data, precision)
+    value_counts = defaultdict(int)
     
-    kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(values.reshape(-1, 1))
-    cluster_counts = np.bincount(kmeans.labels_)
-    main_cluster = np.argmax(cluster_counts)
+    for value in rounded_data:
+        value_counts[value] += 1
     
-    cluster_values = values[kmeans.labels_ == main_cluster]
-    mean = np.mean(cluster_values)
-    std = np.std(cluster_values)
+    if not value_counts:
+        return None, 0
     
-    in_region = (np.abs(values - mean) <= std) & (kmeans.labels_ == main_cluster)
-    return in_region
+    most_common_value = max(value_counts.items(), key=lambda x: x[1])[0]
+    return most_common_value, value_counts[most_common_value]
 
-def calculate_offsets(data, left_idx, right_idx):
+def calculate_offsets(data, left_idx, right_idx, mode=1):
     if left_idx < 0 or right_idx >= len(data) or left_idx > right_idx:
-        raise ValueError(f"Invalid index range: left={left_idx}, right={right_idx}, data length={len(data)}")
+        raise ValueError(f"Invalid index range: left={left_idx}, right={right_idx}")
     
     selected_data = data[left_idx:right_idx+1]
+    mod_data = selected_data[:, 0]
+    cls_data = selected_data[:, 1]
+    tru_data = selected_data[:, 2]
     
-    mod_mask = find_concentrated_region(selected_data[:, 0])
-    cls_mask = find_concentrated_region(selected_data[:, 1])
-    tru_mask = find_concentrated_region(selected_data[:, 2])
-    
-    common_mask = mod_mask & cls_mask & tru_mask
-    
-    if not np.any(common_mask):
-        common_mask = mod_mask | cls_mask | tru_mask
-        print("Warning: No common concentrated region found, using union of individual regions")
-    
-    mod_offset = np.mean(selected_data[common_mask, 0] - selected_data[common_mask, 2])
-    cls_offset = np.mean(selected_data[common_mask, 1] - selected_data[common_mask, 2])
-    
-    print(f"Used {np.sum(common_mask)}/{len(selected_data)} points in concentrated region")
-    return mod_offset, cls_offset, common_mask
+    if mode == 0:
+        mod_mean = np.mean(mod_data)
+        cls_mean = np.mean(cls_data)
+        tru_mean = np.mean(tru_data)
+        
+        diffs = {
+            'mod': abs(mod_mean - tru_mean),
+            'cls': abs(cls_mean - tru_mean),
+            'tru': 0  
+        }
+        selected_base = min(diffs, key=diffs.get)
+        
+        if selected_base == 'mod':
+            base_value = mod_mean
+            mod_offset = 0
+            cls_offset = cls_mean - mod_mean
+            tru_offset = tru_mean - mod_mean
+        elif selected_base == 'cls':
+            base_value = cls_mean
+            mod_offset = mod_mean - cls_mean
+            cls_offset = 0
+            tru_offset = tru_mean - cls_mean
+        else:  
+            base_value = tru_mean
+            mod_offset = mod_mean - tru_mean
+            cls_offset = cls_mean - tru_mean
+            tru_offset = 0
+            
+        base_type = f"Mean ({selected_base})"
+        
+    elif mode == 1:
 
-def plot_adjustment(data, left_idx, right_idx):
+        mod_common, mod_count = find_most_common_equal_values(mod_data)
+        cls_common, cls_count = find_most_common_equal_values(cls_data)
+        tru_common, tru_count = find_most_common_equal_values(tru_data)
+        
+        counts = {
+            'mod': mod_count,
+            'cls': cls_count,
+            'tru': tru_count
+        }
+        selected_base = max(counts.items(), key=lambda x: x[1])[0]
+        
+        if selected_base == 'mod':
+            base_value = mod_common
+            mod_offset = 0
+            cls_offset = cls_common - mod_common
+            tru_offset = tru_common - mod_common
+        elif selected_base == 'cls':
+            base_value = cls_common
+            mod_offset = mod_common - cls_common
+            cls_offset = 0
+            tru_offset = tru_common - cls_common
+        else: 
+            base_value = tru_common
+            mod_offset = mod_common - tru_common
+            cls_offset = cls_common - tru_common
+            tru_offset = 0
+            
+        base_type = f"Most Common ({selected_base})"
+        
+    else:
+        raise ValueError(f"Unsupported alignment mode: {mode}")
+    
+    print(f"Selected base: {base_type} (value={base_value:.4f})")
+    print(f"Alignment parameters: ModifiedD Offset = {mod_offset:.4f}, ClassicD Offset = {cls_offset:.4f}")
+    return mod_offset, cls_offset, base_value, base_type
+
+def plot_adjustment(data, left_idx, right_idx, mode=1):
     plt.figure(figsize=(12, 8))
     
     time = data[:, 3]
@@ -78,55 +131,50 @@ def plot_adjustment(data, left_idx, right_idx):
     cls_data = data[:, 1]
     tru_data = data[:, 2]
     
-    mod_offset, cls_offset, common_mask = calculate_offsets(data, left_idx, right_idx)
+    mod_offset, cls_offset, base_value, base_type = calculate_offsets(data, left_idx, right_idx, mode)
     
     adjusted_mod = mod_data - mod_offset
     adjusted_cls = cls_data - cls_offset
     
     plt.plot(time, tru_data, 'g-^', label='TrueD', alpha=0.8, linewidth=1.5)
-    plt.plot(time, adjusted_mod, 'b-o', label=f'ModifiedD (Offset={-mod_offset:.2f})', alpha=0.8)
-    plt.plot(time, adjusted_cls, 'r-s', label=f'ClassicD (Offset={-cls_offset:.2f})', alpha=0.8)
+    plt.plot(time, adjusted_mod, 'b-o', label=f'ModifiedD (Offset={mod_offset:.2f})', alpha=0.8)
+    plt.plot(time, adjusted_cls, 'r-s', label=f'ClassicD (Offset={cls_offset:.2f})', alpha=0.8)
     
-    plt.axvspan(time[left_idx], time[right_idx], color='yellow', alpha=0.2, label='Alignment Region')
+    plt.axhline(y=base_value, color='purple', linestyle='--', 
+                label=f'Base Value ({base_type}: {base_value:.2f})')
+    plt.axvspan(time[left_idx], time[right_idx], color='yellow', 
+                alpha=0.2, label='Alignment Region')
     
-    selected_times = time[left_idx:right_idx+1]
-    plt.scatter(selected_times[common_mask], tru_data[left_idx:right_idx+1][common_mask],
-               color='purple', marker='*', s=100, label='Concentrated Points')
-    
-    plt.title('Vertical Alignment Using Concentrated Regions')
+    mode_text = "Mean Alignment" if mode == 0 else "Most Common Value Alignment"
+    plt.title(f'Vertical Alignment Using {mode_text}')
     plt.xlabel('Time')
     plt.ylabel('Distance')
     plt.legend(loc='upper left')
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.tight_layout()
-    plt.savefig('vertical_alignment_concentrated.png')
-    print(f"Alignment comparison chart saved: vertical_alignment_concentrated.png")
-    print(f"Alignment parameters: ModifiedD Offset = {-mod_offset:.4f}, ClassicD Offset = {-cls_offset:.4f}")
+    
+    filename = 'data.png' 
+    plt.savefig(filename)
     plt.show()
 
 if __name__ == "__main__":
-    file_path = 'validData/3.txt'
-    # file_path = 'dataLog.txt'
-    
-    LEFT_IDX = 0     
-    RIGHT_IDX = 30 
-    ADDRESS = 34698
+
+    file_path = 'validData/3.txt'  
+    LEFT_IDX = 0                   # Alignment interval start index
+    RIGHT_IDX = 35                 # Alignment interval end index
+    ADDRESS = 34698                # Device address
+    MODE = 0                       # Alignment mode: 0=Mean alignment, 1=Mode alignment
     
     data = read_data(file_path, address=ADDRESS)
     if len(data) == 0:
         print("Warning: No valid data found!")
         exit()
     
-    if RIGHT_IDX >= len(data):
-        RIGHT_IDX = len(data) - 1
-        print(f"Warning: End index ({RIGHT_IDX}) exceeds data range, adjusted to {RIGHT_IDX}")
-    
-    if LEFT_IDX < 0:
-        LEFT_IDX = 0
-        print(f"Warning: Start index ({LEFT_IDX}) is less than 0, adjusted to 0")
+    RIGHT_IDX = min(RIGHT_IDX, len(data)-1)
+    LEFT_IDX = max(LEFT_IDX, 0)
     
     if LEFT_IDX > RIGHT_IDX:
-        print(f"Warning: Start index ({LEFT_IDX}) is greater than end index ({RIGHT_IDX}), swapped values")
+        print(f"Warning: Start index ({LEFT_IDX}) > end index ({RIGHT_IDX}), swapping...")
         LEFT_IDX, RIGHT_IDX = RIGHT_IDX, LEFT_IDX
     
-    plot_adjustment(data, LEFT_IDX, RIGHT_IDX)
+    plot_adjustment(data, LEFT_IDX, RIGHT_IDX, MODE)
