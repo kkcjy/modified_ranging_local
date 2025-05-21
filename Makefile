@@ -17,9 +17,6 @@ INCDIR = .
 # Source files for each program
 DRONE_SRCS = $(filter-out $(SRCDIR)/center_control.c, $(wildcard $(SRCDIR)/*.c))
 CENTER_SRCS = $(filter-out $(SRCDIR)/drone.c, $(wildcard $(SRCDIR)/*.c))
-# CENTER_SRCS = $(SRCDIR)/center_control.c 
-# CENTER_SRCS = $(SRCDIR)/center_control.c \
-#               $(SRCDIR)/modified_ranging.c 
 
 # Object files
 DRONE_OBJS = $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(DRONE_SRCS))

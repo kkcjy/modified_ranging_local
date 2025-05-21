@@ -11,7 +11,7 @@ void DEBUG_PRINT(const char *format, ...) {
     va_end(args);
     
     // print to file
-    FILE *log_file = first_call ? fopen("dataLog.txt", "w") : fopen("dataLog.txt", "a");
+    FILE *log_file = first_call ? fopen("data/dataLog.txt", "w") : fopen("data/dataLog.txt", "a");
     
     if (log_file != NULL) {
         va_start(args, format);  

@@ -153,13 +153,13 @@ def plot_adjustment(data, left_idx, right_idx, mode=1):
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.tight_layout()
     
-    filename = 'data.png' 
+    filename = 'data/data.png' 
     plt.savefig(filename)
     plt.show()
 
 if __name__ == "__main__":
 
-    file_path = 'validData/3.txt'  
+    file_path = 'data/3.txt'  
     LEFT_IDX = 0                   # Alignment interval start index
     RIGHT_IDX = 35                 # Alignment interval end index
     ADDRESS = 34698                # Device address
