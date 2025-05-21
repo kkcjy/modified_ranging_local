@@ -54,18 +54,18 @@ python3 data_process.py
 This script will generate a plot of the adjusted data and save it as `data.png`.
 
 ## Code Structure
-`local_host`: Initializes the local host by setting address, base time, location, and velocity. It provides basic configuration for the system.
-`base_struct`: Define a series of enumeration types and structures, providing basic data structure definitions for the entire project. 
-`ranging_buffer`: Defines the ranging buffer structure and related operations like initialization, addition, and search. It helps manage ranging data.
-`table_linked_list`: Defines a linked - list data structure for message buffer management. It includes operations for node initialization, addition, deletion, and search.
-`ranging_table`: Defines the ranging table structure and operations for initialization, enabling, disabling, and comparison. It manages ranging information.
-`modified_ranging`: Implements the modified ranging algorithm, including table initialization, neighbor registration, and buffer data addition. It's the core of the ranging algorithm.
-`socket_frame`: Defines the socket communication framework with message structures and constants. It enables data transmission between the drone simulator and the control center.
-`drone`: Implements the drone simulator for message sending, receiving, and processing. It simulates drone behavior using the socket framework.
-`center_control`: Implements the control center for handling drone connections, broadcasting messages, and managing the drone list. It manages the overall system.
-`data_process`: Processes and visualizes simulation data. It reads data from files, calculates offsets, and draws plots to help developers understand algorithm performance.
-`lock`: Implements a thread - safe message processing locking mechanism.
-`debug`: Defines a debug printing function DEBUG_PRINT to assist developers in debugging.
+- `local_host`: Initializes the local host by setting address, base time, location, and velocity. It provides basic configuration for the system.
+- `base_struct`: Define a series of enumeration types and structures, providing basic data structure definitions for the entire project. 
+- `ranging_buffer`: Defines the ranging buffer structure and related operations like initialization, addition, and search. It helps manage ranging data.
+- `table_linked_list`: Defines a linked - list data structure for message buffer management. It includes operations for node initialization, addition, deletion, and search.
+- `ranging_table`: Defines the ranging table structure and operations for initialization, enabling, disabling, and comparison. It manages ranging information.
+- `modified_ranging`: Implements the modified ranging algorithm, including table initialization, neighbor registration, and buffer data addition. It's the core of the ranging algorithm.
+- `socket_frame`: Defines the socket communication framework with message structures and constants. It enables data transmission between the drone simulator and the control center.
+- `drone`: Implements the drone simulator for message sending, receiving, and processing. It simulates drone behavior using the socket framework.
+- `center_control`: Implements the control center for handling drone connections, broadcasting messages, and managing the drone list. It manages the overall system.
+- `data_process`: Processes and visualizes simulation data. It reads data from files, calculates offsets, and draws plots to help developers understand algorithm performance.
+- `lock`: Implements a thread - safe message processing locking mechanism.
+- `debug`: Defines a debug printing function DEBUG_PRINT to assist developers in debugging.
 
 ## Configuration
 The project can be configured through preprocessor directives in the source code. For example, you can enable or disable features such as dynamic ranging frequency, packet loss simulation, and position sending by defining or undefining the corresponding macros in the source files.

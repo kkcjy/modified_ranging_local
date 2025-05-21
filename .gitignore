@@ -1,1 +1,4 @@
 data/
+obj/
+drone
+center_control
