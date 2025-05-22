@@ -3,6 +3,7 @@
 #include "lock.h"
 #include "modified_ranging.h"
 
+
 const char *local_drone_id;            
 extern Local_Host_t *localHost;     
 extern RangingTableSet_t* rangingTableSet;     
@@ -15,20 +16,15 @@ QueueTaskLock_t queueTaskLock;                  // lock for task
 void send_to_center(int center_socket, const char* node_id, const Ranging_Message_t* ranging_msg) {
     NodeMessage msg;
 
-    if(sizeof(MessageWithLocation) > MESSAGE_SIZE) {
+    if(sizeof(Ranging_Message_t) > MESSAGE_SIZE) {
         printf("Warning: %ld > %ld, Ranging_Message_t too large!\n", sizeof(Ranging_Message_t), MESSAGE_SIZE);
     }
 
     snprintf(msg.sender_id, sizeof(msg.sender_id), "%s", node_id);  
-
-    MessageWithLocation modified_msg;
-    memcpy(&modified_msg.rangingMessage, ranging_msg, sizeof(*ranging_msg));
+    memcpy(msg.data, ranging_msg, sizeof(Ranging_Message_t)); 
+    msg.data_size = sizeof(Ranging_Message_t);
     dwTime_t curTime;
     curTime.full = getCurrentTime();
-    memcpy(msg.data, &modified_msg, sizeof(MessageWithLocation)); 
-
-    msg.data_size = sizeof(MessageWithLocation);
-
     addLocalSendBuffer(curTime);
 
     if (send(center_socket, &msg, sizeof(msg), 0) < 0) {
@@ -55,16 +51,13 @@ void *receive_from_center(void *arg) {
             exit(1);
         }
 
-        // don't display messages from essage dropped randomly (probabself
         if (strcmp(msg.sender_id, local_drone_id) != 0) {
-            if (msg.data_size != sizeof(MessageWithLocation)) {
+            if (msg.data_size != sizeof(Ranging_Message_t)) {
                 printf("Receiving failed, size of data_size does not match\n");
                 return NULL;
             }
 
-            MessageWithLocation *modified_msg = (MessageWithLocation*)msg.data;
-
-            Ranging_Message_t *ranging_msg = &modified_msg->rangingMessage;
+            Ranging_Message_t *ranging_msg = (Ranging_Message_t*)msg.data;
 
             uint64_t curTime = getCurrentTime();
 
@@ -78,6 +71,8 @@ void *receive_from_center(void *arg) {
             QueueTaskRx(&queueTaskLock, &full_info, sizeof(full_info));
         }
     }
+
+
     return NULL;
 }
 

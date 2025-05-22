@@ -12,12 +12,19 @@
 
 #include "modified_ranging.h"
 
-#define     MAX_NODES       10
+#define     MAX_NODES       3
 #define     BUFFER_SIZE     1024
 #define     ID_SIZE         20
 #define     MESSAGE_SIZE    BUFFER_SIZE - ID_SIZE - sizeof(size_t)
 #define     CENTER_PORT     8888
 #define     REJECT_INFO     "REJECT"    // number of drones -> MAX_NODES
+
+
+typedef struct {
+    char drone_id[ID_SIZE];
+    StatusType status;
+    dwTime_t timeStamp;
+} LineMessage;
 
 typedef struct {
     char sender_id[ID_SIZE];
@@ -26,12 +33,9 @@ typedef struct {
 } NodeMessage;
 
 typedef struct {
-    Ranging_Message_t rangingMessage;
-} __attribute__((packed)) MessageWithLocation;
-
-typedef struct {
     int socket;
     char node_id[ID_SIZE];
+    int number;
 } NodeInfo;
 
 #endif

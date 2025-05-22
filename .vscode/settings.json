@@ -60,6 +60,7 @@
         "semaphore": "c",
         "stop_token": "c",
         "thread": "c",
-        "inet.h": "c"
+        "inet.h": "c",
+        "system_error": "c"
     }
 }
