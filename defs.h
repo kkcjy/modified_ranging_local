@@ -16,10 +16,11 @@
 // #define         PACKET_LOSS_ENABLE                              // simulate packet loss
 #define         PACKET_LOSS_RATE            25                  // rate of packet loss(0~100)
 /* Warning: enable only one of RANDOM_MOVE_ENABLE、OPPOSITE_MOVE_ENABLE */
-#define         RANDOM_MOVE_ENABLE                              // enable random move
+// #define         RANDOM_MOVE_ENABLE                              // enable random move
 #define         RANDOM_VELOCITY             3                   // vx/vy/vz < RANDOM_VELOCITY(m/s)
-// #define         OPPOSITE_MOVE_ENABLE                            // enable opposite flight
-#define         OPPOSITE_VELOCITY           5                   // vx/vy/vz = OPPOSITE_VELOCITY(m/s) / 0(m/s)
+#define         OPPOSITE_MOVE_ENABLE                            // enable opposite flight
+#define         OPPOSITE_VELOCITY           7                   // vx/vy/vz = OPPOSITE_VELOCITY(m/s) / 0(m/s)
+#define         OPPOSITE_DISTANCE_BASE      5000                // (mm)low distance of drones in OPPOSITE mode           
 #define         ALIGN_ENABLE                
 #define         ALIGN_ROUNDS                50                  // initial rounds with stationary state
 

@@ -159,7 +159,7 @@ def plot_adjustment(data, left_idx, right_idx, mode=1):
 
 if __name__ == "__main__":
 
-    file_path = 'data/3.txt'  
+    file_path = 'data/dataLog.txt'  
     LEFT_IDX = 0                   # Alignment interval start index
     RIGHT_IDX = 35                 # Alignment interval end index
     ADDRESS = 34698                # Device address

@@ -38,31 +38,35 @@ void localInit(uint16_t address) {
     srand((unsigned int)(get_current_milliseconds()));
 
     #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-        localHost->location.x = FLIGHT_AREA_LOW_BASE + rand() % (FLIGHT_AREA_UPON_BASE - FLIGHT_AREA_LOW_BASE + 1);
-        localHost->location.y = FLIGHT_AREA_LOW_BASE + rand() % (FLIGHT_AREA_UPON_BASE - FLIGHT_AREA_LOW_BASE + 1);
-        localHost->location.z = FLIGHT_AREA_LOW_BASE + rand() % (FLIGHT_AREA_UPON_BASE - FLIGHT_AREA_LOW_BASE + 1);
+        #if defined(RANDOM_MOVE_ENABLE)
+            localHost->location.x = FLIGHT_AREA_LOW_BASE + rand() % (FLIGHT_AREA_UPON_BASE - FLIGHT_AREA_LOW_BASE + 1);
+            localHost->location.y = FLIGHT_AREA_LOW_BASE + rand() % (FLIGHT_AREA_UPON_BASE - FLIGHT_AREA_LOW_BASE + 1);
+            localHost->location.z = FLIGHT_AREA_LOW_BASE + rand() % (FLIGHT_AREA_UPON_BASE - FLIGHT_AREA_LOW_BASE + 1);
+        #elif defined(OPPOSITE_MOVE_ENABLE)
+            localHost->location.x = localHost->localAddress % 2 == 0 ? OPPOSITE_DISTANCE_BASE : 0;
+            localHost->location.y = 0;
+            localHost->location.z = 0;
+        #endif
     #endif
 
-    #ifdef RANDOM_MOVE_ENABLE
+    #if defined(RANDOM_MOVE_ENABLE)
         localHost->velocity.x = rand() % (2 * RANDOM_VELOCITY + 1) - RANDOM_VELOCITY;
         localHost->velocity.y = rand() % (2 * RANDOM_VELOCITY + 1) - RANDOM_VELOCITY;
         localHost->velocity.z = rand() % (2 * RANDOM_VELOCITY + 1) - RANDOM_VELOCITY;
-    #endif
-
-    #ifdef OPPOSITE_MOVE_ENABLE
+    #elif defined(OPPOSITE_MOVE_ENABLE)
         localHost->velocity.x = localHost->localAddress % 2 == 0 ? OPPOSITE_VELOCITY : 0;
         localHost->velocity.y = 0;
         localHost->velocity.z = 0;
     #endif
 
     #ifdef RANDOM_DIFF_TIME_ENABLE
-    localHost->randOffTime = rand() % (MAX_RANDOM_TIME_OFF + 1);
+        localHost->randOffTime = rand() % (MAX_RANDOM_TIME_OFF + 1);
     #endif
 }
 
 // return current time(ms)
 uint64_t getCurrentTime() {
-    #ifdef RANDOM_DIFF_TIME_ENABLE
+    #if RANDOM_DIFF_TIME_ENABLE
         return (get_current_milliseconds() - localHost->baseTime) + localHost->randOffTime;
     #else
         return (get_current_milliseconds() - localHost->baseTime);
@@ -74,15 +78,21 @@ Coordinate_Tuple_t getCurrentLocation() {
 }
 
 void reverseVilocity() {
-    if(localHost->location.x < FLIGHT_AREA_LOW_BASE || localHost->location.x > FLIGHT_AREA_UPON_BASE) {
-        localHost->velocity.x -= 2 * localHost->velocity.x;
-    }
-    if(localHost->location.y < FLIGHT_AREA_LOW_BASE || localHost->location.y > FLIGHT_AREA_UPON_BASE) {
-        localHost->velocity.y -= 2 * localHost->velocity.y;
-    }
-    if(localHost->location.z < FLIGHT_AREA_LOW_BASE || localHost->location.z > FLIGHT_AREA_UPON_BASE) {
-        localHost->velocity.z -= 2 * localHost->velocity.z;
-    }
+    #if defined(RANDOM_MOVE_ENABLE)
+        if(localHost->location.x < FLIGHT_AREA_LOW_BASE || localHost->location.x > FLIGHT_AREA_UPON_BASE) {
+            localHost->velocity.x -= 2 * localHost->velocity.x;
+        }
+        if(localHost->location.y < FLIGHT_AREA_LOW_BASE || localHost->location.y > FLIGHT_AREA_UPON_BASE) {
+            localHost->velocity.y -= 2 * localHost->velocity.y;
+        }
+        if(localHost->location.z < FLIGHT_AREA_LOW_BASE || localHost->location.z > FLIGHT_AREA_UPON_BASE) {
+            localHost->velocity.z -= 2 * localHost->velocity.z;
+        }
+    #elif defined(OPPOSITE_MOVE_ENABLE) 
+        if(localHost->location.x < OPPOSITE_DISTANCE_BASE || localHost->location.x > FLIGHT_AREA_UPON_BASE) {
+            localHost->velocity.x -= 2 * localHost->velocity.x;
+        }
+    #endif
 }
 
 void modifyLocation(Time_t time_delay) {
