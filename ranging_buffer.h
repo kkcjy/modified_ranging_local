@@ -32,13 +32,6 @@ typedef struct {
     int64_t sumTof;
     uint16_t TxSeq;
     uint16_t RxSeq;
-
-    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-    Coordinate_Tuple_t sendTxCoordinate; 
-    Coordinate_Tuple_t sendRxCoordinate; 
-    Coordinate_Tuple_t receiveTxCoordinate;
-    Coordinate_Tuple_t receiveRxCoordinate;
-    #endif
 } __attribute__((packed)) RangingBufferNode_t;
 
 /* store RANGING_BUFFER_SIZE round-trip communication

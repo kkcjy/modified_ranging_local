@@ -46,10 +46,6 @@ void initTableLinkedList(TableLinkedList_t *list) {
     for (uint8_t i = 0; i < TABLE_BUFFER_SIZE; i++) {
         list->tableBuffer[i].TxTimestamp.full = NULL_TIMESTAMP;
         list->tableBuffer[i].RxTimestamp.full = NULL_TIMESTAMP;
-        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            list->tableBuffer[i].TxCoordinate = nullCoordinate;
-            list->tableBuffer[i].RxCoordinate = nullCoordinate;
-        #endif
         list->tableBuffer[i].Tf = NULL_TOF;
         list->tableBuffer[i].localSeq = NULL_SEQ;
         list->tableBuffer[i].remoteSeq = NULL_SEQ;
@@ -74,9 +70,6 @@ table_index_t addTableLinkedList(TableLinkedList_t *list, TableNode_t *node) {
         */ 
         if (list->tableBuffer[index].localSeq == node->remoteSeq) {
             list->tableBuffer[index].TxTimestamp = node->TxTimestamp;
-            #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-                list->tableBuffer[index].TxCoordinate = node->TxCoordinate;
-            #endif
             list->tableBuffer[index].remoteSeq = node->remoteSeq;
             return index;
         }
@@ -93,10 +86,6 @@ table_index_t addTableLinkedList(TableLinkedList_t *list, TableNode_t *node) {
     // add record
     list->tableBuffer[index].TxTimestamp = node->TxTimestamp;
     list->tableBuffer[index].RxTimestamp = node->RxTimestamp;
-    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-        list->tableBuffer[index].TxCoordinate = node->TxCoordinate;
-        list->tableBuffer[index].RxCoordinate = node->RxCoordinate;
-    #endif
     list->tableBuffer[index].Tf = node->Tf;
     list->tableBuffer[index].localSeq = node->localSeq;
     list->tableBuffer[index].remoteSeq = node->remoteSeq;
@@ -129,10 +118,6 @@ void deleteTail(TableLinkedList_t *list) {
     // clean data
     list->tableBuffer[index].TxTimestamp.full = NULL_TIMESTAMP;
     list->tableBuffer[index].RxTimestamp.full = NULL_TIMESTAMP;
-    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-    list->tableBuffer[index].TxCoordinate = nullCoordinate;
-    list->tableBuffer[index].RxCoordinate = nullCoordinate;
-    #endif
     list->tableBuffer[index].Tf = NULL_TOF;
     list->tableBuffer[index].localSeq = NULL_SEQ;
     list->tableBuffer[index].remoteSeq = NULL_SEQ;

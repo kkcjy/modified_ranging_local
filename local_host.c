@@ -29,77 +29,14 @@ uint16_t string_to_hash(const char *str) {
     return hash;
 }
 
-// set localAddress and randOffTime(ms)
 void localInit(uint16_t address) {
     localHost = (Local_Host_t*)malloc(sizeof(Local_Host_t));
     localHost->localAddress = address;
-    localHost->baseTime = 0;
-
-    srand((unsigned int)(get_current_milliseconds()));
-
-    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-        #if defined(RANDOM_MOVE_ENABLE)
-            localHost->location.x = FLIGHT_AREA_LOW_BASE + rand() % (FLIGHT_AREA_UPON_BASE - FLIGHT_AREA_LOW_BASE + 1);
-            localHost->location.y = FLIGHT_AREA_LOW_BASE + rand() % (FLIGHT_AREA_UPON_BASE - FLIGHT_AREA_LOW_BASE + 1);
-            localHost->location.z = FLIGHT_AREA_LOW_BASE + rand() % (FLIGHT_AREA_UPON_BASE - FLIGHT_AREA_LOW_BASE + 1);
-        #elif defined(OPPOSITE_MOVE_ENABLE)
-            localHost->location.x = localHost->localAddress % 2 == 0 ? OPPOSITE_DISTANCE_BASE : 0;
-            localHost->location.y = 0;
-            localHost->location.z = 0;
-        #endif
-    #endif
-
-    #if defined(RANDOM_MOVE_ENABLE)
-        localHost->velocity.x = rand() % (2 * RANDOM_VELOCITY + 1) - RANDOM_VELOCITY;
-        localHost->velocity.y = rand() % (2 * RANDOM_VELOCITY + 1) - RANDOM_VELOCITY;
-        localHost->velocity.z = rand() % (2 * RANDOM_VELOCITY + 1) - RANDOM_VELOCITY;
-    #elif defined(OPPOSITE_MOVE_ENABLE)
-        localHost->velocity.x = localHost->localAddress % 2 == 0 ? OPPOSITE_VELOCITY : 0;
-        localHost->velocity.y = 0;
-        localHost->velocity.z = 0;
-    #endif
-
-    #ifdef RANDOM_DIFF_TIME_ENABLE
-        localHost->randOffTime = rand() % (MAX_RANDOM_TIME_OFF + 1);
-    #endif
 }
 
 // return current time(ms)
 uint64_t getCurrentTime() {
-    #if RANDOM_DIFF_TIME_ENABLE
-        return (get_current_milliseconds() - localHost->baseTime) + localHost->randOffTime;
-    #else
-        return (get_current_milliseconds() - localHost->baseTime);
-    #endif
-}
-
-Coordinate_Tuple_t getCurrentLocation() {
-    return localHost->location;
-}
-
-void reverseVilocity() {
-    #if defined(RANDOM_MOVE_ENABLE)
-        if(localHost->location.x < FLIGHT_AREA_LOW_BASE || localHost->location.x > FLIGHT_AREA_UPON_BASE) {
-            localHost->velocity.x -= 2 * localHost->velocity.x;
-        }
-        if(localHost->location.y < FLIGHT_AREA_LOW_BASE || localHost->location.y > FLIGHT_AREA_UPON_BASE) {
-            localHost->velocity.y -= 2 * localHost->velocity.y;
-        }
-        if(localHost->location.z < FLIGHT_AREA_LOW_BASE || localHost->location.z > FLIGHT_AREA_UPON_BASE) {
-            localHost->velocity.z -= 2 * localHost->velocity.z;
-        }
-    #elif defined(OPPOSITE_MOVE_ENABLE) 
-        if(localHost->location.x < OPPOSITE_DISTANCE_BASE || localHost->location.x > FLIGHT_AREA_UPON_BASE) {
-            localHost->velocity.x -= 2 * localHost->velocity.x;
-        }
-    #endif
-}
-
-void modifyLocation(Time_t time_delay) {
-    localHost->location.x += localHost->velocity.x * time_delay;
-    localHost->location.y += localHost->velocity.y * time_delay;
-    localHost->location.z += localHost->velocity.z * time_delay;
-    reverseVilocity();
+    return get_current_milliseconds();
 }
 
 void local_sleep(uint64_t milliseconds) {

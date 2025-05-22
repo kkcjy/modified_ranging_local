@@ -4,7 +4,6 @@
 NodeInfo nodes[MAX_NODES];
 int node_count = 0;
 pthread_mutex_t nodes_mutex = PTHREAD_MUTEX_INITIALIZER;
-uint64_t worldBaseTime = 0;
 
 void broadcast_to_nodes(NodeMessage *msg) {
     pthread_mutex_lock(&nodes_mutex);
@@ -30,17 +29,10 @@ void *handle_node_connection(void *arg) {
 
     pthread_mutex_lock(&nodes_mutex);
     if (node_count < MAX_NODES) {
-        if(node_count == 0) {
-            worldBaseTime = get_current_milliseconds();
-            printf("set worldBaseTime = %ld\n", worldBaseTime);
-        }
         nodes[node_count].socket = node_socket;
         strncpy(nodes[node_count].node_id, node_id, sizeof(nodes[node_count].node_id));
         node_count++;
         printf("Node %s connected\n", node_id);
-
-        // send worldBaseTime to drone
-        send(node_socket, &worldBaseTime, sizeof(worldBaseTime), 0);
     }
     else {
         printf("Max nodes reached (%d), rejecting %s\n", MAX_NODES, node_id);
@@ -62,7 +54,7 @@ void *handle_node_connection(void *arg) {
         // printf("\n********************[%s]********************\n", node_id);
         // printRangingMessage(rangingMessage);
         // printf("********************[%s]********************\n", node_id);
-        printf("broadcast [%s], address = %d, msgSeq = %d, time = %ld\n", node_id, rangingMessage->header.srcAddress, rangingMessage->header.msgSequence, get_current_milliseconds() - worldBaseTime);
+        printf("broadcast [%s], address = %d, msgSeq = %d, time = %ld\n", node_id, rangingMessage->header.srcAddress, rangingMessage->header.msgSequence, get_current_milliseconds());
 
         // Immediately broadcast received message to all nodes
         broadcast_to_nodes(&msg);

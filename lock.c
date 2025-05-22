@@ -1,4 +1,5 @@
 #include "lock.h"
+#include "local_host.h"
 #include "modified_ranging.h"
 
 extern RangingTableSet_t* rangingTableSet;     
@@ -90,12 +91,7 @@ GET:
 PROCESS:
     Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo = (Ranging_Message_With_Additional_Info_t*)queue->queueTask[queue->head].data;
 
-    #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
-        // distance < SAFE_DISTANCE -> unsafe
-        bool unSafe = processRangingMessage(rangingMessageWithAdditionalInfo);
-    #else
-        processRangingMessage(rangingMessageWithAdditionalInfo);
-    #endif
+    processRangingMessage(rangingMessageWithAdditionalInfo);
 
     free(queue->queueTask[queue->head].data);
     queue->queueTask[queue->head].data = NULL;
@@ -106,9 +102,5 @@ PROCESS:
 
     pthread_mutex_unlock(&queue->mutex);
 
-    #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
-        return unSafe;
-    #else
-        return false;
-    #endif
+    return false;
 }

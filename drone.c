@@ -10,12 +10,6 @@ extern uint16_t localSendSeqNumber;
 extern uint16_t localReceivedSeqNumber;
 extern int RangingPeriod;
 QueueTaskLock_t queueTaskLock;                  // lock for task
-#ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
-    int safeRoundCounter = 0;                   // counter for safe distance
-#endif
-#ifdef WARM_UP_WAIT_ENABLE
-    extern int discardCount;                    // wait for device warming up and discard message
-#endif
 
 
 void send_to_center(int center_socket, const char* node_id, const Ranging_Message_t* ranging_msg) {
@@ -31,15 +25,11 @@ void send_to_center(int center_socket, const char* node_id, const Ranging_Messag
     memcpy(&modified_msg.rangingMessage, ranging_msg, sizeof(*ranging_msg));
     dwTime_t curTime;
     curTime.full = getCurrentTime();
-    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-        Coordinate_Tuple_t curLocation = getCurrentLocation();
-    #endif
-    modified_msg.location = curLocation;
     memcpy(msg.data, &modified_msg, sizeof(MessageWithLocation)); 
 
     msg.data_size = sizeof(MessageWithLocation);
 
-    addLocalSendBuffer(curTime, curLocation);
+    addLocalSendBuffer(curTime);
 
     if (send(center_socket, &msg, sizeof(msg), 0) < 0) {
         perror("Send failed");
@@ -67,18 +57,6 @@ void *receive_from_center(void *arg) {
 
         // don't display messages from essage dropped randomly (probabself
         if (strcmp(msg.sender_id, local_drone_id) != 0) {
-            #ifdef PACKET_LOSS_ENABLE
-                // for random
-                int random_value = ((rand() * 2654435761U) / getpid()) % 100;
-
-                if (random_value < PACKET_LOSS_RATE) {
-                    MessageWithLocation *modified_msg = (MessageWithLocation*)msg.data;
-                    Ranging_Message_t *ranging_msg = &modified_msg->rangingMessage;
-                    printf("[QueueTaskRx]: message[%d] from %s dropped(rate = %d%%)\n",ranging_msg->header.msgSequence , msg.sender_id, PACKET_LOSS_RATE);
-                    continue;
-                }
-            #endif
-
             if (msg.data_size != sizeof(MessageWithLocation)) {
                 printf("Receiving failed, size of data_size does not match\n");
                 return NULL;
@@ -88,24 +66,12 @@ void *receive_from_center(void *arg) {
 
             Ranging_Message_t *ranging_msg = &modified_msg->rangingMessage;
 
-            // get curTime and curLocation
-            #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-                Coordinate_Tuple_t curLocation = getCurrentLocation();
-                Coordinate_Tuple_t remoteLocation = modified_msg->location;
-                // printf("[local]:  x = %d, y = %d, z = %d\n[remote]: x = %d, y = %d, z = %d\n", curLocation.x, curLocation.y, curLocation.z, remoteLocation.x, remoteLocation.y, remoteLocation.z);
-                double distance = sqrt(pow((curLocation.x - remoteLocation.x), 2) + pow((curLocation.y - remoteLocation.y), 2) + pow((curLocation.z - remoteLocation.z), 2));
-                double Tof = (distance / 1000) / VELOCITY;
-                // printf("[%s -> %s][%d]: D = %f, TOF  = %f\n", msg.sender_id, local_drone_id, ranging_msg->header.msgSequence, distance, Tof);
-                local_sleep(Tof);
-            #endif
-
             uint64_t curTime = getCurrentTime();
 
             Ranging_Message_With_Additional_Info_t full_info;
 
             full_info.rangingMessage = *ranging_msg;
             full_info.RxTimestamp.full = curTime;
-            full_info.RxCoordinate = curLocation;
             
             // Rx
             // DEBUG_PRINT("[QueueTaskRx]: receive the message[%d] from %s at %ld\n", ranging_msg->header.msgSequence, msg.sender_id, curTime);
@@ -118,26 +84,7 @@ void *receive_from_center(void *arg) {
 // for processing
 void *process_messages(void *arg) {
     while (1) {
-        #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
-            bool unSafe = processFromQueue(&queueTaskLock);
-            /*
-                unsafe -> set RANGING_PERIOD_LOW
-                safe more than SAFE_DISTANCE_ROUND_BORDER -> set RANGING_PERIOD
-            */
-            if (unSafe) {
-                RangingPeriod = RANGING_PERIOD_LOW;
-                safeRoundCounter = 0;
-                printf("Warning: Unsafe condition detected!\n");
-            }
-            else {
-                safeRoundCounter++;
-                if(safeRoundCounter == SAFE_DISTANCE_ROUND_BORDER) {
-                    RangingPeriod = RANGING_PERIOD;
-                }
-            }
-        #else
-            processFromQueue(&queueTaskLock);
-        #endif
+        processFromQueue(&queueTaskLock);
         
         // if(localSendSeqNumber % 10 == 1) {
         //     printRangingTableSet(RECEIVER);
@@ -159,8 +106,7 @@ int main(int argc, char *argv[]) {
 
     // init operation
     localInit(string_to_hash(local_drone_id));
-    DEBUG_PRINT("[localInit]: localHost is ready: droneId = %s, localAddress = %d, x = %d, y = %d, z = %d, vx = %d, vy = %d, vz = %d, randOffTime = %ld\n", 
-        local_drone_id, localHost->localAddress, localHost->location.x, localHost->location.y, localHost->location.z, localHost->velocity.x, localHost->velocity.y, localHost->velocity.z, localHost->randOffTime);
+    DEBUG_PRINT("[localInit]: localHost is ready: droneId = %s, localAddress = %d\n", local_drone_id, localHost->localAddress);
     initQueueTaskLock(&queueTaskLock);     
     DEBUG_PRINT("[initQueueTaskLock]: QueueTaskLock is ready\n");
     initRangingTableSet();
@@ -198,16 +144,6 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    int64_t worldBaseTime;
-    ssize_t bytes_received = recv(center_socket, &worldBaseTime, sizeof(worldBaseTime), 0);
-    if (bytes_received != sizeof(worldBaseTime)) {
-        perror("Failed to receive timestamp");
-        close(center_socket);
-        return -1;
-    }
-
-    localHost->baseTime = worldBaseTime;
-
     srand((unsigned int)(get_current_milliseconds()));
 
     // start receive
@@ -229,14 +165,6 @@ int main(int argc, char *argv[]) {
         // if(localReceivedSeqNumber % 10 == 1) {
         //     printRangingTableSet(SENDER);
         // }
-
-        #ifdef ALIGN_ENABLE
-            if(localSendSeqNumber > ALIGN_ROUNDS) {
-                modifyLocation(time_delay);
-            }
-        #else
-            modifyLocation(time_delay);
-        #endif
 
         local_sleep(time_delay); 
     }

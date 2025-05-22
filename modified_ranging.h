@@ -11,18 +11,12 @@
 typedef struct {
     uint16_t dest;          // fill in the address of neighbor                                  
     Timestamp_Tuple_t RxTimestamps[MESSAGE_BODY_RX_SIZE]; 
-    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-    Coordinate_Tuple_t RxCoodinates[MESSAGE_BODY_RX_SIZE];
-    #endif
 } __attribute__((packed)) Message_Body_Unit_t;
 
 typedef struct {
     uint16_t srcAddress;    // address of the source of message                             
     uint16_t msgSequence;   // the msgSequence-th message sent from local                         
     Timestamp_Tuple_t TxTimestamps[MESSAGE_HEAD_TX_SIZE];
-    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-    Coordinate_Tuple_t TxCoodinates[MESSAGE_HEAD_TX_SIZE];
-    #endif
     uint16_t msgLength;                                      
 } __attribute__((packed)) Message_Header_t;
 
@@ -41,17 +35,11 @@ typedef struct {
 typedef struct {
     Ranging_Message_t rangingMessage;
     dwTime_t RxTimestamp;                   // local timestamp when message is received
-    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-    Coordinate_Tuple_t RxCoordinate;        // local cooedinate when message is received
-    #endif
 } __attribute__((packed)) Ranging_Message_With_Additional_Info_t;
 
 typedef struct { 
     uint16_t seqNumber;  
     dwTime_t timestamp;
-    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-    Coordinate_Tuple_t TxCoordinate; 
-    #endif
 } __attribute__((packed)) LocalSendBufferNode_t;
 
 typedef struct {
@@ -66,7 +54,7 @@ typedef struct {
 void initRangingTableSet();
 table_index_t registerRangingTable(uint16_t address);
 void unregisterRangingTable(uint16_t address);
-void addLocalSendBuffer(dwTime_t timestamp, Coordinate_Tuple_t TxCoordinate);
+void addLocalSendBuffer(dwTime_t timestamp);
 table_index_t findRangingTable(uint16_t address);
 table_index_t findLocalSendBufferNode(uint16_t seq);
 int setPriorityIndex();

@@ -25,10 +25,6 @@ typedef struct {
 typedef struct{
     dwTime_t TxTimestamp;         
     dwTime_t RxTimestamp;            
-    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-    Coordinate_Tuple_t TxCoordinate;    
-    Coordinate_Tuple_t RxCoordinate;   
-    #endif
     int64_t Tf;
     uint16_t localSeq;                 
     uint16_t remoteSeq;                 

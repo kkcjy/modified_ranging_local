@@ -17,13 +17,6 @@ void initRangingBufferNode_t(RangingBufferNode_t *node) {
     node->sumTof = NULL_TOF;
     node->TxSeq = NULL_SEQ;
     node->RxSeq = NULL_SEQ;
-
-    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-        node->sendTxCoordinate = nullCoordinate;
-        node->sendRxCoordinate = nullCoordinate;
-        node->receiveTxCoordinate = nullCoordinate;
-        node->receiveRxCoordinate = nullCoordinate;
-    #endif
 }
 
 void initRangingBuffer(RangingBuffer_t *buffer) {
@@ -52,13 +45,6 @@ void addRangingBuffer(RangingBuffer_t *buffer, RangingBufferNode_t *node, Status
         buffer->sendBuffer[buffer->topSendBuffer].sumTof = node->sumTof;
         buffer->sendBuffer[buffer->topSendBuffer].TxSeq = node->TxSeq;
         buffer->sendBuffer[buffer->topSendBuffer].RxSeq = node->RxSeq;
-        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            buffer->sendBuffer[buffer->topSendBuffer].sendTxCoordinate = node->sendTxCoordinate;
-            buffer->sendBuffer[buffer->topSendBuffer].sendRxCoordinate = node->sendRxCoordinate;
-            buffer->sendBuffer[buffer->topSendBuffer].receiveTxCoordinate = node->receiveTxCoordinate;
-            buffer->sendBuffer[buffer->topSendBuffer].receiveRxCoordinate = node->receiveRxCoordinate;
-        #endif
-
         // DEBUG_PRINT("[SENDBUFFER_ADD]: sendTx:%llu,sendRx:%llu,receiveTx:%llu,receiveRx:%llu,sumTof:%lld,TxSeq:%d,RxSeq:%d\n"
         //     ,node->sendTx.full,node->sendRx.full,node->receiveTx.full,node->receiveRx.full,node->sumTof,node->TxSeq,node->RxSeq);
     }
@@ -74,13 +60,6 @@ void addRangingBuffer(RangingBuffer_t *buffer, RangingBufferNode_t *node, Status
         buffer->receiveBuffer[buffer->topReceiveBuffer].sumTof = node->sumTof;
         buffer->receiveBuffer[buffer->topReceiveBuffer].TxSeq = node->TxSeq;
         buffer->receiveBuffer[buffer->topReceiveBuffer].RxSeq = node->RxSeq;
-        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            buffer->receiveBuffer[buffer->topReceiveBuffer].sendTxCoordinate = node->sendTxCoordinate;
-            buffer->receiveBuffer[buffer->topReceiveBuffer].sendRxCoordinate = node->sendRxCoordinate;
-            buffer->receiveBuffer[buffer->topReceiveBuffer].receiveTxCoordinate = node->receiveTxCoordinate;
-            buffer->receiveBuffer[buffer->topReceiveBuffer].receiveRxCoordinate = node->receiveRxCoordinate;
-        #endif
-
         // DEBUG_PRINT("[RECEIVEBUFFER_ADD]: sendTx:%llu,sendRx:%llu,receiveTx:%llu,receiveRx:%llu,sumTof:%lld,TxSeq:%d,RxSeq:%d\n"
         //     ,node->sendTx.full,node->sendRx.full,node->receiveTx.full,node->receiveRx.full,node->sumTof,node->TxSeq,node->RxSeq);
     }
@@ -232,14 +211,6 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
     int64_t classicTof = (diffA * Rb + diffA * Db + diffB * Ra + diffB * Da) / (2*sumAB);
     float classicD = classicTof * VELOCITY;
 
-    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-        float trueDx = (tableNode->RxCoordinate.x - tableNode->TxCoordinate.x);
-        float trueDy = (tableNode->RxCoordinate.y - tableNode->TxCoordinate.y);
-        float trueDz = (tableNode->RxCoordinate.z - tableNode->TxCoordinate.z);
-        float trueD = sqrtf(trueDx*trueDx + trueDy*trueDy + trueDz*trueDz) / 1000;
-        // DEBUG_PRINT("[CalculateTof%s%s]: modified_D = %f, classic_D = %f, true_D = %f\n", status == 0 ? "_SENDER" : "_RECEIVER", flag == FIRST_CALCULATE ? "_FIRST" : "_SECOND", D, classicD, trueD);
-    #endif
-
     /* adjust
     if flag == FIRST_CALCULATE
         update the most recent valid record
@@ -275,18 +246,7 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
             newNode.receiveRx = node->receiveRx;
             newNode.RxSeq = node->RxSeq;
         }
-        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            newNode.sendTxCoordinate = tableNode->TxCoordinate;
-            newNode.sendRxCoordinate = tableNode->RxCoordinate;
-            if(flag == FIRST_CALCULATE || flag == SECOND_CALCULATE_UNQUALIFIED) {
-                newNode.receiveRxCoordinate = buffer->receiveBuffer[last].receiveRxCoordinate;
-                newNode.receiveTxCoordinate = buffer->receiveBuffer[last].receiveTxCoordinate;
-            }
-            else if (flag == SECOND_CALCULATE_ABNORMAL) {
-                newNode.receiveRxCoordinate = node->receiveRxCoordinate;
-                newNode.receiveTxCoordinate = node->receiveTxCoordinate;
-            }
-        #endif
+
         newNode.sumTof = T23;
         newNode.T1 = node->T2;
         newNode.T2 = T23 - newNode.T1;
@@ -312,18 +272,6 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
         newNode.receiveTx = Tx;
         newNode.receiveRx = Rx;
         newNode.RxSeq = tableNode->localSeq;
-        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            if(flag == FIRST_CALCULATE || flag == SECOND_CALCULATE_UNQUALIFIED) {
-                newNode.sendTxCoordinate = buffer->sendBuffer[last].sendTxCoordinate;
-                newNode.sendRxCoordinate = buffer->sendBuffer[last].sendRxCoordinate;
-            }
-            else if (flag == SECOND_CALCULATE_ABNORMAL) {
-                newNode.sendTxCoordinate = node->sendTxCoordinate;
-                newNode.sendRxCoordinate = node->sendRxCoordinate;
-            }
-            newNode.receiveRxCoordinate = tableNode->RxCoordinate;
-            newNode.receiveTxCoordinate = tableNode->TxCoordinate;
-        #endif
         newNode.sumTof = T23;
         newNode.T1 = node->T2;
         newNode.T2 = T23 - newNode.T1;
@@ -332,7 +280,6 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
 
     *Modified = D;
     *Classic = classicD;
-    *True = trueD;
 
     return D;
 }
@@ -404,12 +351,6 @@ void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, 
         newNode1.sumTof = classicTof * 2;
         newNode1.T1 = classicTof;
         newNode1.T2 = classicTof;
-        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            newNode1.sendTxCoordinate = listA->tableBuffer[indexA3].TxCoordinate;
-            newNode1.sendRxCoordinate = listA->tableBuffer[indexA3].RxCoordinate;
-            newNode1.receiveTxCoordinate = listB->tableBuffer[indexB2].TxCoordinate;
-            newNode1.receiveRxCoordinate = listB->tableBuffer[indexB2].RxCoordinate;
-        #endif
         addRangingBuffer(rangingBuffer, &newNode1, RECEIVER);
 
         newNode2.sendTx = listA->tableBuffer[indexA1].TxTimestamp;
@@ -421,12 +362,6 @@ void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, 
         newNode2.sumTof = classicTof * 2;
         newNode2.T1 = classicTof;
         newNode2.T2 = classicTof;
-        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            newNode2.sendTxCoordinate = listA->tableBuffer[indexA1].TxCoordinate;
-            newNode2.sendRxCoordinate = listA->tableBuffer[indexA1].RxCoordinate;
-            newNode2.receiveTxCoordinate = listB->tableBuffer[indexB2].TxCoordinate;
-            newNode2.receiveRxCoordinate = listB->tableBuffer[indexB2].RxCoordinate;
-        #endif
         addRangingBuffer(rangingBuffer, &newNode2, SENDER);
     }
     else if(status == RECEIVER){
@@ -444,12 +379,6 @@ void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, 
         newNode1.sumTof = classicTof*2;
         newNode1.T1 = classicTof;
         newNode1.T2 = classicTof;
-        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            newNode1.sendTxCoordinate = listB->tableBuffer[indexB2].TxCoordinate;
-            newNode1.sendRxCoordinate = listB->tableBuffer[indexB2].RxCoordinate;
-            newNode1.receiveTxCoordinate = listA->tableBuffer[indexA3].TxCoordinate;
-            newNode1.receiveRxCoordinate = listA->tableBuffer[indexA3].RxCoordinate;
-        #endif
         addRangingBuffer(rangingBuffer, &newNode1, SENDER);
 
         newNode2.sendTx = listB->tableBuffer[indexB2].TxTimestamp;
@@ -461,12 +390,6 @@ void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, 
         newNode2.sumTof = classicTof*2;
         newNode2.T1 = classicTof;
         newNode2.T2 = classicTof;
-        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            newNode2.sendTxCoordinate = listB->tableBuffer[indexB2].TxCoordinate;
-            newNode2.sendRxCoordinate = listB->tableBuffer[indexB2].RxCoordinate;
-            newNode2.receiveTxCoordinate = listA->tableBuffer[indexA1].TxCoordinate;
-            newNode2.receiveRxCoordinate = listA->tableBuffer[indexA1].RxCoordinate;
-        #endif
         addRangingBuffer(rangingBuffer, &newNode2, RECEIVER);
     }
     initTofSum += classicTof;
@@ -479,18 +402,11 @@ void printRangingBuffer(RangingBuffer_t *buffer) {
         if(index == NULL_INDEX){
             break;
         }
-        DEBUG_PRINT("SendBuffer[%d]: receiveTx: %llu,receiveRx: %llu,sendTx: %llu,sendRx: %llu,sumTof: %lld",
+        DEBUG_PRINT("SendBuffer[%d]: receiveTx: %llu,receiveRx: %llu,sendTx: %llu,sendRx: %llu,sumTof: %lld\n",
             index,buffer->sendBuffer[index].receiveTx.full,buffer->sendBuffer[index].receiveRx.full,
             buffer->sendBuffer[index].sendTx.full,buffer->sendBuffer[index].sendRx.full,
             buffer->sendBuffer[index].sumTof
         );
-        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            DEBUG_PRINT(",receiveCoordinate: (%d,%d,%d),sendCoordinate: (%d,%d,%d)\n",
-                buffer->sendBuffer[index].receiveRxCoordinate.x,buffer->sendBuffer[index].receiveRxCoordinate.y,buffer->sendBuffer[index].receiveRxCoordinate.z,
-                buffer->sendBuffer[index].sendRxCoordinate.x,buffer->sendBuffer[index].sendRxCoordinate.y,buffer->sendBuffer[index].sendRxCoordinate.z);
-        #else
-                DEBUG_PRINT("\n");
-        #endif
         index = (index - 1 + RANGING_BUFFER_SIZE) % RANGING_BUFFER_SIZE;
     }
 
@@ -499,17 +415,10 @@ void printRangingBuffer(RangingBuffer_t *buffer) {
         if(index == NULL_INDEX) {
             break;
         }
-        DEBUG_PRINT("ReceiveBuffer[%d]: sendTx: %llu,sendRx: %llu,receiveTx: %llu,receiveRx: %llu,sumTof: %lld",
+        DEBUG_PRINT("ReceiveBuffer[%d]: sendTx: %llu,sendRx: %llu,receiveTx: %llu,receiveRx: %llu,sumTof: %lld\n",
             index,buffer->receiveBuffer[index].sendTx.full,buffer->receiveBuffer[index].sendRx.full,
             buffer->receiveBuffer[index].receiveTx.full,buffer->receiveBuffer[index].receiveRx.full,
             buffer->receiveBuffer[index].sumTof);
-        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            DEBUG_PRINT(",sendCoordinate: (%d,%d,%d),receiveCoordinate: (%d,%d,%d)\n",
-                buffer->receiveBuffer[index].sendRxCoordinate.x,buffer->receiveBuffer[index].sendRxCoordinate.y,buffer->receiveBuffer[index].sendRxCoordinate.z,
-                buffer->receiveBuffer[index].receiveRxCoordinate.x,buffer->receiveBuffer[index].receiveRxCoordinate.y,buffer->receiveBuffer[index].receiveRxCoordinate.z);
-        #else
-            DEBUG_PRINT("\n");
-        #endif
         index = (index - 1 + RANGING_BUFFER_SIZE) % RANGING_BUFFER_SIZE;
     }
 }

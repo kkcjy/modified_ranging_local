@@ -4,9 +4,6 @@ Local_Host_t *localHost;                        // local host
 RangingTableSet_t* rangingTableSet;             // local rangingTableSet
 uint16_t localSendSeqNumber = 1;                // seqNumber of message local sent  
 int RangingPeriod = RANGING_PERIOD;             // period of sending
-#ifdef WARM_UP_WAIT_ENABLE
-    int discardCount = 0;                       // wait for device warming up and discard message
-#endif
 
 void initRangingTableSet() {
     rangingTableSet = (RangingTableSet_t*)malloc(sizeof(RangingTableSet_t));
@@ -15,9 +12,6 @@ void initRangingTableSet() {
     for (table_index_t i = 0; i < TX_BUFFER_POOL_SIZE; i++) {
         rangingTableSet->localSendBuffer[i].timestamp.full = NULL_TIMESTAMP;
         rangingTableSet->localSendBuffer[i].seqNumber = NULL_SEQ;
-        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            rangingTableSet->localSendBuffer[i].TxCoordinate = nullCoordinate;
-        #endif
     }
     for (int i = 0; i < TABLE_SET_NEIGHBOR_NUM; i++) {
         rangingTableSet->neighborIdxPriorityQueue[i] = NULL_INDEX;
@@ -60,12 +54,11 @@ void unregisterRangingTable(uint16_t address) {
     // DEBUG_PRINT("[unregisterRangingTable]: unregister RangingTable successfully\n");
 }
 
-void addLocalSendBuffer(dwTime_t timestamp, Coordinate_Tuple_t TxCoordinate) {
+void addLocalSendBuffer(dwTime_t timestamp) {
     rangingTableSet->topLocalSendBuffer = (rangingTableSet->topLocalSendBuffer + 1) % TX_BUFFER_POOL_SIZE;
     // localSendSeqNumber has updated
     rangingTableSet->localSendBuffer[rangingTableSet->topLocalSendBuffer].seqNumber = localSendSeqNumber - 1;
     rangingTableSet->localSendBuffer[rangingTableSet->topLocalSendBuffer].timestamp = timestamp;
-    rangingTableSet->localSendBuffer[rangingTableSet->topLocalSendBuffer].TxCoordinate = TxCoordinate;
 }
 
 // find the index of RangingTable by address
@@ -119,26 +112,16 @@ void printRangingMessage(Ranging_Message_t* rangingMessage) {
     DEBUG_PRINT("msgLength: %u\n", rangingMessage->header.msgLength);
     DEBUG_PRINT("TxTimestamps:\n");
     for(int i = 0; i < MESSAGE_HEAD_TX_SIZE; i++) {
-        DEBUG_PRINT("\tseqNumber: %u, timestamp: %llu",
+        DEBUG_PRINT("\tseqNumber: %u, timestamp: %llu\n",
         rangingMessage->header.TxTimestamps[i].seqNumber, rangingMessage->header.TxTimestamps[i].timestamp.full);
-        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            DEBUG_PRINT(", coordinate:(%u,%u,%u)\n",rangingMessage->header.TxCoodinates[i].x, rangingMessage->header.TxCoodinates[i].y, rangingMessage->header.TxCoodinates[i].z);
-        #else
-            DEBUG_PRINT("\n");
-        #endif
     }
     DEBUG_PRINT("[BodyUnits]:\n");
     for(int i = 0; i < MESSAGE_BODY_UNIT_SIZE; i++){
         DEBUG_PRINT("dest: %u\n", rangingMessage->bodyUnits[i].dest);
         DEBUG_PRINT("RxTimestamps:\n");
         for(int j = 0; j < MESSAGE_BODY_RX_SIZE; j++){
-            DEBUG_PRINT("\tseqNumber: %u, timestamp: %llu",
+            DEBUG_PRINT("\tseqNumber: %u, timestamp: %llu\n",
             rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber, rangingMessage->bodyUnits[i].RxTimestamps[j].timestamp.full);
-            #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-                DEBUG_PRINT(", coordinate:(%u,%u,%u)\n",rangingMessage->bodyUnits[i].RxCoodinates[j].x, rangingMessage->bodyUnits[i].RxCoodinates[j].y, rangingMessage->bodyUnits[i].RxCoodinates[j].z);
-            #else
-                DEBUG_PRINT("\n");
-            #endif
         }
     }
 }
@@ -148,13 +131,9 @@ void printLocalSendBuffer() {
     table_index_t index = rangingTableSet->topLocalSendBuffer;
     int count = 0;
     while (count < TABLE_BUFFER_SIZE) {
-        DEBUG_PRINT("seq: %d,Tx: %lld", 
+        DEBUG_PRINT("seq: %d,Tx: %lld\n", 
             rangingTableSet->localSendBuffer[index].seqNumber, rangingTableSet->localSendBuffer[index].timestamp.full);
-        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            DEBUG_PRINT(", coordinate:(%u,%u,%u)\n",rangingTableSet->localSendBuffer[index].TxCoordinate.x, rangingTableSet->localSendBuffer[index].TxCoordinate.y, rangingTableSet->localSendBuffer[index].TxCoordinate.z);
-        #else
-            DEBUG_PRINT("\n");
-        #endif
+
         index = (index - 1 + TABLE_BUFFER_SIZE) % TABLE_BUFFER_SIZE;
         count++;
     }
@@ -211,20 +190,12 @@ Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
             if(index != NULL_INDEX) {
                 bodyUnit->RxTimestamps[i].seqNumber = rangingTable->receiveBuffer.tableBuffer[index].localSeq;
                 bodyUnit->RxTimestamps[i].timestamp = rangingTable->receiveBuffer.tableBuffer[index].RxTimestamp;
-                #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-                    bodyUnit->RxCoodinates[i].x = rangingTable->receiveBuffer.tableBuffer[index].RxCoordinate.x;
-                    bodyUnit->RxCoodinates[i].y = rangingTable->receiveBuffer.tableBuffer[index].RxCoordinate.y;
-                    bodyUnit->RxCoodinates[i].z = rangingTable->receiveBuffer.tableBuffer[index].RxCoordinate.z;
-                #endif
                 index = rangingTable->receiveBuffer.tableBuffer[index].next;
             }
             // insufficient data, fill with null
             else{
                 bodyUnit->RxTimestamps[i].seqNumber = NULL_SEQ;
                 bodyUnit->RxTimestamps[i].timestamp.full = NULL_TIMESTAMP;
-                #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-                    bodyUnit->RxCoodinates[i] = nullCoordinate;
-                #endif
             }
         }
         bodyUnitCounter++;
@@ -248,20 +219,12 @@ Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
         if(rangingTableSet->localSendBuffer[index].timestamp.full != NULL_TIMESTAMP){
             rangingMessage->header.TxTimestamps[i].seqNumber = rangingTableSet->localSendBuffer[index].seqNumber;
             rangingMessage->header.TxTimestamps[i].timestamp = rangingTableSet->localSendBuffer[index].timestamp;
-            #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-                rangingMessage->header.TxCoodinates[i].x = rangingTableSet->localSendBuffer[index].TxCoordinate.x;
-                rangingMessage->header.TxCoodinates[i].y = rangingTableSet->localSendBuffer[index].TxCoordinate.y;
-                rangingMessage->header.TxCoodinates[i].z = rangingTableSet->localSendBuffer[index].TxCoordinate.z;
-            #endif
             index = (index - 1 + TABLE_BUFFER_SIZE) % TABLE_BUFFER_SIZE;
         }
         // insufficient data, fill with null
         else{
             rangingMessage->header.TxTimestamps[i].seqNumber = NULL_SEQ;
             rangingMessage->header.TxTimestamps[i].timestamp.full = NULL_TIMESTAMP;
-            #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-                rangingMessage->header.TxCoodinates[i] = nullCoordinate;
-            #endif
         }
     }
 
@@ -277,13 +240,6 @@ Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
 
 // return the min Tof with neighbor
 bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo) {
-    #ifdef WARM_UP_WAIT_ENABLE
-        if((discardCount * RANGING_PERIOD < WARM_UP_TIME) || discardCount < DISCARD_MESSAGE_NUM) {
-            DEBUG_PRINT("[processRangingMessage]: Discarding message, discardCount:%d\n",discardCount);
-            discardCount++;
-            return false;
-        }
-    #endif
 
     float H_Modified = NULL_DIS;
     float H_Classic = NULL_DIS;
@@ -308,12 +264,6 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
     TableNode_t firstNode;
     firstNode.TxTimestamp = nullTimeStamp;
     firstNode.RxTimestamp = rangingMessageWithAdditionalInfo->RxTimestamp;
-    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-        firstNode.TxCoordinate = nullCoordinate;
-        firstNode.RxCoordinate.x = rangingMessageWithAdditionalInfo->RxCoordinate.x;
-        firstNode.RxCoordinate.y = rangingMessageWithAdditionalInfo->RxCoordinate.y;
-        firstNode.RxCoordinate.z = rangingMessageWithAdditionalInfo->RxCoordinate.z;
-    #endif
     firstNode.Tf = NULL_TOF;
     firstNode.localSeq = rangingMessage->header.msgSequence;
     firstNode.remoteSeq = NULL_SEQ;
@@ -359,12 +309,6 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
             TableNode_t secondNode;
             secondNode.TxTimestamp = rangingMessage->header.TxTimestamps[i].timestamp;
             secondNode.RxTimestamp = nullTimeStamp;
-            #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-                secondNode.TxCoordinate.x = rangingMessage->header.TxCoodinates[i].x;
-                secondNode.TxCoordinate.y = rangingMessage->header.TxCoodinates[i].y;
-                secondNode.TxCoordinate.z = rangingMessage->header.TxCoodinates[i].z;
-                secondNode.RxCoordinate = nullCoordinate;
-            #endif
             secondNode.Tf = NULL_TOF;
             secondNode.localSeq = NULL_SEQ;
             secondNode.remoteSeq = rangingMessage->header.TxTimestamps[i].seqNumber;
@@ -434,14 +378,6 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
                 TableNode_t fullNode;
                 fullNode.TxTimestamp = rangingTableSet->localSendBuffer[sendBufferIndex].timestamp;
                 fullNode.RxTimestamp = rangingMessage->bodyUnits[i].RxTimestamps[j].timestamp;
-                #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-                    fullNode.TxCoordinate.x = rangingTableSet->localSendBuffer[sendBufferIndex].TxCoordinate.x;
-                    fullNode.TxCoordinate.y = rangingTableSet->localSendBuffer[sendBufferIndex].TxCoordinate.y;
-                    fullNode.TxCoordinate.z = rangingTableSet->localSendBuffer[sendBufferIndex].TxCoordinate.z;
-                    fullNode.RxCoordinate.x = rangingMessage->bodyUnits[i].RxCoodinates[j].x;
-                    fullNode.RxCoordinate.y = rangingMessage->bodyUnits[i].RxCoodinates[j].y;
-                    fullNode.RxCoordinate.z = rangingMessage->bodyUnits[i].RxCoodinates[j].z;
-                #endif
                 fullNode.Tf = NULL_TOF;
                 fullNode.localSeq = rangingTableSet->localSendBuffer[sendBufferIndex].seqNumber;
                 fullNode.remoteSeq = rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber;
@@ -502,12 +438,6 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
     else {
         DEBUG_PRINT("[current]: No valid Current distance calculated\n");
     }
-
-    #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
-        if(ModifiedD != NULL_DIS) {
-            return ModifiedD < SAFE_DISTANCE;
-        }
-    #endif
 
     return false;
 }

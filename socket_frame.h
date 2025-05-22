@@ -27,7 +27,6 @@ typedef struct {
 
 typedef struct {
     Ranging_Message_t rangingMessage;
-    Coordinate_Tuple_t location;
 } __attribute__((packed)) MessageWithLocation;
 
 typedef struct {
