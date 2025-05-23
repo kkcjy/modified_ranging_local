@@ -25,9 +25,6 @@ void send_to_center(int center_socket, const char* node_id, const Ranging_Messag
     snprintf(msg.sender_id, sizeof(msg.sender_id), "%s", node_id);  
     memcpy(msg.data, ranging_msg, sizeof(Ranging_Message_t)); 
     msg.data_size = sizeof(Ranging_Message_t);
-    dwTime_t curTime;
-    curTime.full = getCurrentTime();
-    addLocalSendBuffer(curTime);
 
     if (send(center_socket, &msg, sizeof(msg), 0) < 0) {
         perror("Send failed");
@@ -58,7 +55,7 @@ void *receive_from_center(void *arg) {
             // from broadcast_flightlog
             if (msg.data_size == sizeof(LineMessage)) {
                 LineMessage *line_msg = (LineMessage *)msg.data;
-                if(line_msg->drone_id == local_drone_id) {
+                if(strcmp(local_drone_id, line_msg->drone_id) == 0) {
                     StatusType status = line_msg->status;
                     // sender -> ready to send
                     if(status == SENDER) {
@@ -75,11 +72,12 @@ void *receive_from_center(void *arg) {
             }
             // from broadcast_to_nodes
             else if(msg.data_size == sizeof(Ranging_Message_t)) {
-                Ranging_Message_t *ranging_msg = (Ranging_Message_t*)msg.data;
+                while (RxTimestamp.full == NULL_TIMESTAMP) ;
 
+                Ranging_Message_t *ranging_msg = (Ranging_Message_t*)msg.data;
                 Ranging_Message_With_Additional_Info_t full_info;
 
-                full_info.rangingMessage = *ranging_msg;
+                full_info.rangingMessage = *ranging_msg;                
                 full_info.RxTimestamp = RxTimestamp;
                 RxTimestamp = nullTimeStamp;
                 

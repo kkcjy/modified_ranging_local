@@ -3,12 +3,8 @@
 
 NodeInfo nodes[MAX_NODES];
 int node_count = 0;
-static long file_pos = 0;  
+long file_pos = 0;  
 pthread_mutex_t nodes_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t file_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t tx_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t tx_cond = PTHREAD_COND_INITIALIZER;
-int tx_ready_socket = -1;
 
 
 int get_index_by_num(int number) {
@@ -30,15 +26,6 @@ void broadcast_to_nodes(NodeMessage *msg) {
     pthread_mutex_unlock(&nodes_mutex);
 }
 
-void wait_for_tx_and_broadcast(int tx_socket) {
-    pthread_mutex_lock(&tx_mutex);
-    while (tx_ready_socket != tx_socket) {
-        pthread_cond_wait(&tx_cond, &tx_mutex);
-    }
-    tx_ready_socket = -1;
-    pthread_mutex_unlock(&tx_mutex);
-}
-
 void *handle_node_connection(void *arg) {
     int node_socket = *(int *)arg;
     free(arg);
@@ -53,11 +40,10 @@ void *handle_node_connection(void *arg) {
 
     // handle node connection
     pthread_mutex_lock(&nodes_mutex);
-    if (node_count < MAX_NODES) {
-        nodes[node_count].socket = node_socket;
-        strncpy(nodes[node_count].node_id, node_id, sizeof(nodes[node_count].node_id));
-        nodes[node_count].number = node_count;
-        node_count++;
+    if (node_count <= MAX_NODES) {
+        nodes[node_count - 1].socket = node_socket;
+        strncpy(nodes[node_count - 1].node_id, node_id, sizeof(nodes[node_count - 1].node_id));
+        nodes[node_count - 1].number = node_count - 1;
         printf("Node %s connected\n", node_id);
     } else {
         printf("Max nodes reached (%d), rejecting %s\n", MAX_NODES, node_id);
@@ -80,11 +66,6 @@ void *handle_node_connection(void *arg) {
         }
 
         broadcast_to_nodes(&msg);
-
-        pthread_mutex_lock(&tx_mutex);
-        tx_ready_socket = node_socket;
-        pthread_cond_signal(&tx_cond);
-        pthread_mutex_unlock(&tx_mutex);
     }
 
     pthread_mutex_lock(&nodes_mutex);
@@ -110,8 +91,9 @@ void *broadcast_flightlog(void *arg) {
             sleep(1);
             continue;
         }
-        fseek(file, file_pos, SEEK_SET);
 
+        fseek(file, file_pos, SEEK_SET);
+        
         char line1[256], line2[256], line3[256];
         if (fgets(line1, sizeof(line1), file) &&
             fgets(line2, sizeof(line2), file) &&
@@ -133,7 +115,9 @@ void *broadcast_flightlog(void *arg) {
 
                 if (sscanf(lines[i], "%llu %d %2s %lu", &date_time, &drone_num, status, &line_msg.timeStamp.full) == 4) {
                     int idx = get_index_by_num(drone_num);
-                    if (idx < 0) continue;
+                    if (idx < 0) {
+                        continue;
+                    }
                     snprintf(line_msg.drone_id, ID_SIZE, "%s", nodes[idx].node_id);
                     line_msg.status = (strcmp(status, "TX") == 0) ? SENDER : RECEIVER;
                     memcpy(read_msg.data, &line_msg, sizeof(LineMessage));
@@ -141,13 +125,12 @@ void *broadcast_flightlog(void *arg) {
                     read_msg.data_size = sizeof(LineMessage);
                     send(nodes[idx].socket, &read_msg, sizeof(read_msg), 0);
 
-                    if (line_msg.status == SENDER) {
-                        wait_for_tx_and_broadcast(nodes[idx].socket);
-                    }
+                    printf("drone_num: %d, drone_id: %s, status: %s\n", drone_num, line_msg.drone_id, status);
                 }
             }
         }
         fclose(file);
+        local_sleep(READ_PERIOD);
     }
     return NULL;
 }
@@ -195,6 +178,7 @@ int main() {
         }
 
         pthread_t thread_id;
+        node_count++;
         if (pthread_create(&thread_id, NULL, handle_node_connection, new_socket)) {
             perror("pthread_create");
             close(*new_socket);
@@ -213,8 +197,10 @@ int main() {
 
     pthread_t broadcast_thread;
     pthread_create(&broadcast_thread, NULL, broadcast_flightlog, NULL);
-    pthread_detach(broadcast_thread);
 
+    while (1);
+
+    pthread_detach(broadcast_thread);
     close(server_fd);
     return 0;
 }
