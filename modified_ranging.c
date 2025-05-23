@@ -3,7 +3,7 @@
 Local_Host_t *localHost;                        // local host
 RangingTableSet_t* rangingTableSet;             // local rangingTableSet
 uint16_t localSendSeqNumber = 1;                // seqNumber of message local sent  
-int RangingPeriod = RANGING_PERIOD;             // period of sending
+int rangingPeriod = RANGING_PERIOD;             // period of sending
 
 void initRangingTableSet() {
     rangingTableSet = (RangingTableSet_t*)malloc(sizeof(RangingTableSet_t));
@@ -164,7 +164,7 @@ void printRangingTableSet(StatusType type) {
 
 Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
     // (175 ~ 225)
-    Time_t taskDelay = M2T(RangingPeriod + rand()%(RANGING_PERIOD_RAND_RANGE + 1) - RANGING_PERIOD_RAND_RANGE/2);
+    Time_t taskDelay = M2T(rangingPeriod + rand()%(RANGING_PERIOD_RAND_RANGE + 1) - RANGING_PERIOD_RAND_RANGE/2);
 
     int8_t bodyUnitCounter = 0;     // counter for valid bodyunits
 

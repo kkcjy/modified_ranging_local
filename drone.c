@@ -9,8 +9,10 @@ extern Local_Host_t *localHost;
 extern RangingTableSet_t* rangingTableSet;     
 extern uint16_t localSendSeqNumber;
 extern uint16_t localReceivedSeqNumber;
-extern int RangingPeriod;
+extern int rangingPeriod;
 QueueTaskLock_t queueTaskLock;                  // lock for task
+dwTime_t TxTimestamp;                           // store timestamp from broadcast_flightlog
+dwTime_t RxTimestamp;                           // store timestamp from broadcast_flightlog
 
 
 void send_to_center(int center_socket, const char* node_id, const Ranging_Message_t* ranging_msg) {
@@ -51,27 +53,46 @@ void *receive_from_center(void *arg) {
             exit(1);
         }
 
-        if (strcmp(msg.sender_id, local_drone_id) != 0) {
-            if (msg.data_size != sizeof(Ranging_Message_t)) {
-                printf("Receiving failed, size of data_size does not match\n");
-                return NULL;
+        // ignore the message from itself
+        if (strcmp(msg.sender_id, local_drone_id) != 0 || strcmp(msg.sender_id, "CENTER") == 0) {
+            // from broadcast_flightlog
+            if (msg.data_size == sizeof(LineMessage)) {
+                LineMessage *line_msg = (LineMessage *)msg.data;
+                if(line_msg->drone_id == local_drone_id) {
+                    StatusType status = line_msg->status;
+                    // sender -> ready to send
+                    if(status == SENDER) {
+                        TxTimestamp = line_msg->timeStamp;
+                        QueueTaskTx(&queueTaskLock, MESSAGE_SIZE, send_to_center, center_socket, local_drone_id);
+                        addLocalSendBuffer(TxTimestamp);
+                        TxTimestamp = nullTimeStamp;
+                    }
+                    // receiver -> prepare to receive
+                    else if(status == RECEIVER) {
+                        RxTimestamp = line_msg->timeStamp;
+                    }
+                }
             }
+            // from broadcast_to_nodes
+            else if(msg.data_size == sizeof(Ranging_Message_t)) {
+                Ranging_Message_t *ranging_msg = (Ranging_Message_t*)msg.data;
 
-            Ranging_Message_t *ranging_msg = (Ranging_Message_t*)msg.data;
+                Ranging_Message_With_Additional_Info_t full_info;
 
-            uint64_t curTime = getCurrentTime();
-
-            Ranging_Message_With_Additional_Info_t full_info;
-
-            full_info.rangingMessage = *ranging_msg;
-            full_info.RxTimestamp.full = curTime;
-            
-            // Rx
-            // DEBUG_PRINT("[QueueTaskRx]: receive the message[%d] from %s at %ld\n", ranging_msg->header.msgSequence, msg.sender_id, curTime);
-            QueueTaskRx(&queueTaskLock, &full_info, sizeof(full_info));
+                full_info.rangingMessage = *ranging_msg;
+                full_info.RxTimestamp = RxTimestamp;
+                RxTimestamp = nullTimeStamp;
+                
+                // Rx
+                // DEBUG_PRINT("[QueueTaskRx]: receive the message[%d] from %s at %ld\n", ranging_msg->header.msgSequence, msg.sender_id, curTime);
+                QueueTaskRx(&queueTaskLock, &full_info, sizeof(full_info));
+            }
+            else {
+                    printf("Receiving failed, size of data_size does not match\n");
+                    return NULL;
+            }            
         }
     }
-
 
     return NULL;
 }
@@ -100,6 +121,8 @@ int main(int argc, char *argv[]) {
     local_drone_id = argv[2];
 
     // init operation
+    TxTimestamp = nullTimeStamp;
+    RxTimestamp = nullTimeStamp;
     localInit(string_to_hash(local_drone_id));
     DEBUG_PRINT("[localInit]: localHost is ready: droneId = %s, localAddress = %d\n", local_drone_id, localHost->localAddress);
     initQueueTaskLock(&queueTaskLock);     
@@ -139,8 +162,6 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    srand((unsigned int)(get_current_milliseconds()));
-
     // start receive
     pthread_t receive_thread;
     if (pthread_create(&receive_thread, NULL, receive_from_center, &center_socket)) {
@@ -150,19 +171,6 @@ int main(int argc, char *argv[]) {
     }
 
     printf("Node %s connected to center\n", local_drone_id);
-
-    // main send loop
-    while (1) {
-        // DEBUG_PRINT("[QueueTaskTx]: send the message[%d] from %s at %ld\n", localSendSeqNumber, local_drone_id, getCurrentTime());
-        Time_t time_delay = QueueTaskTx(&queueTaskLock, MESSAGE_SIZE, send_to_center, center_socket, local_drone_id);
-        
-        // printf("time_delay = %d\n", time_delay);
-        // if(localReceivedSeqNumber % 10 == 1) {
-        //     printRangingTableSet(SENDER);
-        // }
-
-        local_sleep(time_delay); 
-    }
 
     pthread_join(receive_thread, NULL);
     pthread_join(process_thread, NULL);

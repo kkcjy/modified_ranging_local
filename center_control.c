@@ -51,6 +51,7 @@ void *handle_node_connection(void *arg) {
     }
     node_id[bytes_received] = '\0';
 
+    // handle node connection
     pthread_mutex_lock(&nodes_mutex);
     if (node_count < MAX_NODES) {
         nodes[node_count].socket = node_socket;
@@ -70,6 +71,7 @@ void *handle_node_connection(void *arg) {
     }
     pthread_mutex_unlock(&nodes_mutex);
 
+    // broadcast tx from drone
     while (1) {
         NodeMessage msg;
         ssize_t bytes_received = recv(node_socket, &msg, sizeof(msg), 0);
