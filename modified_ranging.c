@@ -249,7 +249,6 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
     float B_True = NULL_DIS;
     float ModifiedD = NULL_DIS;
     float ClassicD = NULL_DIS;
-    float TrueD = NULL_DIS;
 
     Ranging_Message_t *rangingMessage = &rangingMessageWithAdditionalInfo->rangingMessage;
 
@@ -419,21 +418,18 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
     if(H_Modified != NULL_DIS && B_Modified != NULL_DIS) {
         ModifiedD = (H_Modified + B_Modified) / 2;
         ClassicD = (H_Classic + B_Classic) / 2;
-        TrueD = (H_True + B_True) / 2;
     }
     else if(H_Modified != NULL_DIS) {
         ModifiedD = H_Modified;
         ClassicD = H_Classic;
-        TrueD = H_True;
     }
     else if(B_Modified != NULL_DIS) {
         ModifiedD = B_Modified;
         ClassicD = B_Classic;
-        TrueD = B_True;
     }
 
     if(ModifiedD != NULL_DIS) {
-        DEBUG_PRINT("[current_%d]: ModifiedD = %f, ClassicD = %f, TrueD = %f, time = %lld\n", localHost->localAddress, ModifiedD, ClassicD, TrueD, rangingMessageWithAdditionalInfo->RxTimestamp.full);
+        DEBUG_PRINT("[current-%d-%d]: ModifiedD = %f, ClassicD = %f, time = %lld\n", localHost->localAddress, neighborAddress, ModifiedD, ClassicD, rangingMessageWithAdditionalInfo->RxTimestamp.full);
     }
     else {
         DEBUG_PRINT("[current]: No valid Current distance calculated\n");

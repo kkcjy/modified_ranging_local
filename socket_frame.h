@@ -12,7 +12,7 @@
 
 #include "modified_ranging.h"
 
-#define     MAX_NODES       2
+#define     MAX_NODES       3
 #define     BUFFER_SIZE     1024
 #define     ID_SIZE         20
 #define     MESSAGE_SIZE    BUFFER_SIZE - ID_SIZE - sizeof(size_t)
