@@ -8,7 +8,7 @@
 // ENABLE_MODE
 #define         COMMUNICATION_SEND_POSITION_ENABLE              // enable drones to send position(Warning: open)
 // #define         DYNAMIC_RANGING_FREQUENCY_ENABLE                // enable dynamic ranging frequency(RANGING_PERIOD_LOW/RANGING_PERIOD)
-#define         SAFE_DISTANCE               1                   // distance < SAFE_DISTANCE -> RANGING_PERIOD_LOW(set DYNAMIC_RANGING_FREQUENCY_ENABLE)
+#define         SAFE_DISTANCE               2000                // distance < SAFE_DISTANCE -> RANGING_PERIOD_LOW(set DYNAMIC_RANGING_FREQUENCY_ENABLE)
 #define         SAFE_DISTANCE_ROUND_BORDER  2                   // distance < SAFE_DISTANCE more than SAFE_DISTANCE_ROUND_BORDER -> RANGING_PERIOD(set DYNAMIC_RANGING_FREQUENCY_ENABLE)
 #define         CLASSIC_TOF_ENABLE                              // allow classicTof if ratioes not satisfy
 // #define         WARM_UP_WAIT_ENABLE                             // discard first DISCARD_MESSAGE_NUM message

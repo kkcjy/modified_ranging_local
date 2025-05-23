@@ -4,11 +4,6 @@
 #include "defs.h"
 #include "dwTypes.h"
 
-// not used
-typedef enum {
-    CLASSIC_MODE,
-    MODIFIED_MODE
-} RangingMODE;
 
 typedef enum {
     SENDER,         // sender in communication
