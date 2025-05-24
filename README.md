@@ -1,76 +1,101 @@
-# Modified Ranging Local Test Without Crazyflie Support
+# Modified Ranging Local Simulation with Sniffer Timestamp Integration
 
-## Overview
-This project provides a local test environment for modified ranging without the need for Crazyflie hardware support. It consists of a drone simulator and a control center, allowing you to simulate the communication and ranging process between drones. Additionally, there is a Python script for data processing.
+## Project Overview
 
-## Prerequisites
-- A Unix-like operating system (e.g., Linux, macOS)
-- GCC compiler for C code compilation
-- Python 3 installed for data processing
+This project simulates the full process of drone-to-drone communication using the modified_ranging protocol, driven by timestamp data collected via a sniffer. It supports multi-drone simulation and enables analysis and comparison of different ranging protocols. The workflow includes simulation data driving, protocol operation, log collection, and data visualization.
 
-## Building the Project
+## Usage Instructions
 
-### Build All Components
-To build both the drone simulator and the control center, run the following command in the project root directory:
+### 1. Environment Preparation
+
+- Recommended: Linux or macOS
+- GCC compiler required (for C code)
+- Python 3 with matplotlib, numpy, scipy
+
+### 2. Build the Project
+
+In the project root directory, run:
+
 ```sh
 make
 ```
 
-### Build Specific Components
-- **Build only the drone simulator**:
-```sh
-make drone
-```
-- **Build only the control center**:
-```sh
-make center_control
-```
+To build individual modules:
 
-## Running the System
+- Drone simulator only:
+  ```sh
+  make drone
+  ```
+- Center control only:
+  ```sh
+  make center_control
+  ```
 
-### Start the Control Center
-After building the project, start the control center by running the following command:
+### 3. Configuration and Startup
+
+#### Start Center Control
+
 ```sh
 ./center_control
 ```
-The control center will start listening on the specified port (`8888` by default) and wait for drone connections.
+The center control listens on port 8888 by default, waiting for drone connections.
 
-### Start the Drone Simulator
-To start the drone simulator, run the following command, replacing `<port>` with the IP address of the control center and `<drone_name>` with a unique identifier for the drone:
-```sh
-./drone <port> <drone_name>
-```
-For example:
+#### Start Three Drone Simulators
+
+**You must always start three drones** (e.g., drone1, drone2, drone3):
+
 ```sh
 ./drone 127.0.0.1 drone1
+./drone 127.0.0.1 drone2
+./drone 127.0.0.1 drone3
 ```
-You can start multiple drone simulators to simulate a multi - drone environment.
 
-### Process Data
-After the simulation is completed, you can use the Python script to process the data. Run the following command:
+> **Note:**  
+> - Drone names should share a prefix and differ only by number (e.g., drone1, drone2, drone3).  
+> - If you change the names, ensure the minimum address among the three drones matches `ADDRESS_BASE` in `defs`, and preferably only the number differs. Otherwise, you may need to modify some code logic.
+
+#### Timestamp-Driven Simulation
+
+The project runs according to timestamp data pre-stored in `flight_Log.txt`. Each run outputs results to `modified_Log.txt`.
+
+### 4. Data Comparison and Visualization
+
+To compare with swarm_ranging protocol or real-world data:
+
+- Place swarm protocol logs in `swarm_Log.txt`
+- Place ground-truth distance data in `true_Log.csv`
+
+### 5. Data Processing and Plotting
+
+After simulation, run the data processing script:
+
 ```sh
 python3 data_process.py
 ```
-This script will generate a plot of the adjusted data and save it as `data.png`.
 
-## Code Structure
-- `local_host`: Initializes the local host by setting address, base time, location, and velocity. It provides basic configuration for the system.
-- `base_struct`: Define a series of enumeration types and structures, providing basic data structure definitions for the entire project. 
-- `ranging_buffer`: Defines the ranging buffer structure and related operations like initialization, addition, and search. It helps manage ranging data.
-- `table_linked_list`: Defines a linked - list data structure for message buffer management. It includes operations for node initialization, addition, deletion, and search.
-- `ranging_table`: Defines the ranging table structure and operations for initialization, enabling, disabling, and comparison. It manages ranging information.
-- `modified_ranging`: Implements the modified ranging algorithm, including table initialization, neighbor registration, and buffer data addition. It's the core of the ranging algorithm.
-- `socket_frame`: Defines the socket communication framework with message structures and constants. It enables data transmission between the drone simulator and the control center.
-- `drone`: Implements the drone simulator for message sending, receiving, and processing. It simulates drone behavior using the socket framework.
-- `center_control`: Implements the control center for handling drone connections, broadcasting messages, and managing the drone list. It manages the overall system.
-- `data_process`: Processes and visualizes simulation data. It reads data from files, calculates offsets, and draws plots to help developers understand algorithm performance.
-- `lock`: Implements a thread - safe message processing locking mechanism.
-- `debug`: Defines a debug printing function DEBUG_PRINT to assist developers in debugging.
+The script will read the above log files, plot multi-drone ranging comparison curves, and save the result as `data.png`.
 
-## Configuration
-The project can be configured through preprocessor directives in the source code. For example, you can enable or disable features such as dynamic ranging frequency, packet loss simulation, and position sending by defining or undefining the corresponding macros in the source files.
+## Directory Structure
 
-## Troubleshooting
-- **Compilation errors**: Make sure you have the necessary dependencies installed and that your compiler is configured correctly.
-- **Connection issues**: Check that the IP address and port specified when starting the drone simulator match the settings of the control center.
-- **Data processing errors**: Ensure that the input data format is correct and that Python 3 and the required libraries (e.g., `matplotlib, numpy`) are installed.
+- `local_host`: Host initialization and basic configuration
+- `base_struct`: Basic data structures and enums
+- `ranging_buffer`: Ranging buffer structures and operations
+- `table_linked_list`: Message buffer linked list structures and operations
+- `ranging_table`: Ranging table structures and operations
+- `modified_ranging`: Core algorithm for the modified_ranging protocol
+- `socket_frame`: Communication protocol and message structures
+- `drone`: Drone simulator main program
+- `center_control`: Center control main program
+- `data_process.py`: Data processing and visualization script
+- `lock`: Thread safety mechanisms
+- `debug`: Debug output
+
+## FAQ
+
+- **Build errors:** Ensure all dependencies are installed and the compiler is configured correctly.
+- **Connection issues:** Check that drone and center control IP/port settings match.
+- **Data processing errors:** Ensure log formats are correct and Python dependencies are installed.
+
+---
+
+For custom simulation workflows or protocol details, please refer to the source code and comments.
