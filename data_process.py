@@ -1,5 +1,8 @@
 import re
+import csv
+import matplotlib
 import numpy as np
+matplotlib.use('TkAgg') 
 import matplotlib.pyplot as plt
 
 def read_modified_data(log_path, pairs):
@@ -37,21 +40,21 @@ def modify_realTime(timestamp, flight_log_path):
             parts = line.strip().split()
             if len(parts) == 4:
                 ts = parts[3]
-                hms = parts[0][8:14]
-                ts2hms[ts] = hms
+                hmsms = parts[0][8:17]  
+                ts2hms[ts] = hmsms
     real_timestamp = timestamp.astype('U32')
     it = np.nditer(real_timestamp, flags=['multi_index', 'refs_ok'], op_flags=['readwrite'])
     while not it.finished:
         t = it[0]
         try:
             if t == '' or t == 'nan':
-                hms = '------'
+                hmsms = '---------'
             else:
                 t_str = str(int(float(t)))
-                hms = ts2hms.get(t_str, '------')
+                hmsms = ts2hms.get(t_str, '---------')
         except Exception:
-            hms = '------'
-        it[0][...] = hms
+            hmsms = '---------'
+        it[0][...] = hmsms
         it.iternext()
     return real_timestamp
 
@@ -65,7 +68,7 @@ def read_swarm_data(log_path, pairs):
             parts = line.strip().split()
             if len(parts) < 5:
                 continue
-            ts = parts[0][8:14]
+            hmsms = parts[0][8:17]
             for i in [1, 3]:
                 seq = parts[i]
                 dis = float(parts[i+1])
@@ -74,11 +77,43 @@ def read_swarm_data(log_path, pairs):
                     for j, (a, b) in enumerate(pairs):
                         if (src, dst) == (a, b) or (src, dst) == (b, a):
                             dis_list[j].append(dis)
-                            time_list[j].append(ts)
+                            time_list[j].append(hmsms)
                             break
     max_len = max(len(d) for d in dis_list)
     dis_arr = np.full((3, max_len), np.nan)
-    time_arr = np.full((3, max_len), '', dtype='U6')
+    time_arr = np.full((3, max_len), '', dtype='U9') 
+    for i in range(3):
+        l = len(dis_list[i])
+        dis_arr[i, :l] = dis_list[i]
+        time_arr[i, :l] = time_list[i]
+    return dis_arr, time_arr
+
+def read_true_data(log_path):
+    dis_list = [[] for _ in range(3)]
+    time_list = [[] for _ in range(3)]
+    with open(log_path, 'r') as f:
+        reader = csv.reader(f)
+        header = next(reader) 
+        for row in reader:
+            if len(row) < 4:
+                continue
+            ts = row[0]
+            try:
+                hms, ms = ts.split()[1].split('.')
+                hms_str = hms.replace(':', '') + ms 
+            except Exception:
+                hms_str = ''
+            distances = row[1:4]
+            for i in range(3):
+                try:
+                    dis = float(distances[i]) * 100  
+                except Exception:
+                    dis = np.nan
+                dis_list[i].append(dis)
+                time_list[i].append(hms_str)
+    max_len = max(len(d) for d in dis_list)
+    dis_arr = np.full((3, max_len), np.nan)
+    time_arr = np.full((3, max_len), '', dtype='U9') 
     for i in range(3):
         l = len(dis_list[i])
         dis_arr[i, :l] = dis_list[i]
@@ -88,9 +123,10 @@ def read_swarm_data(log_path, pairs):
 def hms_to_seconds(hms_arr):
     sec_arr = []
     for hms in hms_arr:
-        if isinstance(hms, str) and len(hms) == 6 and hms.isdigit():
+        if isinstance(hms, str) and len(hms) == 9 and hms[:6].isdigit() and hms[6:].isdigit():
             h, m, s = int(hms[:2]), int(hms[2:4]), int(hms[4:6])
-            sec_arr.append(h*3600 + m*60 + s)
+            ms = int(hms[6:])  
+            sec_arr.append(h*3600 + m*60 + s + ms/1000)
         else:
             sec_arr.append(np.nan)
     return np.array(sec_arr)
@@ -99,61 +135,54 @@ def seconds_to_hms(sec):
     h = int(sec // 3600)
     m = int((sec % 3600) // 60)
     s = int(sec % 60)
-    return f"{h:02d}:{m:02d}:{s:02d}"
+    ms = int(round((sec - int(sec)) * 1000))
+    return f"{h:02d}:{m:02d}:{s:02d}.{ms:03d}"
 
-def plot_multi_ranging(modified_dis, modified_time, swarm_dis, swarm_time):
+def plot_multi_ranging(modified_dis, modified_time, swarm_dis, swarm_time, true_dis, true_time):
     plt.figure(figsize=(18, 9))
 
-    modified_colors = ["#00B27A", "#D52700", "#5D48A7"]
-    modified_markers = ['o', 's', 'D'] 
-    modified_line_styles = ['-', '--', ':']  
-    modified_labels = ['drone1-drone2 (modified)', 'drone1-drone3 (modified)', 'drone2-drone3 (modified)']
-    
-    swarm_colors = ["#9E5409", "#079DF4", "#658c4b"]
-    swarm_markers = ['x', '+', '*'] 
-    swarm_line_styles = ['-.', ':', '--'] 
+    true_colors = ["#E0D4D4", "#E0D4D4", "#E0D4D4"]
+    true_markers = ['o', 'o', 'o']
+    true_labels = ['drone1-drone2 (true)', 'drone1-drone3 (true)', 'drone2-drone3 (true)']
+
+    swarm_colors = ["#00B27A", "#D52700", "#75d8d1"]
+    swarm_markers = ['*', '*', '*'] 
     swarm_labels = ['drone1-drone2 (swarm)', 'drone1-drone3 (swarm)', 'drone2-drone3 (swarm)']
 
-    modified_secs = hms_to_seconds(modified_time[0])
-    swarm_secs = hms_to_seconds(swarm_time[0])
+    modified_colors = ["#9E5409", "#3BB1F5", "#8C6EF8"]
+    modified_markers = ['x', 'x', 'x'] 
+    modified_labels = ['drone1-drone2 (modified)', 'drone1-drone3 (modified)', 'drone2-drone3 (modified)']
     
-    start_modified = np.nanmin(modified_secs)
-    start_swarm = np.nanmin(swarm_secs)
-    start_time = max(start_modified, start_swarm)
-    
-    # use start_time + 1 second as new alignment point
-    aligned_time = start_time + 1
-    
-    modified_start_idx = np.where(modified_secs >= aligned_time)[0][0] if len(np.where(modified_secs >= aligned_time)[0]) > 0 else 0
-    swarm_start_idx = np.where(swarm_secs >= aligned_time)[0][0] if len(np.where(swarm_secs >= aligned_time)[0]) > 0 else 0
-    
-    x_modified = np.arange(len(modified_secs) - modified_start_idx)
     for i in range(3):
-        y_modified = modified_dis[i][modified_start_idx:]
-        plt.plot(x_modified, y_modified, marker=modified_markers[i], color=modified_colors[i], 
-                label=modified_labels[i], linewidth=3, markersize=5)
-    
-    x_swarm = np.arange(len(swarm_secs) - swarm_start_idx)
-    for i in range(3):
-        y_swarm = swarm_dis[i][swarm_start_idx:]
-        plt.plot(x_swarm, y_swarm, linestyle='--', color=swarm_colors[i], 
-                marker=swarm_markers[i], label=swarm_labels[i], linewidth=1, markersize=4)
+        # true
+        x_true = hms_to_seconds(true_time[i])
+        y_true = true_dis[i]
+        plt.plot(x_true, y_true, linestyle='--', color=true_colors[i], 
+                 marker=true_markers[i], label=true_labels[i], linewidth=1, markersize=4)
 
-    xtick_pos = []
-    xtick_labels = []
-    last_sec = None
-    for idx, sec in enumerate(modified_secs[modified_start_idx:]):
-        if np.isnan(sec):
-            continue
-        if last_sec is None or sec - last_sec >= 5:
-            xtick_pos.append(idx)
-            xtick_labels.append(seconds_to_hms(sec))
-            last_sec = sec
+        # swarm
+        x_swarm = hms_to_seconds(swarm_time[i])
+        y_swarm = swarm_dis[i]
+        plt.plot(x_swarm, y_swarm, linestyle='-', color=swarm_colors[i], 
+                 marker=swarm_markers[i], label=swarm_labels[i], linewidth=1, markersize=4)
+        
+        # modified
+        x_mod = hms_to_seconds(modified_time[i])
+        y_mod = modified_dis[i]
+        plt.plot(x_mod, y_mod,  linestyle=':', color=modified_colors[i], 
+                 marker=modified_markers[i], label=modified_labels[i], linewidth=3, markersize=5)
 
-    plt.xticks(xtick_pos, xtick_labels, rotation=30)
-    plt.xlabel(f'Time Sequence (aligned at {seconds_to_hms(aligned_time)})', fontsize=16)
+    all_x = np.concatenate([hms_to_seconds(modified_time[i]) for i in range(3)])
+    all_x = all_x[~np.isnan(all_x)]
+    all_x = np.sort(np.unique(all_x))
+    step = max(1, len(all_x)//15)
+    xticks = all_x[::step]
+    xticklabels = [seconds_to_hms(sec) for sec in xticks]
+
+    plt.xticks(xticks, xticklabels, rotation=30)
+    plt.xlabel('Time', fontsize=16)
     plt.ylabel('Distance (m)', fontsize=16)
-    plt.title('Multi-Drones Distance Comparison (Aligned at First Common Timestamp +1s)', fontsize=18)
+    plt.title('Multi-Drones Distance Comparison', fontsize=18)
     plt.legend(fontsize=12)
     plt.grid(True)
     plt.tight_layout()
@@ -162,6 +191,7 @@ def plot_multi_ranging(modified_dis, modified_time, swarm_dis, swarm_time):
 if __name__ == "__main__":
     modified_Log_path = 'data/modified_Log.txt'
     swarm_Log_path = 'data/swarm_Log.txt'
+    true_Log_path = 'data/true_Log.csv'
     flight_Log_path = 'data/flight_Log.txt'
 
     pairs = [(1, 0), (2, 0), (1, 2)]
@@ -171,4 +201,6 @@ if __name__ == "__main__":
 
     swarm_dis, swarm_time = read_swarm_data(swarm_Log_path, pairs)
 
-    plot_multi_ranging(modified_dis, modified_time, swarm_dis, swarm_time)
+    true_dis, true_time = read_true_data(true_Log_path)
+
+    plot_multi_ranging(modified_dis, modified_time, swarm_dis, swarm_time, true_dis, true_time)
