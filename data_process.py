@@ -104,12 +104,12 @@ def seconds_to_hms(sec):
 def plot_multi_ranging(modified_dis, modified_time, swarm_dis, swarm_time):
     plt.figure(figsize=(18, 9))
 
-    colors = ['#0072B2', '#D55E00', '#009E73']
+    modified_colors = ["#00B27A", "#D52700", "#5D48A7"]
     modified_markers = ['o', 's', 'D'] 
     modified_line_styles = ['-', '--', ':']  
     modified_labels = ['drone1-drone2 (modified)', 'drone1-drone3 (modified)', 'drone2-drone3 (modified)']
     
-    swarm_colors = ["#DA0ADA", "#079DF4", '#8c564b']
+    swarm_colors = ["#9E5409", "#079DF4", "#658c4b"]
     swarm_markers = ['x', '+', '*'] 
     swarm_line_styles = ['-.', ':', '--'] 
     swarm_labels = ['drone1-drone2 (swarm)', 'drone1-drone3 (swarm)', 'drone2-drone3 (swarm)']
@@ -130,7 +130,7 @@ def plot_multi_ranging(modified_dis, modified_time, swarm_dis, swarm_time):
     x_modified = np.arange(len(modified_secs) - modified_start_idx)
     for i in range(3):
         y_modified = modified_dis[i][modified_start_idx:]
-        plt.plot(x_modified, y_modified, marker=modified_markers[i], color=colors[i], 
+        plt.plot(x_modified, y_modified, marker=modified_markers[i], color=modified_colors[i], 
                 label=modified_labels[i], linewidth=3, markersize=5)
     
     x_swarm = np.arange(len(swarm_secs) - swarm_start_idx)
