@@ -11,8 +11,8 @@ extern uint16_t localSendSeqNumber;
 extern uint16_t localReceivedSeqNumber;
 extern int rangingPeriod;
 QueueTaskLock_t queueTaskLock;                  // lock for task
-dwTime_t TxTimestamp;                           // store timestamp from broadcast_flightlog
-dwTime_t RxTimestamp;                           // store timestamp from broadcast_flightlog
+dwTime_t TxTimestamp;                           // store timestamp from broadcast_flight_Log
+dwTime_t RxTimestamp;                           // store timestamp from broadcast_flight_Log
 
 
 void send_to_center(int center_socket, const char* node_id, const Ranging_Message_t* ranging_msg) {
@@ -52,7 +52,7 @@ void *receive_from_center(void *arg) {
 
         // ignore the message from itself
         if (strcmp(msg.sender_id, local_drone_id) != 0 || strcmp(msg.sender_id, "CENTER") == 0) {
-            // from broadcast_flightlog
+            // from broadcast_flight_Log
             if (msg.data_size == sizeof(LineMessage)) {
                 LineMessage *line_msg = (LineMessage *)msg.data;
                 if(strcmp(local_drone_id, line_msg->drone_id) == 0) {

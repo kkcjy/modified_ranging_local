@@ -83,11 +83,11 @@ void *handle_node_connection(void *arg) {
     return NULL;
 }
 
-void *broadcast_flightlog(void *arg) {
+void *broadcast_flight_Log(void *arg) {
     while (1) {
-        FILE *file = fopen("data/flightLog.txt", "r");
+        FILE *file = fopen("data/flight_Log.txt", "r");
         if (!file) {
-            perror("Failed to open flightLog.txt");
+            perror("Failed to open flight_Log.txt");
             sleep(1);
             continue;
         }
@@ -196,7 +196,7 @@ int main() {
     }
 
     pthread_t broadcast_thread;
-    pthread_create(&broadcast_thread, NULL, broadcast_flightlog, NULL);
+    pthread_create(&broadcast_thread, NULL, broadcast_flight_Log, NULL);
 
     while (1);
 

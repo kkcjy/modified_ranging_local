@@ -13,10 +13,10 @@ def modified_time(data, file_path):
             parts = line.split()
             if len(parts) >= 4:
                 real_times.append(parts[0])
-                timestamps.append(float(parts[3]))
+                timestamps.append(int(parts[3]))
     time_labels = []
     for i in range(len(data)):
-        data_timestamp = data[i, 3]
+        data_timestamp = int(data[i, 2]) if data.shape[1] > 2 else 0  # 你的data第三列是time
         idx = np.argmin(np.abs(np.array(timestamps) - data_timestamp))
         tstr = real_times[idx][-10:-4]
         time_labels.append(tstr[:2] + ':' + tstr[2:4] + ':' + tstr[4:6])
@@ -52,17 +52,16 @@ def plot_multi_lines(time_labels, datas, labels):
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.tight_layout()
     plt.xticks(x[::max(1, len(x)//10)], time_labels[::max(1, len(x)//10)], rotation=45)
-    plt.savefig('data/multi_drones.png')
+    plt.savefig('data/data_process.png')
     plt.show()
 
 if __name__ == "__main__":
-    file_path = 'data/dataLog.txt'
-    flightlog_path = 'data/flightLog.txt'
+    file_path = 'data/modified_Log.txt'
+    flight_Log_path = 'data/flight_Log.txt'
     pairs = [(34697, 34698), (34698, 34699), (34699, 34697)]
     labels = ['34697-34698', '34698-34699', '34699-34697']
     datas = [read_data(file_path, pair) for pair in pairs]
     min_len = min([len(d) for d in datas if len(d) > 0])
     datas = [d[:min_len] for d in datas]
-    dummy_data = np.zeros((min_len, 4))
-    time_labels = modified_time(dummy_data, flightlog_path)
+    time_labels = modified_time(datas[0], flight_Log_path)
     plot_multi_lines(time_labels, datas, labels)
