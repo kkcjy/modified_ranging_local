@@ -2,66 +2,155 @@ import re
 import numpy as np
 import matplotlib.pyplot as plt
 
-def modified_time(data, file_path):
-    real_times = []
-    timestamps = []
-    with open(file_path, 'r') as f:
+def read_modified_data(log_path, pairs):
+    dis_list = [[] for _ in range(3)]
+    time_list = [[] for _ in range(3)]
+    pattern = re.compile(r"\[(\d)-(\d)\]: ModifiedD = ([\d\.]+), time = (\d+)")
+    for idx, (a, b) in enumerate(pairs):
+        pass 
+    with open(log_path, 'r') as f:
         for line in f:
-            line = line.strip()
-            if not line or not line[0].isdigit():
-                continue
-            parts = line.split()
-            if len(parts) >= 4:
-                real_times.append(parts[0])
-                timestamps.append(int(parts[3]))
-    time_labels = []
-    for i in range(len(data)):
-        data_timestamp = int(data[i, 2]) if data.shape[1] > 2 else 0  # 你的data第三列是time
-        idx = np.argmin(np.abs(np.array(timestamps) - data_timestamp))
-        tstr = real_times[idx][-10:-4]
-        time_labels.append(tstr[:2] + ':' + tstr[2:4] + ':' + tstr[4:6])
-    return time_labels
-
-def read_data(file_path, addr_pair):
-    # addr_pair: (addr1, addr2)
-    data = []
-    pattern = r'\[current-(\d+)-(\d+)\]: ModifiedD = ([\d.]+), ClassicD = ([\d.]+), time = (\d+)'
-    with open(file_path, 'r') as f:
-        for line in f:
-            line = line.strip()
-            m = re.match(pattern, line)
+            m = pattern.search(line)
             if m:
-                addr_a, addr_b = int(m.group(1)), int(m.group(2))
-                if (addr_a, addr_b) == addr_pair:
-                    mod = float(m.group(3))
-                    cls = float(m.group(4))
-                    t = float(m.group(5))
-                    data.append((mod, cls, t))
-    return np.array(data)
+                src, dst = int(m.group(1)), int(m.group(2))
+                for i, (a, b) in enumerate(pairs):
+                    if (src, dst) == (a, b) or (src, dst) == (b, a):
+                        dis = float(m.group(3))
+                        t = int(m.group(4))
+                        dis_list[i].append(dis)
+                        time_list[i].append(t)
+                        break
+    max_len = max(len(d) for d in dis_list)
+    dis_arr = np.full((3, max_len), np.nan)
+    time_arr = np.full((3, max_len), np.nan)
+    for i in range(3):
+        l = len(dis_list[i])
+        dis_arr[i, :l] = dis_list[i]
+        time_arr[i, :l] = time_list[i]
+    return dis_arr, time_arr
 
-def plot_multi_lines(time_labels, datas, labels):
-    plt.figure(figsize=(14, 8))
-    x = np.arange(len(time_labels))
-    for i, data in enumerate(datas):
-        if len(data) > 0:
-            plt.plot(x[:len(data)], data[:, 0], label=f'{labels[i]} ModifiedD')
-    plt.title('Multi Drone Distance')
-    plt.xlabel('real_time')
-    plt.ylabel('distance')
-    plt.legend(loc='upper left')
-    plt.grid(True, linestyle='--', alpha=0.7)
+# replace the timestamp in the modified log with the corresponding time in the flight log
+def modify_realTime(timestamp, flight_log_path):
+    ts2hms = {}
+    with open(flight_log_path, 'r') as f:
+        for line in f:
+            parts = line.strip().split()
+            if len(parts) == 4:
+                ts = parts[3]
+                hms = parts[0][8:14]
+                ts2hms[ts] = hms
+    real_timestamp = timestamp.astype('U32')
+    it = np.nditer(real_timestamp, flags=['multi_index', 'refs_ok'], op_flags=['readwrite'])
+    while not it.finished:
+        t = it[0]
+        try:
+            if t == '' or t == 'nan':
+                hms = '------'
+            else:
+                t_str = str(int(float(t)))
+                hms = ts2hms.get(t_str, '------')
+        except Exception:
+            hms = '------'
+        it[0][...] = hms
+        it.iternext()
+    return real_timestamp
+
+def read_swarm_data(log_path, pairs):
+    dis_list = [[] for _ in range(3)]
+    time_list = [[] for _ in range(3)]
+    for idx, (a, b) in enumerate(pairs):
+        pass 
+    with open(log_path, 'r') as f:
+        for line in f:
+            parts = line.strip().split()
+            if len(parts) < 5:
+                continue
+            ts = parts[0][8:14]
+            for i in [1, 3]:
+                seq = parts[i]
+                dis = float(parts[i+1])
+                if '-' in seq:
+                    src, dst = map(int, seq.split('-'))
+                    for j, (a, b) in enumerate(pairs):
+                        if (src, dst) == (a, b) or (src, dst) == (b, a):
+                            dis_list[j].append(dis)
+                            time_list[j].append(ts)
+                            break
+    max_len = max(len(d) for d in dis_list)
+    dis_arr = np.full((3, max_len), np.nan)
+    time_arr = np.full((3, max_len), '', dtype='U6')
+    for i in range(3):
+        l = len(dis_list[i])
+        dis_arr[i, :l] = dis_list[i]
+        time_arr[i, :l] = time_list[i]
+    return dis_arr, time_arr
+
+def hms_to_seconds(hms_arr):
+    sec_arr = []
+    for hms in hms_arr:
+        if isinstance(hms, str) and len(hms) == 6 and hms.isdigit():
+            h, m, s = int(hms[:2]), int(hms[2:4]), int(hms[4:6])
+            sec_arr.append(h*3600 + m*60 + s)
+        else:
+            sec_arr.append(np.nan)
+    return np.array(sec_arr)
+
+def seconds_to_hms(sec):
+    h = int(sec // 3600)
+    m = int((sec % 3600) // 60)
+    s = int(sec % 60)
+    return f"{h:02d}:{m:02d}:{s:02d}"
+
+def plot_multi_ranging(modified_dis, modified_time, swarm_dis, swarm_time):
+    plt.figure(figsize=(18, 9))
+    colors = ['tab:blue', 'tab:orange', 'tab:green']
+    markers = ['o', 's', '^']
+    labels = ['drone1 - drone2 (modified)', 'drone1 - drone3 (modified)', 'drone2 - drone3 (modified)']
+    raw_labels = ['drone1 - drone2 (swarm)', 'drone1 - drone3 (swarm)', 'drone2 - drone3 (swarm)']
+    raw_colors = ['purple', 'red', 'brown']
+    raw_markers = ['x', 'x', 'x']
+
+    time_strs = modified_time[0]
+    time_secs = hms_to_seconds(time_strs)
+    x_mod = np.arange(len(time_secs))
+
+    for i in range(3):
+        plt.plot(x_mod[:len(modified_dis[i])], modified_dis[i], marker=markers[i], color=colors[i], label=labels[i], linewidth=3, markersize=5)
+
+    for i in range(3):
+        x_swarm = np.arange(len(swarm_dis[i]))
+        plt.plot(x_swarm, swarm_dis[i], linestyle='--', color=raw_colors[i], marker=raw_markers[i], label=raw_labels[i], linewidth=1, markersize=4)
+
+    xtick_pos = []
+    xtick_labels = []
+    last_sec = None
+    for idx, sec in enumerate(time_secs):
+        if np.isnan(sec):
+            continue
+        if last_sec is None or sec - last_sec >= 5:
+            xtick_pos.append(idx)
+            xtick_labels.append(seconds_to_hms(sec))
+            last_sec = sec
+
+    plt.xticks(xtick_pos, xtick_labels, rotation=30)
+    plt.xlabel('Timestamp', fontsize=16)
+    plt.ylabel('Distance (m)', fontsize=16)
+    plt.title('Multi-Drones Distance Comparison', fontsize=18)
+    plt.legend(fontsize=12)
+    plt.grid(True)
     plt.tight_layout()
-    plt.xticks(x[::max(1, len(x)//10)], time_labels[::max(1, len(x)//10)], rotation=45)
-    plt.savefig('data/data_process.png')
     plt.show()
 
 if __name__ == "__main__":
-    file_path = 'data/modified_Log.txt'
+    modified_Log_path = 'data/modified_Log.txt'
+    swarm_Log_path = 'data/swarm_Log.txt'
     flight_Log_path = 'data/flight_Log.txt'
-    pairs = [(34697, 34698), (34698, 34699), (34699, 34697)]
-    labels = ['34697-34698', '34698-34699', '34699-34697']
-    datas = [read_data(file_path, pair) for pair in pairs]
-    min_len = min([len(d) for d in datas if len(d) > 0])
-    datas = [d[:min_len] for d in datas]
-    time_labels = modified_time(datas[0], flight_Log_path)
-    plot_multi_lines(time_labels, datas, labels)
+
+    pairs = [(1, 0), (2, 0), (1, 2)]
+
+    modified_dis, modified_time = read_modified_data(modified_Log_path, pairs)
+    modified_time = modify_realTime(modified_time, flight_Log_path)
+
+    swarm_dis, swarm_time = read_swarm_data(swarm_Log_path, pairs)
+
+    plot_multi_ranging(modified_dis, modified_time, swarm_dis, swarm_time)

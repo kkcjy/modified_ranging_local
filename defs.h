@@ -5,6 +5,9 @@
 #define         table_index_t               int8_t
 #define         Time_t                      uint32_t
 
+
+#define         ADDRESS_BASE                34697
+
 // ENABLE_MODE
 #define         CLASSIC_TOF_ENABLE                              // allow classicTof if ratioes not satisfy
 

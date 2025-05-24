@@ -429,10 +429,10 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
     }
 
     if(ModifiedD != NULL_DIS) {
-        DEBUG_PRINT("[current-%d-%d]: ModifiedD = %f, ClassicD = %f, time = %lld\n", localHost->localAddress, neighborAddress, ModifiedD, ClassicD, rangingMessageWithAdditionalInfo->RxTimestamp.full);
+        DEBUG_PRINT("[%d-%d]: ModifiedD = %f, time = %lld\n", localHost->localAddress - ADDRESS_BASE, neighborAddress - ADDRESS_BASE, ModifiedD, rangingMessageWithAdditionalInfo->RxTimestamp.full);
     }
     else {
-        DEBUG_PRINT("[current]: No valid Current distance calculated\n");
+        DEBUG_PRINT("Warning: No valid Current distance calculated\n");
     }
 
     return false;
