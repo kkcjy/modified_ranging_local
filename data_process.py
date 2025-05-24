@@ -105,44 +105,44 @@ def plot_multi_ranging(modified_dis, modified_time, swarm_dis, swarm_time):
     plt.figure(figsize=(18, 9))
 
     colors = ['#0072B2', '#D55E00', '#009E73']
-    markers = ['o', 's', 'D'] 
-    line_styles = ['-', '--', ':']  
-    labels = ['drone1-drone2 (mod)', 'drone1-drone3 (mod)', 'drone2-drone3 (mod)']
+    modified_markers = ['o', 's', 'D'] 
+    modified_line_styles = ['-', '--', ':']  
+    modified_labels = ['drone1-drone2 (modified)', 'drone1-drone3 (modified)', 'drone2-drone3 (modified)']
     
-    raw_colors = ["#DA0ADA", "#079DF4", '#8c564b']
-    raw_markers = ['x', '+', '*'] 
-    raw_line_styles = ['-.', ':', '--'] 
-    raw_labels = ['drone1-drone2 (raw)', 'drone1-drone3 (raw)', 'drone2-drone3 (raw)']
+    swarm_colors = ["#DA0ADA", "#079DF4", '#8c564b']
+    swarm_markers = ['x', '+', '*'] 
+    swarm_line_styles = ['-.', ':', '--'] 
+    swarm_labels = ['drone1-drone2 (swarm)', 'drone1-drone3 (swarm)', 'drone2-drone3 (swarm)']
 
-    mod_secs = hms_to_seconds(modified_time[0])
+    modified_secs = hms_to_seconds(modified_time[0])
     swarm_secs = hms_to_seconds(swarm_time[0])
     
-    start_mod = np.nanmin(mod_secs)
+    start_modified = np.nanmin(modified_secs)
     start_swarm = np.nanmin(swarm_secs)
-    start_time = max(start_mod, start_swarm)
+    start_time = max(start_modified, start_swarm)
     
     # use start_time + 1 second as new alignment point
     aligned_time = start_time + 1
     
-    mod_start_idx = np.where(mod_secs >= aligned_time)[0][0] if len(np.where(mod_secs >= aligned_time)[0]) > 0 else 0
+    modified_start_idx = np.where(modified_secs >= aligned_time)[0][0] if len(np.where(modified_secs >= aligned_time)[0]) > 0 else 0
     swarm_start_idx = np.where(swarm_secs >= aligned_time)[0][0] if len(np.where(swarm_secs >= aligned_time)[0]) > 0 else 0
     
-    x_mod = np.arange(len(mod_secs) - mod_start_idx)
+    x_modified = np.arange(len(modified_secs) - modified_start_idx)
     for i in range(3):
-        y_mod = modified_dis[i][mod_start_idx:]
-        plt.plot(x_mod, y_mod, marker=markers[i], color=colors[i], 
-                label=labels[i], linewidth=3, markersize=5)
+        y_modified = modified_dis[i][modified_start_idx:]
+        plt.plot(x_modified, y_modified, marker=modified_markers[i], color=colors[i], 
+                label=modified_labels[i], linewidth=3, markersize=5)
     
     x_swarm = np.arange(len(swarm_secs) - swarm_start_idx)
     for i in range(3):
         y_swarm = swarm_dis[i][swarm_start_idx:]
-        plt.plot(x_swarm, y_swarm, linestyle='--', color=raw_colors[i], 
-                marker=raw_markers[i], label=raw_labels[i], linewidth=1, markersize=4)
+        plt.plot(x_swarm, y_swarm, linestyle='--', color=swarm_colors[i], 
+                marker=swarm_markers[i], label=swarm_labels[i], linewidth=1, markersize=4)
 
     xtick_pos = []
     xtick_labels = []
     last_sec = None
-    for idx, sec in enumerate(mod_secs[mod_start_idx:]):
+    for idx, sec in enumerate(modified_secs[modified_start_idx:]):
         if np.isnan(sec):
             continue
         if last_sec is None or sec - last_sec >= 5:
