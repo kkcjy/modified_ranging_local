@@ -7,6 +7,10 @@ int RangingPeriod = RANGING_PERIOD;             // period of sending
 #ifdef WARM_UP_WAIT_ENABLE
     int discardCount = 0;                       // wait for device warming up and discard message
 #endif
+#ifdef COMPENSATE_MODE
+    int64_t lastD;     
+    float compensateRate = 0.618;      
+#endif
 
 void initRangingTableSet() {
     rangingTableSet = (RangingTableSet_t*)malloc(sizeof(RangingTableSet_t));
@@ -184,8 +188,7 @@ void printRangingTableSet(StatusType type) {
 }
 
 Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
-    // (175 ~ 225)
-    Time_t taskDelay = M2T(RangingPeriod + rand()%(RANGING_PERIOD_RAND_RANGE + 1) - RANGING_PERIOD_RAND_RANGE/2);
+    Time_t taskDelay = RANGING_PERIOD;
 
     int8_t bodyUnitCounter = 0;     // counter for valid bodyunits
 
@@ -497,8 +500,14 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
     }
 
     if(ModifiedD != NULL_DIS) {
-        DEBUG_PRINT("[current_%d]: ModifiedD = %f, ClassicD = %f, TrueD = %f, time = %lld\n", localHost->localAddress, ModifiedD, ClassicD, TrueD, rangingMessageWithAdditionalInfo->RxTimestamp.full);
-    }
+        #ifdef COMPENSATE_MODE
+            float compensateD = (ModifiedD - lastD) * compensateRate;
+            lastD = ModifiedD;
+            DEBUG_PRINT("[current_%d]: ModifiedD = %f, ClassicD = %f, TrueD = %f, time = %lld\n", localHost->localAddress, ModifiedD + compensateD, ClassicD, TrueD, rangingMessageWithAdditionalInfo->RxTimestamp.full);
+        #else
+            DEBUG_PRINT("[current_%d]: ModifiedD = %f, ClassicD = %f, TrueD = %f, time = %lld\n", localHost->localAddress, ModifiedD, ClassicD, TrueD, rangingMessageWithAdditionalInfo->RxTimestamp.full);
+        #endif
+   }
     else {
         DEBUG_PRINT("[current]: No valid Current distance calculated\n");
     }

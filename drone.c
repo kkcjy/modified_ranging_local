@@ -65,7 +65,7 @@ void *receive_from_center(void *arg) {
             exit(1);
         }
 
-        // don't display messages from essage dropped randomly (probabself
+        // don't receive messages from essage dropped randomly
         if (strcmp(msg.sender_id, local_drone_id) != 0) {
             #ifdef PACKET_LOSS_ENABLE
                 // for random

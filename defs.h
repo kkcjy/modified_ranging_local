@@ -23,6 +23,7 @@
 #define         OPPOSITE_DISTANCE_BASE      5000                // (mm)low distance of drones in OPPOSITE mode           
 #define         ALIGN_ENABLE                
 #define         ALIGN_ROUNDS                50                  // initial rounds with stationary state
+#define         COMPENSATE_MODE                                 // enable compensate for ranging
 
 // LOCAL_HOST_H
 #define         MAX_RANDOM_TIME_OFF         10                  // diff time between 
