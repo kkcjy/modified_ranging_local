@@ -57,7 +57,7 @@ This script will generate a plot of the adjusted data and save it as `data.png`.
 - `local_host`: Initializes the local host by setting address, base time, location, and velocity. It provides basic configuration for the system.
 - `base_struct`: Define a series of enumeration types and structures, providing basic data structure definitions for the entire project. 
 - `ranging_buffer`: Defines the ranging buffer structure and related operations like initialization, addition, and search. It helps manage ranging data.
-- `table_linked_list`: Defines a linked - list data structure for message buffer management. It includes operations for node initialization, addition, deletion, and search.
+- `ranging_list`: Defines a list data structure for message buffer management. It includes operations for node initialization, addition, deletion, and search.
 - `ranging_table`: Defines the ranging table structure and operations for initialization, enabling, disabling, and comparison. It manages ranging information.
 - `modified_ranging`: Implements the modified ranging algorithm, including table initialization, neighbor registration, and buffer data addition. It's the core of the ranging algorithm.
 - `socket_frame`: Defines the socket communication framework with message structures and constants. It enables data transmission between the drone simulator and the control center.

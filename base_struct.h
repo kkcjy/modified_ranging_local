@@ -5,15 +5,23 @@
 #include "dwTypes.h"
 
 
+// SENDER / RECEIVER
 typedef enum {
-    SENDER,         // sender in communication
-    RECEIVER        // receiver in communication
+    SENDER,         
+    RECEIVER     
 } StatusType;
 
+// UNUSED / USING
 typedef enum {
-    NULL_STATE,
+    UNUSED,
     USING
 } TableState;
+
+// timestamp + seqNumber
+typedef struct {
+    dwTime_t timestamp;                      
+    uint16_t seqNumber;                      
+} __attribute__((packed)) Timestamp_Tuple_t;
 
 // x y z
 typedef struct {
@@ -21,12 +29,6 @@ typedef struct {
     uint16_t y;
     uint16_t z;
 } __attribute__((packed)) Coordinate_Tuple_t;
-
-// time + seq
-typedef struct {
-    dwTime_t timestamp;                      
-    uint16_t seqNumber;                      
-} __attribute__((packed)) Timestamp_Tuple_t; 
 
 // x y z
 typedef struct {

@@ -3,14 +3,14 @@
 
 #include "base_struct.h"
 #include "debug.h"
-#include "table_linked_list.h"
+#include "ranging_list.h"
 #include "ranging_buffer.h"
 
 typedef struct {
     TableState state; 
     uint16_t address;
-    TableLinkedList_t sendBuffer; 
-    TableLinkedList_t receiveBuffer; 
+    RangingList_t sendBuffer; 
+    RangingList_t receiveBuffer; 
     RangingBuffer_t validBuffer;
 } __attribute__((packed)) RangingTable_t;
 

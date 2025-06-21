@@ -42,7 +42,7 @@ typedef struct {
     FreeQueue_t freeQueue;                
     table_index_t head;                 // -128 ~ 127
     table_index_t tail;                 // -128 ~ 127
-} __attribute__((packed)) TableLinkedList_t;
+} __attribute__((packed)) RangingList_t;
 
 
 void initFreeQueue(FreeQueue_t *queue);
@@ -50,12 +50,12 @@ bool isEmpty(FreeQueue_t *queue);
 bool isFull(FreeQueue_t *queue);
 table_index_t pop(FreeQueue_t *queue);
 void push(FreeQueue_t *queue, table_index_t index);
-void initTableLinkedList(TableLinkedList_t *list);
-table_index_t addTableLinkedList(TableLinkedList_t *list, TableNode_t *node);
-void deleteTail(TableLinkedList_t *list);
-table_index_t searchTableLinkedList(TableLinkedList_t *list, dwTime_t timeStamp, StatusType status);
-table_index_t findRemoteSeqIndex(TableLinkedList_t *list, uint16_t remoteSeq);
+void initTableLinkedList(RangingList_t *list);
+table_index_t addTableLinkedList(RangingList_t *list, TableNode_t *node);
+void deleteTail(RangingList_t *list);
+table_index_t searchTableLinkedList(RangingList_t *list, dwTime_t timeStamp, StatusType status);
+table_index_t findRemoteSeqIndex(RangingList_t *list, uint16_t remoteSeq);
 void printTableNode(TableNode_t *node);
-void printTableLinkedList(TableLinkedList_t *list);
+void printTableLinkedList(RangingList_t *list);
 
 # endif

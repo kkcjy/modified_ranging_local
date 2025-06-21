@@ -1,4 +1,4 @@
-#include "table_linked_list.h"
+#include "ranging_list.h"
 
 
 void initFreeQueue(FreeQueue_t *queue) {
@@ -42,7 +42,7 @@ void push(FreeQueue_t *queue, table_index_t index) {
     queue->room++;
 }
 
-void initTableLinkedList(TableLinkedList_t *list) {
+void initTableLinkedList(RangingList_t *list) {
     for (uint8_t i = 0; i < TABLE_BUFFER_SIZE; i++) {
         list->tableBuffer[i].TxTimestamp.full = NULL_TIMESTAMP;
         list->tableBuffer[i].RxTimestamp.full = NULL_TIMESTAMP;
@@ -62,7 +62,7 @@ void initTableLinkedList(TableLinkedList_t *list) {
 }
 
 // add record and fill in record
-table_index_t addTableLinkedList(TableLinkedList_t *list, TableNode_t *node) {
+table_index_t addTableLinkedList(RangingList_t *list, TableNode_t *node) {
     table_index_t index = list->head;
 
     // fill in record
@@ -115,7 +115,7 @@ table_index_t addTableLinkedList(TableLinkedList_t *list, TableNode_t *node) {
 }
 
 // delete the last record
-void deleteTail(TableLinkedList_t *list) {
+void deleteTail(RangingList_t *list) {
     if (list->tail == NULL_INDEX) {
         return;
     }
@@ -142,7 +142,7 @@ void deleteTail(TableLinkedList_t *list) {
 }
 
 // search for index of tableNode whose Rx/Tx time is closest and which has complete Tx and Rx
-table_index_t searchTableLinkedList(TableLinkedList_t *list, dwTime_t timeStamp, StatusType status) {
+table_index_t searchTableLinkedList(RangingList_t *list, dwTime_t timeStamp, StatusType status) {
     table_index_t index = list->head;
     table_index_t ans = NULL_INDEX;
     while (index != NULL_INDEX) {
@@ -169,7 +169,7 @@ table_index_t searchTableLinkedList(TableLinkedList_t *list, dwTime_t timeStamp,
 }
 
 // find the index of specified remoteSeq record
-table_index_t findRemoteSeqIndex(TableLinkedList_t *list, uint16_t remoteSeq){
+table_index_t findRemoteSeqIndex(RangingList_t *list, uint16_t remoteSeq){
     table_index_t index = list->head;
     while (index != NULL_INDEX) {
         // have processed
@@ -189,7 +189,7 @@ void printTableNode(TableNode_t *node) {
         node->TxTimestamp.full, node->RxTimestamp.full, node->Tf, node->localSeq, node->remoteSeq);
 }
 
-void printTableLinkedList(TableLinkedList_t *list) {
+void printTableLinkedList(RangingList_t *list) {
     DEBUG_PRINT("--------------------START DEBUG_PRINT TABLELINKEDLIST--------------------\n");
     table_index_t index = list->head;
     while (index != NULL_INDEX)

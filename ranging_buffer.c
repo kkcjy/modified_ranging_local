@@ -120,14 +120,14 @@ table_index_t searchRangingBuffer(RangingBuffer_t *buffer, uint16_t seq, StatusT
 }
 
 /* calculateTof and store valid calculation record
-    FLAG = FIRST_CALCULATE,
+    CALCULATE_FLAG = FIRST_CALCULATE,
         calculate the Tof using the most recent valid record
-    FLAG = SECOND_CALCULATE_UNQUALIFIED,
+    CALCULATE_FLAG = SECOND_CALCULATE_UNQUALIFIED,
         recalculate the Tof using the next most recent valid record
     FLAS = SECOND_CALCULATE_ABNORMAL
         recalculate the Tof using the next most recent valid record
 */
-double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t checkLocalSeq, StatusType status, FLAG flag, float *Modified, float *Classic, float *True) {
+double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t checkLocalSeq, StatusType status, CALCULATE_FLAG flag, float *Modified, float *Classic, float *True) {
     dwTime_t Tx = tableNode->TxTimestamp;
     dwTime_t Rx = tableNode->RxTimestamp;
     uint16_t localSeq = tableNode->localSeq;
@@ -217,10 +217,10 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
         if(flag == FIRST_CALCULATE){
             // DEBUG_PRINT("Warning: The latest record in rangingbuffer fails, and an attempt is made to recalculate the Tof using the next most recent valid record\n");
             if(status == SENDER) {
-                return calculateTof(buffer, tableNode, node->TxSeq, status, SECOND_CALCULATE_UNQUALIFIED, Modified, Classic, True);
+                return calculateTof(buffer, tableNode, node->TxSeq, status, SECOND_CALCULATE_ABNORMAL, Modified, Classic, True);
             }
             else if(status == RECEIVER) {
-                return calculateTof(buffer, tableNode, node->RxSeq, status, SECOND_CALCULATE_UNQUALIFIED, Modified, Classic, True);
+                return calculateTof(buffer, tableNode, node->RxSeq, status, SECOND_CALCULATE_ABNORMAL, Modified, Classic, True);
             }
         }
         else{
@@ -337,7 +337,7 @@ double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t ch
     return D;
 }
 
-void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, table_index_t firstIndex, RangingBuffer_t* rangingBuffer, StatusType status) {
+void initializeRecordBuffer(RangingList_t *listA, RangingList_t *listB, table_index_t firstIndex, RangingBuffer_t* rangingBuffer, StatusType status) {
     // fetch data successively from listA, listB, and listA 
     table_index_t indexA1 = firstIndex;
     if (indexA1 == NULL_INDEX || listA->tableBuffer[indexA1].TxTimestamp.full == NULL_TIMESTAMP || listA->tableBuffer[indexA1].RxTimestamp.full == NULL_TIMESTAMP || listA->tableBuffer[indexA1].Tf != NULL_TOF) {

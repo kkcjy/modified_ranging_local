@@ -4,7 +4,7 @@
 #include "defs.h"
 #include "debug.h"
 #include "base_struct.h"
-#include "table_linked_list.h"
+#include "ranging_list.h"
 #include "nullVal.h"
 
 // for function calculateTof
@@ -12,7 +12,7 @@ typedef enum {
     FIRST_CALCULATE,
     SECOND_CALCULATE_UNQUALIFIED,
     SECOND_CALCULATE_ABNORMAL
-} FLAG;
+} CALCULATE_FLAG;
 
 /* for a round-trip communication(RangingBufferNode_t)
                    RECEIVER                                       SENDEDR
@@ -63,8 +63,8 @@ void initRangingBufferNode_t(RangingBufferNode_t *node);
 void initRangingBuffer(RangingBuffer_t *buffer);
 void addRangingBuffer(RangingBuffer_t *buffer, RangingBufferNode_t *node, StatusType status);
 table_index_t searchRangingBuffer(RangingBuffer_t *buffer, uint16_t localSeq, StatusType status);
-double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t checkLocalSeq, StatusType status, FLAG flag, float *Modified, float *Classic, float *True);
-void initializeRecordBuffer(TableLinkedList_t *listA, TableLinkedList_t *listB, table_index_t firstIndex, RangingBuffer_t* rangingBuffer, StatusType status);
+double calculateTof(RangingBuffer_t *buffer, TableNode_t* tableNode, uint16_t checkLocalSeq, StatusType status, CALCULATE_FLAG flag, float *Modified, float *Classic, float *True);
+void initializeRecordBuffer(RangingList_t *listA, RangingList_t *listB, table_index_t firstIndex, RangingBuffer_t* rangingBuffer, StatusType status);
 void printRangingBuffer(RangingBuffer_t *buffer);
 
 #endif
