@@ -1,202 +1,125 @@
 #include "ranging_list.h"
 
 
-void initFreeQueue(FreeQueue_t *queue) {
-    queue->room = FREE_QUEUE_SIZE;
-    queue->tail = FREE_QUEUE_SIZE - 1;
-    queue->head = 0;
-    for (table_index_t i = 0; i < FREE_QUEUE_SIZE; i++) {
-        queue->freeIndex[i] = i;
+void initRangingListNode(RangingListNode_t *node) {
+    node->TxTimestamp.full = NULL_TIMESTAMP;
+    node->RxTimestamp.full = NULL_TIMESTAMP;
+    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
+        node->TxCoordinate = nullCoordinate;
+        node->RxCoordinate = nullCoordinate;
+    #endif
+    node->Tf = NULL_TOF;
+    node->localSeq = NULL_SEQ;
+    node->remoteSeq = NULL_SEQ;
+}
+
+void initRangingList(RangingList_t *list) {
+    list->topRangingList = NULL_INDEX;
+    for (int i = 0; i < RANGING_LIST_SIZE; i++) {
+        initRangingListNode(&list->rangingList[i]);
     }
-}
-
-// spare space is empty
-bool isEmpty(FreeQueue_t *queue) {
-    return queue->room == 0;
-}
-
-// spare space is full
-bool isFull(FreeQueue_t *queue) {
-    return queue->room == FREE_QUEUE_SIZE;
-}
-
-// get a node from freequeue
-table_index_t pop(FreeQueue_t *queue) {
-    if(isEmpty(queue)) {
-        return NULL_INDEX;
-    }
-    table_index_t index = queue->freeIndex[queue->head];
-    queue->freeIndex[queue->head] = NULL_INDEX;
-    queue->head = (queue->head + 1) % FREE_QUEUE_SIZE;
-    queue->room--;
-    return index;
-}
-
-// push a node into freequeue
-void push(FreeQueue_t *queue, table_index_t index) {
-    if(isFull(queue)) {
-        return;
-    }
-    queue->tail = (queue->tail + 1) % FREE_QUEUE_SIZE;
-    queue->freeIndex[queue->tail] = index;
-    queue->room++;
-}
-
-void initTableLinkedList(RangingList_t *list) {
-    for (uint8_t i = 0; i < TABLE_BUFFER_SIZE; i++) {
-        list->tableBuffer[i].TxTimestamp.full = NULL_TIMESTAMP;
-        list->tableBuffer[i].RxTimestamp.full = NULL_TIMESTAMP;
-        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            list->tableBuffer[i].TxCoordinate = nullCoordinate;
-            list->tableBuffer[i].RxCoordinate = nullCoordinate;
-        #endif
-        list->tableBuffer[i].Tf = NULL_TOF;
-        list->tableBuffer[i].localSeq = NULL_SEQ;
-        list->tableBuffer[i].remoteSeq = NULL_SEQ;
-        list->tableBuffer[i].pre = NULL_INDEX;
-        list->tableBuffer[i].next = NULL_INDEX;
-    }
-    initFreeQueue(&list->freeQueue);
-    list->head = NULL_INDEX;
-    list->tail = NULL_INDEX;
 }
 
 // add record and fill in record
-table_index_t addTableLinkedList(RangingList_t *list, TableNode_t *node) {
-    table_index_t index = list->head;
-
-    // fill in record
-    while (index != NULL_INDEX) {
-        /* this node has been recorded and is not complete
-            during the processing of Ranging_Message_With_Additional_Info_t
-            get Rx for the first time and store it in the list(set Tx null)
-            get Tx for the second time, find the corresponding position and store it
-        */ 
-        if (list->tableBuffer[index].localSeq == node->remoteSeq) {
-            list->tableBuffer[index].TxTimestamp = node->TxTimestamp;
-            #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-                list->tableBuffer[index].TxCoordinate = node->TxCoordinate;
-            #endif
-            list->tableBuffer[index].remoteSeq = node->remoteSeq;
-            return index;
+table_index_t addRangingList(RangingList_t *list, RangingListNode_t *node, table_index_t index, StatusType status) {
+    if(status == RECEIVER) {
+        // RxNode with Rx info —— Rx + localSeq
+        if(index == NULL_INDEX) {
+            index = (list->topRangingList + 1) % RANGING_LIST_SIZE;
+            list->rangingList[index] = *node;
+            list->topRangingList = index;
         }
-        index = list->tableBuffer[index].next;
-    }
 
-    // freequeue is empty, remove the last record
-    if (isEmpty(&list->freeQueue)) {
-        deleteTail(list);
-    }
-
-    index = pop(&list->freeQueue);
-
-    // add record
-    list->tableBuffer[index].TxTimestamp = node->TxTimestamp;
-    list->tableBuffer[index].RxTimestamp = node->RxTimestamp;
-    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-        list->tableBuffer[index].TxCoordinate = node->TxCoordinate;
-        list->tableBuffer[index].RxCoordinate = node->RxCoordinate;
-    #endif
-    list->tableBuffer[index].Tf = node->Tf;
-    list->tableBuffer[index].localSeq = node->localSeq;
-    list->tableBuffer[index].remoteSeq = node->remoteSeq;
-
-    // update
-    if (list->head == NULL_INDEX) {
-        list->head = index;
-        list->tail = index;
-    }
-    else {
-        list->tableBuffer[list->head].pre = index;
-        list->tableBuffer[index].next = list->head;
-        list->head = index;
-    }
-    return index;
-}
-
-// delete the last record
-void deleteTail(RangingList_t *list) {
-    if (list->tail == NULL_INDEX) {
-        return;
-    }
-    
-    table_index_t index = list->tail;
-    list->tail = list->tableBuffer[index].pre;
-    if (list->tail != NULL_INDEX) {
-        list->tableBuffer[list->tail].next = NULL_INDEX;
-    }
-
-    // clean data
-    list->tableBuffer[index].TxTimestamp.full = NULL_TIMESTAMP;
-    list->tableBuffer[index].RxTimestamp.full = NULL_TIMESTAMP;
-    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-    list->tableBuffer[index].TxCoordinate = nullCoordinate;
-    list->tableBuffer[index].RxCoordinate = nullCoordinate;
-    #endif
-    list->tableBuffer[index].Tf = NULL_TOF;
-    list->tableBuffer[index].localSeq = NULL_SEQ;
-    list->tableBuffer[index].remoteSeq = NULL_SEQ;
-    list->tableBuffer[index].next = NULL_INDEX;
-    list->tableBuffer[index].pre = NULL_INDEX;
-    push(&list->freeQueue, index);
-}
-
-// search for index of tableNode whose Rx/Tx time is closest and which has complete Tx and Rx
-table_index_t searchTableLinkedList(RangingList_t *list, dwTime_t timeStamp, StatusType status) {
-    table_index_t index = list->head;
-    table_index_t ans = NULL_INDEX;
-    while (index != NULL_INDEX) {
-        // Rx、Tx is full
-        if(status == RECEIVER 
-            && list->tableBuffer[index].TxTimestamp.full != NULL_TIMESTAMP 
-            && list->tableBuffer[index].RxTimestamp.full != NULL_TIMESTAMP 
-            && list->tableBuffer[index].TxTimestamp.full < timeStamp.full) {
-                if (ans == NULL_INDEX || list->tableBuffer[index].TxTimestamp.full > list->tableBuffer[ans].TxTimestamp.full) {
-                    ans = index;
-            }
+        // TxNode with Tx info —— Tx + remoteSeq
+        else {
+            list->rangingList[index].TxTimestamp = node->TxTimestamp;
+            list->rangingList[index].TxCoordinate = node->TxCoordinate;
+            list->rangingList[index].remoteSeq = node->remoteSeq;
         }
-        if(status == SENDER
-            && list->tableBuffer[index].RxTimestamp.full != NULL_TIMESTAMP 
-            && list->tableBuffer[index].TxTimestamp.full != NULL_TIMESTAMP 
-            && list->tableBuffer[index].RxTimestamp.full < timeStamp.full) {
-                if (ans == NULL_INDEX || list->tableBuffer[index].RxTimestamp.full > list->tableBuffer[ans].RxTimestamp.full) {
-                    ans = index;
-            }
-        }
-        index = list->tableBuffer[index].next;
     }
-    return ans;
-}
 
-// find the index of specified remoteSeq record
-table_index_t findRemoteSeqIndex(RangingList_t *list, uint16_t remoteSeq){
-    table_index_t index = list->head;
-    while (index != NULL_INDEX) {
-        // have processed
-        if (list->tableBuffer[index].remoteSeq == remoteSeq) {
-            return NULL_DONE_INDEX;
-        }
-        if (list->tableBuffer[index].localSeq == remoteSeq) {
-            return index;
-        }
-        index = list->tableBuffer[index].next;
+    else if(status == SENDER) {
+        // FullNode with Tx and Rx info —— Tx + Rx + localSeq + remoteSeq
+        index = (list->topRangingList + 1) % RANGING_LIST_SIZE;
+        list->rangingList[index].TxTimestamp = node->TxTimestamp;
+        list->rangingList[index].RxTimestamp = node->RxTimestamp;
+        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
+            list->rangingList[index].TxCoordinate = node->TxCoordinate;
+            list->rangingList[index].RxCoordinate = node->RxCoordinate;
+        #endif
+        list->rangingList[index].localSeq = node->localSeq;
+        list->rangingList[index].remoteSeq = node->remoteSeq;
+        list->topRangingList = index;
+        return index;
     }
     return NULL_INDEX;
 }
 
-void printTableNode(TableNode_t *node) {
+// search for index of tableNode whose Rx/Tx time is closest with full info of Tx and Rx
+table_index_t searchRangingList(RangingList_t *list, dwTime_t timeStamp, StatusType status) {
+    table_index_t index = list->topRangingList;
+    if(index == NULL_INDEX) {
+        return NULL_INDEX;
+    }
+    table_index_t ans = NULL_INDEX;
+    int count = 0;
+    while (count < RANGING_LIST_SIZE) {
+        // Rx、Tx is full
+        if(status == RECEIVER
+            && list->rangingList[index].TxTimestamp.full != NULL_TIMESTAMP 
+            && list->rangingList[index].RxTimestamp.full != NULL_TIMESTAMP 
+            && list->rangingList[index].TxTimestamp.full < timeStamp.full) {
+                if (ans == NULL_INDEX || list->rangingList[index].TxTimestamp.full > list->rangingList[ans].TxTimestamp.full) {
+                    ans = index;
+            }
+        }
+        if(status == SENDER
+            && list->rangingList[index].RxTimestamp.full != NULL_TIMESTAMP 
+            && list->rangingList[index].TxTimestamp.full != NULL_TIMESTAMP 
+            && list->rangingList[index].RxTimestamp.full < timeStamp.full) {
+                if (ans == NULL_INDEX || list->rangingList[index].RxTimestamp.full > list->rangingList[ans].RxTimestamp.full) {
+                    ans = index;
+            }
+        }
+        index = (index - 1 + RANGING_LIST_SIZE) % RANGING_LIST_SIZE;
+        count++;
+    }
+    return ans;
+}
+
+// find the index of matching localSeq by remoteSeq
+table_index_t findLocalSeqIndex(RangingList_t *list, uint16_t remoteSeq){
+    table_index_t index = list->topRangingList;
+    if(index == NULL_INDEX) {
+        return NULL_INDEX;
+    }
+    int count = 0;
+    while(count < RANGING_LIST_SIZE) {
+        if(list->rangingList[index].localSeq != NULL_SEQ && list->rangingList[index].localSeq == remoteSeq) {
+            return index;
+        }
+        index = (index - 1 + RANGING_LIST_SIZE) % RANGING_LIST_SIZE;
+        count++;
+    }
+    return NULL_INDEX;
+}
+
+void printRangingListNode(RangingListNode_t *node) {
     DEBUG_PRINT("TxTimestamp: %ld, RxTimestamp: %ld, Tf: %ld, localSeq: %d, remoteSeq: %d\n", 
         node->TxTimestamp.full, node->RxTimestamp.full, node->Tf, node->localSeq, node->remoteSeq);
 }
 
-void printTableLinkedList(RangingList_t *list) {
+void printRangingList(RangingList_t *list) {
     DEBUG_PRINT("--------------------START DEBUG_PRINT TABLELINKEDLIST--------------------\n");
-    table_index_t index = list->head;
-    while (index != NULL_INDEX)
-    {
+    table_index_t index = list->topRangingList;
+    if(index == NULL_INDEX) {
+        return;
+    }
+    int count = 0;
+    while(count < RANGING_LIST_SIZE) {
         DEBUG_PRINT("TxTimestamp: %ld, RxTimestamp: %ld, Tf: %ld, localSeq: %d, remoteSeq: %d\n", 
-            list->tableBuffer[index].TxTimestamp.full, list->tableBuffer[index].RxTimestamp.full, list->tableBuffer[index].Tf, list->tableBuffer[index].localSeq, list->tableBuffer[index].remoteSeq);
-        index = list->tableBuffer[index].next;
+            list->rangingList[index].TxTimestamp.full, list->rangingList[index].RxTimestamp.full, list->rangingList[index].Tf, list->rangingList[index].localSeq, list->rangingList[index].remoteSeq);
+        index = (index - 1 + RANGING_LIST_SIZE) % RANGING_LIST_SIZE;
     }
     DEBUG_PRINT("--------------------END DEBUG_PRINT TABLELINKEDLIST--------------------\n");
 }

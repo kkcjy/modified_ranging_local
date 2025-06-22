@@ -33,9 +33,9 @@
 // LOCK_H
 #define         QUEUE_TASK_LENGTH           3
 
-// TABLE_LINK_LIST_H
-#define         TABLE_BUFFER_SIZE           10                  // max size of RangingTable_t.sendBuffer and RangingTable_t.receiveBuffer
-#define         FREE_QUEUE_SIZE             TABLE_BUFFER_SIZE   // max size of freeQueue
+// RANGING_LIST_H
+#define         RANGING_LIST_SIZE           10                  // max size of RangingTable_t.sendBuffer and RangingTable_t.receiveBuffer
+#define         FREE_QUEUE_SIZE             RANGING_LIST_SIZE   // max size of freeQueue
 
 // RANGING_BUFFER_H
 #define         RANGING_BUFFER_SIZE         6                   // max size of RangingTable_t.validBuffer
@@ -47,7 +47,7 @@
 #define         MESSAGE_BODY_RX_SIZE        3                   // length of Rx in bodyUnits(message)
 #define         MESSAGE_HEAD_TX_SIZE        3                   // length of Tx in header(message)
 #define         MESSAGE_BODY_UNIT_SIZE      3                   // max size of bodyUnits(message)
-#define         TX_BUFFER_POOL_SIZE         TABLE_BUFFER_SIZE   // max size of localSendBuffer(local)
+#define         TX_BUFFER_POOL_SIZE         RANGING_LIST_SIZE   // max size of localSendBuffer(local)
 #define         TABLE_SET_NEIGHBOR_NUM      10                  // number of neighbor recorded(local)
 #define         RANGING_PERIOD_MIN          50                  // (ms)
 #define         RANGING_PERIOD_MAX          1000                // (ms)

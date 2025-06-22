@@ -86,11 +86,11 @@ table_index_t findRangingTable(uint16_t address) {
 table_index_t findLocalSendBufferNode(uint16_t seq) {
     table_index_t index = rangingTableSet->topLocalSendBuffer;
     int count = 0;
-    while (rangingTableSet->localSendBuffer[index].seqNumber != NULL_SEQ && count < TABLE_BUFFER_SIZE) {
+    while (rangingTableSet->localSendBuffer[index].seqNumber != NULL_SEQ && count < RANGING_LIST_SIZE) {
         if(rangingTableSet->localSendBuffer[index].seqNumber == seq) {
             return index;
         }
-        index = (index - 1 + TABLE_BUFFER_SIZE) % TABLE_BUFFER_SIZE;
+        index = (index - 1 + RANGING_LIST_SIZE) % RANGING_LIST_SIZE;
         count++;
     }
     return NULL_INDEX;
@@ -151,7 +151,7 @@ void printLocalSendBuffer() {
     DEBUG_PRINT("-----------------------------LOCALSENDBUFFER-----------------------------\n");
     table_index_t index = rangingTableSet->topLocalSendBuffer;
     int count = 0;
-    while (count < TABLE_BUFFER_SIZE) {
+    while (count < RANGING_LIST_SIZE) {
         DEBUG_PRINT("seq: %d,Tx: %lld", 
             rangingTableSet->localSendBuffer[index].seqNumber, rangingTableSet->localSendBuffer[index].timestamp.full);
         #ifdef COMMUNICATION_SEND_POSITION_ENABLE
@@ -159,7 +159,7 @@ void printLocalSendBuffer() {
         #else
             DEBUG_PRINT("\n");
         #endif
-        index = (index - 1 + TABLE_BUFFER_SIZE) % TABLE_BUFFER_SIZE;
+        index = (index - 1 + RANGING_LIST_SIZE) % RANGING_LIST_SIZE;
         count++;
     }
     DEBUG_PRINT("-----------------------------LOCALSENDBUFFER-----------------------------\n");
@@ -208,27 +208,17 @@ Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
         bodyUnit->dest = rangingTable->address;
 
         // Rx
-        table_index_t index = rangingTable->receiveBuffer.head;
-        for(int i = 0; i < MESSAGE_BODY_RX_SIZE; i++){
+        table_index_t index = rangingTable->receiveList.topRangingList;
+        int count = 0;
+        while(count < MESSAGE_BODY_RX_SIZE && count < RANGING_LIST_SIZE) {
             // receiveBuffer --> bodyUnit->RxTimestamps
-            if(index != NULL_INDEX) {
-                bodyUnit->RxTimestamps[i].seqNumber = rangingTable->receiveBuffer.tableBuffer[index].localSeq;
-                bodyUnit->RxTimestamps[i].timestamp = rangingTable->receiveBuffer.tableBuffer[index].RxTimestamp;
-                #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-                    bodyUnit->RxCoodinates[i].x = rangingTable->receiveBuffer.tableBuffer[index].RxCoordinate.x;
-                    bodyUnit->RxCoodinates[i].y = rangingTable->receiveBuffer.tableBuffer[index].RxCoordinate.y;
-                    bodyUnit->RxCoodinates[i].z = rangingTable->receiveBuffer.tableBuffer[index].RxCoordinate.z;
-                #endif
-                index = rangingTable->receiveBuffer.tableBuffer[index].next;
-            }
-            // insufficient data, fill with null
-            else{
-                bodyUnit->RxTimestamps[i].seqNumber = NULL_SEQ;
-                bodyUnit->RxTimestamps[i].timestamp.full = NULL_TIMESTAMP;
-                #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-                    bodyUnit->RxCoodinates[i] = nullCoordinate;
-                #endif
-            }
+            bodyUnit->RxTimestamps[count].seqNumber = rangingTable->receiveList.rangingList[index].localSeq;
+            bodyUnit->RxTimestamps[count].timestamp = rangingTable->receiveList.rangingList[index].RxTimestamp;
+            #ifdef COMMUNICATION_SEND_POSITION_ENABLE
+                bodyUnit->RxCoodinates[count] = rangingTable->receiveList.rangingList[index].RxCoordinate;
+            #endif
+            index = (index - 1 + RANGING_LIST_SIZE) % RANGING_LIST_SIZE;
+            count++;
         }
         bodyUnitCounter++;
     }
@@ -256,7 +246,7 @@ Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
                 rangingMessage->header.TxCoodinates[i].y = rangingTableSet->localSendBuffer[index].TxCoordinate.y;
                 rangingMessage->header.TxCoodinates[i].z = rangingTableSet->localSendBuffer[index].TxCoordinate.z;
             #endif
-            index = (index - 1 + TABLE_BUFFER_SIZE) % TABLE_BUFFER_SIZE;
+            index = (index - 1 + RANGING_LIST_SIZE) % RANGING_LIST_SIZE;
         }
         // insufficient data, fill with null
         else{
@@ -308,20 +298,16 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
         RxTimestamp + RxCoordinate  
     */
     // node: Tx <-- null, Rx <-- AdditionalInfo
-    TableNode_t firstNode;
-    firstNode.TxTimestamp = nullTimeStamp;
-    firstNode.RxTimestamp = rangingMessageWithAdditionalInfo->RxTimestamp;
+    RangingListNode_t RxNode;
+    RxNode.TxTimestamp = nullTimeStamp;
+    RxNode.RxTimestamp = rangingMessageWithAdditionalInfo->RxTimestamp;
     #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-        firstNode.TxCoordinate = nullCoordinate;
-        firstNode.RxCoordinate.x = rangingMessageWithAdditionalInfo->RxCoordinate.x;
-        firstNode.RxCoordinate.y = rangingMessageWithAdditionalInfo->RxCoordinate.y;
-        firstNode.RxCoordinate.z = rangingMessageWithAdditionalInfo->RxCoordinate.z;
+        RxNode.TxCoordinate = nullCoordinate;
+        RxNode.RxCoordinate = rangingMessageWithAdditionalInfo->RxCoordinate;
     #endif
-    firstNode.Tf = NULL_TOF;
-    firstNode.localSeq = rangingMessage->header.msgSequence;
-    firstNode.remoteSeq = NULL_SEQ;
-    firstNode.pre = NULL_INDEX;
-    firstNode.next = NULL_INDEX;
+    RxNode.Tf = NULL_TOF;
+    RxNode.localSeq = rangingMessage->header.msgSequence;
+    RxNode.remoteSeq = NULL_SEQ;
 
     /* process header
         srcAddress + msgSequence + Tx
@@ -341,62 +327,53 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
 
     RangingTable_t *neighborReceiveBuffer = &rangingTableSet->neighborReceiveBuffer[neighborIndex];
 
-    // DEBUG_PRINT("[firstNode]: ");
-    // printTableNode(&firstNode);
+    // DEBUG_PRINT("[RxNode]: ");
+    // printRangingListNode(&RxNode);
 
-    // first time calling(localSeq): Tx - null Rx - full
-    addTableLinkedList(&neighborReceiveBuffer->receiveBuffer, &firstNode);
+    // first time calling(RxNode with Rx info —— Rx + localSeq)
+    addRangingList(&neighborReceiveBuffer->receiveList, &RxNode, NULL_INDEX, RECEIVER);
 
     // find corresponding Rx to calculate
     for (int i = MESSAGE_HEAD_TX_SIZE - 1; i >= 0; i--) {
         if(rangingMessage->header.TxTimestamps[i].seqNumber == NULL_SEQ) {
             continue;
         }
-        table_index_t receiveBufferIndex = findRemoteSeqIndex(&neighborReceiveBuffer->receiveBuffer, rangingMessage->header.TxTimestamps[i].seqNumber);
-        if(receiveBufferIndex == NULL_DONE_INDEX) {
-            // DEBUG_PRINT("Warning: have processed this node\n");
-            continue;
-        }
-        // received
-        if (receiveBufferIndex != NULL_INDEX) {
-            TableNode_t secondNode;
-            secondNode.TxTimestamp = rangingMessage->header.TxTimestamps[i].timestamp;
-            secondNode.RxTimestamp = nullTimeStamp;
+
+        table_index_t receiveBufferIndex = findLocalSeqIndex(&neighborReceiveBuffer->receiveList, rangingMessage->header.TxTimestamps[i].seqNumber);
+        
+        // not processed
+        if (receiveBufferIndex != NULL_INDEX && neighborReceiveBuffer->receiveList.rangingList[receiveBufferIndex].remoteSeq == NULL_SEQ) {
+            RangingListNode_t TxNode;
+            TxNode.TxTimestamp = rangingMessage->header.TxTimestamps[i].timestamp;
+            TxNode.RxTimestamp = nullTimeStamp;
             #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-                secondNode.TxCoordinate.x = rangingMessage->header.TxCoodinates[i].x;
-                secondNode.TxCoordinate.y = rangingMessage->header.TxCoodinates[i].y;
-                secondNode.TxCoordinate.z = rangingMessage->header.TxCoodinates[i].z;
-                secondNode.RxCoordinate = nullCoordinate;
+                TxNode.TxCoordinate = rangingMessage->header.TxCoodinates[i];
+                TxNode.RxCoordinate = nullCoordinate;
             #endif
-            secondNode.Tf = NULL_TOF;
-            secondNode.localSeq = NULL_SEQ;
-            secondNode.remoteSeq = rangingMessage->header.TxTimestamps[i].seqNumber;
-            secondNode.pre = NULL_INDEX;
-            secondNode.next = NULL_INDEX;
+            TxNode.Tf = NULL_TOF;
+            TxNode.localSeq = NULL_SEQ;
+            TxNode.remoteSeq = rangingMessage->header.TxTimestamps[i].seqNumber;
 
-            // DEBUG_PRINT("[secondNode]: ");
-            // printTableNode(&secondNode);
+            // DEBUG_PRINT("[TxNode]: ");
+            // printRangingListNode(&TxNode);
 
-            // second time calling(remoteSeq): fill in Tx
-            addTableLinkedList(&neighborReceiveBuffer->receiveBuffer, &secondNode);
+            // second time calling(TxNode with Tx info —— Tx + remoteSeq)
+            addRangingList(&neighborReceiveBuffer->receiveList, &TxNode, receiveBufferIndex, RECEIVER);
 
             if(neighborReceiveBuffer->validBuffer.sendLength < MAX_INITIAL_CALCULATION){
-                initializeRecordBuffer(&neighborReceiveBuffer->receiveBuffer, &neighborReceiveBuffer->sendBuffer, receiveBufferIndex, &neighborReceiveBuffer->validBuffer, RECEIVER);
+                initializeRecordBuffer(&neighborReceiveBuffer->receiveList, &neighborReceiveBuffer->sendList, receiveBufferIndex, &neighborReceiveBuffer->validBuffer, RECEIVER);
                 if(neighborReceiveBuffer->validBuffer.sendLength >= MAX_INITIAL_CALCULATION){
                     // finish calling initializeRecordBuffer, update Tof
                     int64_t initTof = getInitTofSum() / MAX_INITIAL_CALCULATION;
-                    for (int i = 0; i < neighborReceiveBuffer->validBuffer.sendLength; i++) {
-                        neighborReceiveBuffer->validBuffer.sendBuffer[i].sumTof = initTof*2;
-                        neighborReceiveBuffer->validBuffer.sendBuffer[i].T1 = initTof;
-                        neighborReceiveBuffer->validBuffer.sendBuffer[i].T2 = initTof;
-                    }
+                    neighborReceiveBuffer->validBuffer.sendBuffer[i].sumTof = initTof * 2;
+
                     // DEBUG_PRINT("[initializeRecordBuffer]: finish calling, initTof = %lld\n",initTof);
                 }
             }
             else{
                 // from old data to recent data, get the last valid D
-                calculateTof(&neighborReceiveBuffer->validBuffer, &neighborReceiveBuffer->receiveBuffer.tableBuffer[receiveBufferIndex],
-                    neighborReceiveBuffer->receiveBuffer.tableBuffer[receiveBufferIndex].localSeq, RECEIVER, FIRST_CALCULATE, &H_Modified, &H_Classic, &H_True);
+                calculateTof(&neighborReceiveBuffer->validBuffer, &neighborReceiveBuffer->receiveList.rangingList[receiveBufferIndex],
+                    neighborReceiveBuffer->receiveList.rangingList[receiveBufferIndex].localSeq, RECEIVER, FIRST_CALCULATE, &H_Modified, &H_Classic, &H_True);
             }
         }
         // missed
@@ -405,83 +382,61 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
         }
     }
 
-    // if(H_Modified != NULL_DIS) {
-    //     printf("[Recent]: H_Modified = %f, H_Classic = %f, H_True = %f\n", H_Modified, H_Classic, H_True);
-    // }
-    // else {
-    //     printf("[Recent]: No valid Modified H_Modified calculated\n");
-    // }
-
     /* process bodyUnit
         dest + Rx
     */
     for (int i = 0; i < MESSAGE_BODY_UNIT_SIZE; i++) {
         if (rangingMessage->bodyUnits[i].dest == localHost->localAddress) {
-            // RxTimestamp with larger seqNumber come first when generating message
+            // find corresponding Rx to calculate
             for (int j = MESSAGE_BODY_RX_SIZE - 1; j >= 0 ; j--) {
                 if(rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber == NULL_SEQ) {
                     continue;
                 }
 
                 table_index_t sendBufferIndex = findLocalSendBufferNode(rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber);
-                if (sendBufferIndex == NULL_INDEX) {
-                    DEBUG_PRINT("Warning: Cannot find corresponding Tx timestamp for Rx[%d] timestamp while processing rangingMessage->bodyUnit\n", rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber);
-                    continue;
-                }
+                
+                if (sendBufferIndex != NULL_INDEX) {
+                    RangingListNode_t FullNode;
+                    FullNode.TxTimestamp = rangingTableSet->localSendBuffer[sendBufferIndex].timestamp;
+                    FullNode.RxTimestamp = rangingMessage->bodyUnits[i].RxTimestamps[j].timestamp;
+                    #ifdef COMMUNICATION_SEND_POSITION_ENABLE
+                        FullNode.TxCoordinate = rangingTableSet->localSendBuffer[sendBufferIndex].TxCoordinate;
+                        FullNode.RxCoordinate = rangingMessage->bodyUnits[i].RxCoodinates[j];
+                    #endif
+                    FullNode.Tf = NULL_TOF;
+                    FullNode.localSeq = rangingTableSet->localSendBuffer[sendBufferIndex].seqNumber;
+                    FullNode.remoteSeq = rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber;
 
-                if(findRemoteSeqIndex(&neighborReceiveBuffer->sendBuffer, rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber) == NULL_DONE_INDEX) {
-                    // DEBUG_PRINT("Warning: have processed this node\n");
-                    continue;
-                }
+                    // DEBUG_PRINT("[FullNode]: ");
+                    // printRangingListNode(&FullNode);
 
-                TableNode_t fullNode;
-                fullNode.TxTimestamp = rangingTableSet->localSendBuffer[sendBufferIndex].timestamp;
-                fullNode.RxTimestamp = rangingMessage->bodyUnits[i].RxTimestamps[j].timestamp;
-                #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-                    fullNode.TxCoordinate.x = rangingTableSet->localSendBuffer[sendBufferIndex].TxCoordinate.x;
-                    fullNode.TxCoordinate.y = rangingTableSet->localSendBuffer[sendBufferIndex].TxCoordinate.y;
-                    fullNode.TxCoordinate.z = rangingTableSet->localSendBuffer[sendBufferIndex].TxCoordinate.z;
-                    fullNode.RxCoordinate.x = rangingMessage->bodyUnits[i].RxCoodinates[j].x;
-                    fullNode.RxCoordinate.y = rangingMessage->bodyUnits[i].RxCoodinates[j].y;
-                    fullNode.RxCoordinate.z = rangingMessage->bodyUnits[i].RxCoodinates[j].z;
-                #endif
-                fullNode.Tf = NULL_TOF;
-                fullNode.localSeq = rangingTableSet->localSendBuffer[sendBufferIndex].seqNumber;
-                fullNode.remoteSeq = rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber;
+                    // Tx - null Rx - full
+                    table_index_t newReceiveRecordIndex_BodyUnit = addRangingList(&neighborReceiveBuffer->sendList, &FullNode, NULL_INDEX, SENDER);
 
-                // DEBUG_PRINT("[fullNode]: ");
-                // printTableNode(&fullNode);
-
-                // Tx - null Rx - full
-                table_index_t newReceiveRecordIndex_BodyUnit = addTableLinkedList(&neighborReceiveBuffer->sendBuffer, &fullNode);
-
-                if(neighborReceiveBuffer->validBuffer.receiveLength < MAX_INITIAL_CALCULATION){
-                    initializeRecordBuffer(&neighborReceiveBuffer->sendBuffer, &neighborReceiveBuffer->receiveBuffer, newReceiveRecordIndex_BodyUnit, &neighborReceiveBuffer->validBuffer, SENDER);
-                    if(neighborReceiveBuffer->validBuffer.receiveLength == MAX_INITIAL_CALCULATION){
-                        int64_t initTof = getInitTofSum() / MAX_INITIAL_CALCULATION;
-                        for (int i = 0; i < neighborReceiveBuffer->validBuffer.receiveLength; i++) {
-                            neighborReceiveBuffer->validBuffer.receiveBuffer[i].sumTof = initTof*2;
-                            neighborReceiveBuffer->validBuffer.receiveBuffer[i].T1 = initTof;
-                            neighborReceiveBuffer->validBuffer.receiveBuffer[i].T2 = initTof;
+                    if(neighborReceiveBuffer->validBuffer.receiveLength < MAX_INITIAL_CALCULATION){
+                        initializeRecordBuffer(&neighborReceiveBuffer->sendList, &neighborReceiveBuffer->receiveList, newReceiveRecordIndex_BodyUnit, &neighborReceiveBuffer->validBuffer, SENDER);
+                        if(neighborReceiveBuffer->validBuffer.receiveLength == MAX_INITIAL_CALCULATION){
+                            int64_t initTof = getInitTofSum() / MAX_INITIAL_CALCULATION;
+                            for (int i = 0; i < neighborReceiveBuffer->validBuffer.receiveLength; i++) {
+                                neighborReceiveBuffer->validBuffer.receiveBuffer[i].sumTof = initTof * 2;
+                            }
+                            // DEBUG_PRINT("[initializeRecordBuffer]: finish calling, initTof = %lld\n",initTof);
                         }
-                        // DEBUG_PRINT("[initializeRecordBuffer]: finish calling, initTof = %lld\n",initTof);
+                    }
+                    else {
+                        calculateTof(&neighborReceiveBuffer->validBuffer, &neighborReceiveBuffer->sendList.rangingList[newReceiveRecordIndex_BodyUnit],
+                            neighborReceiveBuffer->sendList.rangingList[newReceiveRecordIndex_BodyUnit].localSeq, SENDER, FIRST_CALCULATE, &B_Modified, &B_Classic, &B_True);
                     }
                 }
+                // missed
                 else {
-                    calculateTof(&neighborReceiveBuffer->validBuffer, &neighborReceiveBuffer->sendBuffer.tableBuffer[newReceiveRecordIndex_BodyUnit],
-                        neighborReceiveBuffer->sendBuffer.tableBuffer[newReceiveRecordIndex_BodyUnit].localSeq, SENDER, FIRST_CALCULATE, &B_Modified, &B_Classic, &B_True);
+                    DEBUG_PRINT("Warning: Cannot find corresponding Tx timestamp for Rx[%d] timestamp while processing rangingMessage->bodyUnit\n", rangingMessage->bodyUnits[i].RxTimestamps[j].seqNumber);
+                    continue;
                 }
             }
             break;
         }
     }
-
-    // if(B_Modified != NULL_DIS) {
-    //     printf("[Recent]: B_Modified = %f, B_Classic = %f, B_True = %f\n", B_Modified, B_Classic, B_True);
-    // }
-    // else {
-    //     printf("[Recent]: No valid Modified B_Modified calculated\n");
-    // }
 
     if(H_Modified != NULL_DIS && B_Modified != NULL_DIS) {
         ModifiedD = (H_Modified + B_Modified) / 2;

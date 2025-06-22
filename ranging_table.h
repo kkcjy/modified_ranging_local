@@ -9,8 +9,8 @@
 typedef struct {
     TableState state; 
     uint16_t address;
-    RangingList_t sendBuffer; 
-    RangingList_t receiveBuffer; 
+    RangingList_t sendList; 
+    RangingList_t receiveList; 
     RangingBuffer_t validBuffer;
 } __attribute__((packed)) RangingTable_t;
 

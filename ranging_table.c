@@ -4,8 +4,8 @@
 void initRangingTable(RangingTable_t *table) {
     table->state = UNUSED;
     table->address = NULL_ADDR;
-    initTableLinkedList(&table->sendBuffer);
-    initTableLinkedList(&table->receiveBuffer);
+    initRangingList(&table->sendList);
+    initRangingList(&table->receiveList);
     initRangingBuffer(&table->validBuffer);
 }
 
@@ -17,8 +17,8 @@ void enableRangingTable(RangingTable_t *table, uint16_t address) {
 void disableRangingTable(RangingTable_t *table) {
     table->state = UNUSED;
     table->address = NULL_ADDR;
-    initTableLinkedList(&table->sendBuffer);
-    initTableLinkedList(&table->receiveBuffer);
+    initRangingList(&table->sendList);
+    initRangingList(&table->receiveList);
     initRangingBuffer(&table->validBuffer);
 }
 
@@ -31,30 +31,34 @@ void disableRangingTable(RangingTable_t *table) {
 bool compareTablePriority(RangingTable_t *tableA, RangingTable_t *tableB) {
     RangingBufferNode_t nodeA = tableA->validBuffer.receiveBuffer[tableA->validBuffer.topReceiveBuffer];
     RangingBufferNode_t nodeB = tableB->validBuffer.receiveBuffer[tableB->validBuffer.topReceiveBuffer];
-    return nodeA.receiveRx.full < nodeB.receiveRx.full;
+    return nodeA.receiveRxTimestamp.full < nodeB.receiveRxTimestamp.full;
 }
 
 void printRangingTable(RangingTable_t *table) {
     DEBUG_PRINT("State: %s\n", (table->state == UNUSED) ? "NOT_USING" : "USING");
     DEBUG_PRINT("Address: %d\n", table->address);
     if (table->state == USING) {
-        DEBUG_PRINT("[SendBuffer]:\n");
-        table_index_t index = table->sendBuffer.head;
-        while (index != NULL_INDEX) {
-            DEBUG_PRINT("localSeq: %d,remoteSeq: %d,Tx: %lld,Rx: %lld,Tf: %lld\n", 
-                table->sendBuffer.tableBuffer[index].localSeq, table->sendBuffer.tableBuffer[index].remoteSeq, 
-                table->sendBuffer.tableBuffer[index].TxTimestamp.full, table->sendBuffer.tableBuffer[index].RxTimestamp.full, 
-                table->sendBuffer.tableBuffer[index].Tf);
-            index = table->sendBuffer.tableBuffer[index].next;
+        DEBUG_PRINT("[SendList]:\n");
+        table_index_t index = table->sendList.topRangingList;
+        if(index == NULL_INDEX) {
+            return;
         }
-        DEBUG_PRINT("[ReceiveBuffer]:\n");
-        index = table->receiveBuffer.head;
-        while (index != NULL_INDEX) {
+        int count = 0;
+        while(count < RANGING_LIST_SIZE) {
             DEBUG_PRINT("localSeq: %d,remoteSeq: %d,Tx: %lld,Rx: %lld,Tf: %lld\n", 
-                table->receiveBuffer.tableBuffer[index].localSeq, table->receiveBuffer.tableBuffer[index].remoteSeq, 
-                table->receiveBuffer.tableBuffer[index].TxTimestamp.full, table->receiveBuffer.tableBuffer[index].RxTimestamp.full, 
-                table->receiveBuffer.tableBuffer[index].Tf);
-            index = table->receiveBuffer.tableBuffer[index].next;
+                table->sendList.rangingList[index].localSeq, table->sendList.rangingList[index].remoteSeq, 
+                table->sendList.rangingList[index].TxTimestamp.full, table->sendList.rangingList[index].RxTimestamp.full, 
+                table->sendList.rangingList[index].Tf);
+            index = (index - 1 + RANGING_LIST_SIZE) % RANGING_LIST_SIZE;
+        }
+        DEBUG_PRINT("[ReceiveList]:\n");
+        index = table->receiveList.topRangingList;
+        while(count < RANGING_LIST_SIZE) {
+            DEBUG_PRINT("localSeq: %d,remoteSeq: %d,Tx: %lld,Rx: %lld,Tf: %lld\n", 
+                table->receiveList.rangingList[index].localSeq, table->receiveList.rangingList[index].remoteSeq, 
+                table->receiveList.rangingList[index].TxTimestamp.full, table->receiveList.rangingList[index].RxTimestamp.full, 
+                table->receiveList.rangingList[index].Tf);
+            index = (index - 1 + RANGING_LIST_SIZE) % RANGING_LIST_SIZE;
         }
     }
     printRangingBuffer(&table->validBuffer);
