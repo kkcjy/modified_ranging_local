@@ -1,11 +1,9 @@
 #ifndef MODIFIED_RANGING_H
 #define MODIFIED_RANGING_H
 
-#include "defs.h"
-#include "ranging_buffer.h"
-#include "nullVal.h"
+#include "modified_ranging_defconfig.h"
+#include "ranging_struct.h"
 #include "local_host.h"
-#include "base_struct.h"
 
 
 typedef struct {

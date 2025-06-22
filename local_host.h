@@ -1,9 +1,9 @@
 #ifndef LOCAL_HOST_H
 #define LOCAL_HOST_H
 
-#include "defs.h"
+#include "modified_ranging_defconfig.h"
+#include "ranging_struct.h"
 #include "debug.h"
-#include "base_struct.h"
 
 typedef struct {
     uint16_t localAddress;              // local address

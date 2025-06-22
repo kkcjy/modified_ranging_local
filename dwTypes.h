@@ -1,7 +1,7 @@
 #ifndef DWTYPES_H
 #define DWTYPES_H
 
-#include "defs.h"
+#include "modified_ranging_defconfig.h"
 
 
 typedef union {

@@ -1,7 +1,7 @@
 #ifndef LOCK_H
 #define LOCK_H
 
-#include "defs.h"
+#include "modified_ranging_defconfig.h"
 #include "debug.h"
 #include "modified_ranging.h"
 

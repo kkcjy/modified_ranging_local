@@ -1,13 +1,15 @@
 #include "modified_ranging.h"
 
+
 Local_Host_t *localHost;                        // local host
 RangingTableSet_t* rangingTableSet;             // local rangingTableSet
 uint16_t localSendSeqNumber = 1;                // seqNumber of message local sent  
 int RangingPeriod = RANGING_PERIOD;             // period of sending
-#ifdef COMPENSATE_MODE
+#ifdef COMPENSATE_ENABLE
     int64_t lastD;     
     float compensateRate = 0.618;      
 #endif
+
 
 void initRangingTable(RangingTable_t *table) {
     table->state = UNUSED;
@@ -461,7 +463,7 @@ bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessag
     }
 
     if(ModifiedD != NULL_DIS) {
-        #ifdef COMPENSATE_MODE
+        #ifdef COMPENSATE_ENABLE
             float compensateD = (ModifiedD - lastD) * compensateRate;
             lastD = ModifiedD;
             DEBUG_PRINT("[current_%d]: ModifiedD = %f, ClassicD = %f, TrueD = %f, time = %lld\n", localHost->localAddress, ModifiedD + compensateD, ClassicD, TrueD, rangingMessageWithAdditionalInfo->RxTimestamp.full);

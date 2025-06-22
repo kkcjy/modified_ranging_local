@@ -5,6 +5,17 @@
 #define         table_index_t               int8_t
 #define         Time_t                      uint32_t
 
+// NULL_VAL
+#define         NULL_ADDR                   0
+#define         NULL_INDEX                  -1
+#define         NULL_SEQ                    0
+#define         NULL_TIMESTAMP              0
+#define         NULL_TOF                    0
+#define         NULL_DIS                    -1
+
+static const dwTime_t nullTimeStamp = {.full = NULL_TIMESTAMP};
+static const Coordinate_Tuple_t nullCoordinate = {.x = -1, .y = -1, .z = -1};
+
 // ENABLE_MODE
 #define         COMMUNICATION_SEND_POSITION_ENABLE              // enable drones to send position(Warning: open)
 // #define         DYNAMIC_RANGING_FREQUENCY_ENABLE                // enable dynamic ranging frequency(RANGING_PERIOD_LOW/RANGING_PERIOD)
@@ -22,7 +33,7 @@
 #define         OPPOSITE_DISTANCE_BASE      5000                // (mm)low distance of drones in OPPOSITE mode           
 #define         ALIGN_ENABLE                
 #define         ALIGN_ROUNDS                50                  // initial rounds with stationary state
-#define         COMPENSATE_MODE                                 // enable compensate for ranging
+#define         COMPENSATE_ENABLE                               // enable compensate for ranging
 
 // LOCAL_HOST_H
 #define         MAX_RANDOM_TIME_OFF         10                  // diff time between 
@@ -32,11 +43,8 @@
 // LOCK_H
 #define         QUEUE_TASK_LENGTH           3
 
-// RANGING_LIST_H
+// RANGING_STRUCT_H
 #define         RANGING_LIST_SIZE           10                  // max size of RangingTable_t.sendBuffer and RangingTable_t.receiveBuffer
-#define         FREE_QUEUE_SIZE             RANGING_LIST_SIZE   // max size of freeQueue
-
-// RANGING_BUFFER_H
 #define         RANGING_BUFFER_SIZE         6                   // max size of RangingTable_t.validBuffer
 #define         CONVERGENCE_THRESHOLD       1
 #define         VELOCITY                    0.4691763978616     // (m/s)
@@ -48,12 +56,9 @@
 #define         MESSAGE_BODY_UNIT_SIZE      3                   // max size of bodyUnits(message)
 #define         TX_BUFFER_POOL_SIZE         RANGING_LIST_SIZE   // max size of localSendBuffer(local)
 #define         TABLE_SET_NEIGHBOR_NUM      10                  // number of neighbor recorded(local)
-#define         RANGING_PERIOD_MIN          50                  // (ms)
-#define         RANGING_PERIOD_MAX          1000                // (ms)
 #define         RANGING_PERIOD              200                 // (ms)
 #define         RANGING_PERIOD_LOW          100                 // (ms)
 #define         RANGING_PERIOD_RAND_RANGE   50                  // (ms)
-#define         WARM_UP_TIME                10000               // time for device to warm up
 #define         MAX_INITIAL_CALCULATION     6                   // number of times initializeCalculateTof called(no more than RANGING_BUFFER_SIZE)
 #define         M2T(X)                      ((unsigned int)(X))
 
