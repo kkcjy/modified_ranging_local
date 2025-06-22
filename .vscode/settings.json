@@ -35,7 +35,6 @@
         "debug.h": "c",
         "local_host.h": "c",
         "lock.h": "c",
-        "ranging_table.h": "c",
         "stdarg.h": "c",
         "stdio.h": "c",
         "imitate_uwb.h": "c",

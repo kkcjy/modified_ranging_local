@@ -11,7 +11,6 @@
 #define         SAFE_DISTANCE               2000                // distance < SAFE_DISTANCE -> RANGING_PERIOD_LOW(set DYNAMIC_RANGING_FREQUENCY_ENABLE)
 #define         SAFE_DISTANCE_ROUND_BORDER  2                   // distance < SAFE_DISTANCE more than SAFE_DISTANCE_ROUND_BORDER -> RANGING_PERIOD(set DYNAMIC_RANGING_FREQUENCY_ENABLE)
 #define         CLASSIC_TOF_ENABLE                              // allow classicTof if ratioes not satisfy
-// #define         WARM_UP_WAIT_ENABLE                             // discard first DISCARD_MESSAGE_NUM message
 // #define         RANDOM_DIFF_TIME_ENABLE                         // enable diff(0 ~ MAX_RANDOM_TIME_OFF) time between drones
 // #define         PACKET_LOSS_ENABLE                              // simulate packet loss
 #define         PACKET_LOSS_RATE            25                  // rate of packet loss(0~100)
@@ -55,8 +54,7 @@
 #define         RANGING_PERIOD_LOW          100                 // (ms)
 #define         RANGING_PERIOD_RAND_RANGE   50                  // (ms)
 #define         WARM_UP_TIME                10000               // time for device to warm up
-#define         DISCARD_MESSAGE_NUM         25                  // number of message thrown during device warming up
-#define         MAX_INITIAL_CALCULATION     6                   // number of times initializeRecordBuffer called(Warning: no more than RANGING_BUFFER_SIZE)
+#define         MAX_INITIAL_CALCULATION     6                   // number of times initializeCalculateTof called(no more than RANGING_BUFFER_SIZE)
 #define         M2T(X)                      ((unsigned int)(X))
 
 

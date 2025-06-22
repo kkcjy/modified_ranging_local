@@ -13,9 +13,6 @@ QueueTaskLock_t queueTaskLock;                  // lock for task
 #ifdef DYNAMIC_RANGING_FREQUENCY_ENABLE
     int safeRoundCounter = 0;                   // counter for safe distance
 #endif
-#ifdef WARM_UP_WAIT_ENABLE
-    extern int discardCount;                    // wait for device warming up and discard message
-#endif
 
 
 void send_to_center(int center_socket, const char* node_id, const Ranging_Message_t* ranging_msg) {
