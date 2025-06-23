@@ -136,9 +136,7 @@ void *process_messages(void *arg) {
             processFromQueue(&queueTaskLock);
         #endif
         
-        // if(localSendSeqNumber % 10 == 1) {
-        //     printRangingTableSet(RECEIVER);
-        // }
+        // printRangingTableSet();
 
         local_sleep(10);                      
     }
@@ -222,11 +220,6 @@ int main(int argc, char *argv[]) {
         // DEBUG_PRINT("[QueueTaskTx]: send the message[%d] from %s at %ld\n", localSendSeqNumber, local_drone_id, getCurrentTime());
         Time_t time_delay = QueueTaskTx(&queueTaskLock, MESSAGE_SIZE, send_to_center, center_socket, local_drone_id);
         
-        // printf("time_delay = %d\n", time_delay);
-        // if(localReceivedSeqNumber % 10 == 1) {
-        //     printRangingTableSet(SENDER);
-        // }
-
         #ifdef ALIGN_ENABLE
             if(localSendSeqNumber > ALIGN_ROUNDS) {
                 modifyLocation(time_delay);

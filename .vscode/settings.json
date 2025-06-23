@@ -2,6 +2,17 @@
     "files.associations": {
         "modified_ranging_defconfig.h": "c",
         "local_host.h": "c",
-        "debug.h": "c"
+        "debug.h": "c",
+        "ranging_struct.h": "c",
+        "array": "c",
+        "chrono": "c",
+        "compare": "c",
+        "executor": "c",
+        "functional": "c",
+        "ratio": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "future": "c"
     }
 }

@@ -2,19 +2,9 @@
 #define DEFS_H
 #define _POSIX_C_SOURCE 200809L
 
+
 #define         table_index_t               int8_t
 #define         Time_t                      uint32_t
-
-// NULL_VAL
-#define         NULL_ADDR                   0
-#define         NULL_INDEX                  -1
-#define         NULL_SEQ                    0
-#define         NULL_TIMESTAMP              0
-#define         NULL_TOF                    0
-#define         NULL_DIS                    -1
-
-static const dwTime_t nullTimeStamp = {.full = NULL_TIMESTAMP};
-static const Coordinate_Tuple_t nullCoordinate = {.x = -1, .y = -1, .z = -1};
 
 // ENABLE_MODE
 #define         COMMUNICATION_SEND_POSITION_ENABLE              // enable drones to send position(Warning: open)
@@ -33,7 +23,7 @@ static const Coordinate_Tuple_t nullCoordinate = {.x = -1, .y = -1, .z = -1};
 #define         OPPOSITE_DISTANCE_BASE      5000                // (mm)low distance of drones in OPPOSITE mode           
 #define         ALIGN_ENABLE                
 #define         ALIGN_ROUNDS                50                  // initial rounds with stationary state
-#define         COMPENSATE_ENABLE                               // enable compensate for ranging
+// #define         COMPENSATE_ENABLE                               // enable compensate for ranging
 
 // LOCAL_HOST_H
 #define         MAX_RANDOM_TIME_OFF         10                  // diff time between 
@@ -54,7 +44,7 @@ static const Coordinate_Tuple_t nullCoordinate = {.x = -1, .y = -1, .z = -1};
 #define         MESSAGE_BODY_RX_SIZE        3                   // length of Rx in bodyUnits(message)
 #define         MESSAGE_HEAD_TX_SIZE        3                   // length of Tx in header(message)
 #define         MESSAGE_BODY_UNIT_SIZE      3                   // max size of bodyUnits(message)
-#define         TX_BUFFER_POOL_SIZE         RANGING_LIST_SIZE   // max size of localSendBuffer(local)
+#define         LOCAL_SEND_BUFFER_SIZE         RANGING_LIST_SIZE   // max size of localSendBuffer(local)
 #define         TABLE_SET_NEIGHBOR_NUM      10                  // number of neighbor recorded(local)
 #define         RANGING_PERIOD              200                 // (ms)
 #define         RANGING_PERIOD_LOW          100                 // (ms)

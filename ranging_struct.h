@@ -35,6 +35,19 @@ typedef struct {
 } __attribute__((packed)) Velocity_Tuple_t;
 
 
+// --------------------     NULL VALUE      --------------------
+#define         NULL_ADDR                   0
+#define         NULL_INDEX                  -1
+#define         NULL_DONE_INDEX             -2
+#define         NULL_SEQ                    0
+#define         NULL_TIMESTAMP              0
+#define         NULL_TOF                    0
+#define         NULL_DIS                    -1
+
+static const dwTime_t nullTimeStamp = {.full = NULL_TIMESTAMP};
+static const Coordinate_Tuple_t nullCoordinate = {.x = -1, .y = -1, .z = -1};
+
+
 /* --------------------     RANGING LIST    --------------------
     a single communication
               SENDEDR               |               RECEIVER
@@ -59,7 +72,6 @@ typedef struct {
     table_index_t topRangingList;               
 } __attribute__((packed)) RangingList_t;
 
-
 void initRangingListNode(RangingListNode_t *node);
 void initRangingList(RangingList_t *list);
 table_index_t addRangingList(RangingList_t *list, RangingListNode_t *node, table_index_t index, StatusType status);
@@ -67,6 +79,7 @@ table_index_t searchRangingList(RangingList_t *list, dwTime_t timeStamp, StatusT
 table_index_t findLocalSeqIndex(RangingList_t *list, uint16_t remoteSeq);
 void printRangingListNode(RangingListNode_t *node);
 void printRangingList(RangingList_t *list);
+
 
 /* --------------------    RANGING BUFFER   --------------------
     a pair of communications
@@ -107,10 +120,8 @@ typedef struct {
 // for function calculateTof
 typedef enum {
     FIRST_CALCULATE,
-    SECOND_CALCULATE_UNQUALIFIED,
-    SECOND_CALCULATE_ABNORMAL
+    SECOND_CALCULATE
 } CALCULATE_FLAG;
-
 
 int64_t getInitTofSum();
 void initRangingBufferNode(RangingBufferNode_t *bufferNode);

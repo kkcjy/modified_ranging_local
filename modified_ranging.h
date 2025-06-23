@@ -61,9 +61,9 @@ typedef struct {
 typedef struct {
     int counter;                                                // number of neighbors                                   
     table_index_t topLocalSendBuffer;
-    LocalSendBufferNode_t localSendBuffer[TX_BUFFER_POOL_SIZE]; 
+    LocalSendBufferNode_t localSendBuffer[LOCAL_SEND_BUFFER_SIZE]; 
     uint8_t neighborPriorityQueue[TABLE_SET_NEIGHBOR_NUM];      // used for choosing neighbors to sent messages
-    RangingTable_t neighborReceiveBuffer[TABLE_SET_NEIGHBOR_NUM];
+    RangingTable_t neighborTable[TABLE_SET_NEIGHBOR_NUM];
 } __attribute__((packed)) RangingTableSet_t;
 
 
@@ -77,7 +77,7 @@ void updatePriority(int address);
 void printRangingMessage(Ranging_Message_t* rangingMessage);
 void printLocalSendBuffer();
 void printRangingTable(RangingTable_t *table);
-void printRangingTableSet(StatusType type);
+void printRangingTableSet();
 Time_t generateRangingMessage(Ranging_Message_t *rangingMessage);
 bool processRangingMessage(Ranging_Message_With_Additional_Info_t *rangingMessageWithAdditionalInfo);
 
