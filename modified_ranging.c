@@ -215,7 +215,7 @@ Time_t generateRangingMessage(Ranging_Message_t *rangingMessage) {
         table_index_t index = rangingTable->receiveList.topRangingList;
         int count = 0;
         while(count < MESSAGE_BODY_RX_SIZE && count < RANGING_LIST_SIZE) {
-            // receiveBuffer --> bodyUnit->RxTimestamps
+            // receiveList --> bodyUnit->RxTimestamps
             bodyUnit->RxTimestamps[count].seqNumber = rangingTable->receiveList.rangingList[index].localSeq;
             bodyUnit->RxTimestamps[count].timestamp = rangingTable->receiveList.rangingList[index].RxTimestamp;
             #ifdef COMMUNICATION_SEND_POSITION_ENABLE
