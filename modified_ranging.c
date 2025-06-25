@@ -7,7 +7,7 @@ uint16_t localSendSeqNumber = 1;                // seqNumber of message local se
 int RangingPeriod = RANGING_PERIOD;             // period of sending
 #ifdef COMPENSATE_ENABLE
     float lastD = NULL_DIS;                     // last distance
-float compensateRate = 0.5;                     // compensate rate for ranging    
+    float compensateRate = 0.618;               // compensate rate for ranging    
 #endif
 
 
