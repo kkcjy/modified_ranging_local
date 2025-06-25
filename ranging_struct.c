@@ -12,7 +12,6 @@ void initRangingListNode(RangingListNode_t *node) {
         node->TxCoordinate = nullCoordinate;
         node->RxCoordinate = nullCoordinate;
     #endif
-    node->Tf = NULL_TOF;
     node->localSeq = NULL_SEQ;
     node->remoteSeq = NULL_SEQ;
 }
@@ -36,7 +35,6 @@ table_index_t addRangingList(RangingList_t *list, RangingListNode_t *node, table
             #endif
             list->rangingList[index].localSeq = node->localSeq;
             list->rangingList[index].remoteSeq = NULL_SEQ;          // used for checking if the TxNode is processed
-            list->rangingList[index].Tf = NULL_TOF;
             list->topRangingList = index;
         }
 
@@ -67,7 +65,7 @@ table_index_t addRangingList(RangingList_t *list, RangingListNode_t *node, table
     return NULL_INDEX;
 }
 
-// search for index of tableNode whose Rx/Tx time is closest with full info of Tx and Rx
+// search for index of tableNode whose Rx/Tx time is closest to Tx/Rx
 table_index_t searchRangingList(RangingList_t *list, dwTime_t timeStamp, StatusType status) {
     table_index_t index = list->topRangingList;
     if(index == NULL_INDEX) {
@@ -77,19 +75,19 @@ table_index_t searchRangingList(RangingList_t *list, dwTime_t timeStamp, StatusT
     int count = 0;
     while (count < RANGING_LIST_SIZE) {
         // Rx、Tx is full
-        if(status == RECEIVER
-            && list->rangingList[index].TxTimestamp.full != NULL_TIMESTAMP 
-            && list->rangingList[index].RxTimestamp.full != NULL_TIMESTAMP 
-            && list->rangingList[index].TxTimestamp.full < timeStamp.full) {
-                if (ans == NULL_INDEX || list->rangingList[index].TxTimestamp.full > list->rangingList[ans].TxTimestamp.full) {
-                    ans = index;
-            }
-        }
         if(status == SENDER
             && list->rangingList[index].RxTimestamp.full != NULL_TIMESTAMP 
             && list->rangingList[index].TxTimestamp.full != NULL_TIMESTAMP 
             && list->rangingList[index].RxTimestamp.full < timeStamp.full) {
                 if (ans == NULL_INDEX || list->rangingList[index].RxTimestamp.full > list->rangingList[ans].RxTimestamp.full) {
+                    ans = index;
+            }
+        }
+        if(status == RECEIVER
+            && list->rangingList[index].TxTimestamp.full != NULL_TIMESTAMP 
+            && list->rangingList[index].RxTimestamp.full != NULL_TIMESTAMP 
+            && list->rangingList[index].TxTimestamp.full < timeStamp.full) {
+                if (ans == NULL_INDEX || list->rangingList[index].TxTimestamp.full > list->rangingList[ans].TxTimestamp.full) {
                     ans = index;
             }
         }
@@ -120,8 +118,8 @@ table_index_t findLocalSeqIndex(RangingList_t *list, uint16_t remoteSeq){
 }
 
 void printRangingListNode(RangingListNode_t *node) {
-    DEBUG_PRINT("TxTimestamp: %ld, RxTimestamp: %ld, Tf: %ld, localSeq: %d, remoteSeq: %d\n", 
-        node->TxTimestamp.full, node->RxTimestamp.full, node->Tf, node->localSeq, node->remoteSeq);
+    DEBUG_PRINT("TxTimestamp: %llu, RxTimestamp: %llu, localSeq: %u, remoteSeq: %u\n", 
+        node->TxTimestamp.full, node->RxTimestamp.full, node->localSeq, node->remoteSeq);
 }
 
 void printRangingList(RangingList_t *list) {
@@ -132,8 +130,8 @@ void printRangingList(RangingList_t *list) {
     }
     int count = 0;
     while(count < RANGING_LIST_SIZE) {
-        DEBUG_PRINT("TxTimestamp: %ld, RxTimestamp: %ld, Tf: %ld, localSeq: %d, remoteSeq: %d\n", 
-            list->rangingList[index].TxTimestamp.full, list->rangingList[index].RxTimestamp.full, list->rangingList[index].Tf, list->rangingList[index].localSeq, list->rangingList[index].remoteSeq);
+        DEBUG_PRINT("TxTimestamp: %llu, RxTimestamp: %llu, localSeq: %u, remoteSeq: %u\n", 
+            list->rangingList[index].TxTimestamp.full, list->rangingList[index].RxTimestamp.full, list->rangingList[index].localSeq, list->rangingList[index].remoteSeq);
         index = (index - 1 + RANGING_LIST_SIZE) % RANGING_LIST_SIZE;
     }
     DEBUG_PRINT("--------------------END DEBUG_PRINT TABLELINKEDLIST--------------------\n");
@@ -182,15 +180,15 @@ void addRangingBuffer(RangingBuffer_t *buffer, RangingBufferNode_t *bufferNode, 
         buffer->sendBuffer[buffer->topSendBuffer].sendRxTimestamp = bufferNode->sendRxTimestamp;
         buffer->sendBuffer[buffer->topSendBuffer].receiveTxTimestamp = bufferNode->receiveTxTimestamp;
         buffer->sendBuffer[buffer->topSendBuffer].receiveRxTimestamp = bufferNode->receiveRxTimestamp;
-        buffer->sendBuffer[buffer->topSendBuffer].sumTof = bufferNode->sumTof;
-        buffer->sendBuffer[buffer->topSendBuffer].TxSeq = bufferNode->TxSeq;
-        buffer->sendBuffer[buffer->topSendBuffer].RxSeq = bufferNode->RxSeq;
         #ifdef COMMUNICATION_SEND_POSITION_ENABLE
             buffer->sendBuffer[buffer->topSendBuffer].sendTxCoordinate = bufferNode->sendTxCoordinate;
             buffer->sendBuffer[buffer->topSendBuffer].sendRxCoordinate = bufferNode->sendRxCoordinate;
             buffer->sendBuffer[buffer->topSendBuffer].receiveTxCoordinate = bufferNode->receiveTxCoordinate;
             buffer->sendBuffer[buffer->topSendBuffer].receiveRxCoordinate = bufferNode->receiveRxCoordinate;
         #endif
+        buffer->sendBuffer[buffer->topSendBuffer].sumTof = bufferNode->sumTof;
+        buffer->sendBuffer[buffer->topSendBuffer].TxSeq = bufferNode->TxSeq;
+        buffer->sendBuffer[buffer->topSendBuffer].RxSeq = bufferNode->RxSeq;
     }
 
     else if (status == RECEIVER) {
@@ -247,7 +245,7 @@ table_index_t searchRangingBuffer(RangingBuffer_t *buffer, uint16_t seq, StatusT
     FIRST_CALCULATE                 calculate Tof with the most recent valid record
     SECOND_CALCULATE                recalculate Tof with the next most recent valid record
 */
-double calculateTof(RangingBuffer_t *buffer, RangingListNode_t* listNode, uint16_t checkLocalSeq, StatusType status, CALCULATE_FLAG flag, float *Modified, float *Classic, float *True) {
+float calculateTof(RangingBuffer_t *buffer, RangingListNode_t* listNode, uint16_t checkLocalSeq, StatusType status, CALCULATE_FLAG flag, float *Modified, float *Classic, float *True) {
     dwTime_t Tx = listNode->TxTimestamp;
     dwTime_t Rx = listNode->RxTimestamp;
     uint16_t localSeq = listNode->localSeq;
@@ -256,7 +254,7 @@ double calculateTof(RangingBuffer_t *buffer, RangingListNode_t* listNode, uint16
     
     table_index_t index = searchRangingBuffer(buffer, checkLocalSeq, status);
     if(index == NULL_INDEX){
-        DEBUG_PRINT("Warning: Cannot find the record with localSeq:%d\n",checkLocalSeq);
+        DEBUG_PRINT("Warning: Cannot find the record with localSeq:%u\n", checkLocalSeq);
         return -1;
     }
     if(status == SENDER){
@@ -277,6 +275,10 @@ double calculateTof(RangingBuffer_t *buffer, RangingListNode_t* listNode, uint16
         Db = (bufferNode->receiveTxTimestamp.full - bufferNode->sendRxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
         Rb = (Rx.full - bufferNode->receiveTxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
         Da = (Tx.full - bufferNode->receiveRxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
+        // DEBUG_PRINT("sTx: %llu, sRx: %llu, rTx: %llu, rRx: %llu, Tx: %llu, Rx: %llu\n", 
+        //     bufferNode->sendTxTimestamp.full, bufferNode->sendRxTimestamp.full, 
+        //     bufferNode->receiveTxTimestamp.full, bufferNode->receiveRxTimestamp.full, 
+        //     Tx.full, Rx.full);
     }
     /* RECEIVER
         rTx         <--Ra-->        sRx     <--Da-->    Tx
@@ -288,10 +290,14 @@ double calculateTof(RangingBuffer_t *buffer, RangingListNode_t* listNode, uint16
         Db = (bufferNode->sendTxTimestamp.full - bufferNode->receiveRxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
         Rb = (Rx.full - bufferNode->sendTxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
         Da = (Tx.full - bufferNode->sendRxTimestamp.full + UWB_MAX_TIMESTAMP) % UWB_MAX_TIMESTAMP;
+        // DEBUG_PRINT("rTx: %llu, rRx: %llu, sTx: %llu, sRx: %llu, Tx: %llu, Rx: %llu\n", 
+        //     bufferNode->receiveTxTimestamp.full, bufferNode->receiveRxTimestamp.full, 
+        //     bufferNode->sendTxTimestamp.full, bufferNode->sendRxTimestamp.full, 
+        //     Tx.full, Rx.full);
     }
     
-    int64_t T12 = bufferNode->sumTof;
-    int64_t T23 = 0;
+    float T12 = bufferNode->sumTof;
+    float T23 = 0;
     float Ra_Da = (float)Ra/Da;
     float Rb_Db = (float)Rb/Db;
     int64_t diffA = Ra - Da;
@@ -300,16 +306,16 @@ double calculateTof(RangingBuffer_t *buffer, RangingListNode_t* listNode, uint16
 
     if(Ra_Da < CONVERGENCE_THRESHOLD || Rb_Db < CONVERGENCE_THRESHOLD) {
         if(Ra_Da < Rb_Db) {
-            T23 = ((diffA * Rb + diffA * Db + diffB * Ra + diffB * Da) / 2 - Ra * T12) / Da;
+            T23 = (float)((diffA * Rb + diffA * Db + diffB * Ra + diffB * Da) / 2 - Ra * T12) / Da;
         }
         else {
-            T23 = ((diffA * Rb + diffA * Db + diffB * Ra + diffB * Da) / 2 - Rb * T12) / Db;
+            T23 = (float)((diffA * Rb + diffA * Db + diffB * Ra + diffB * Da) / 2 - Rb * T12) / Db;
         }
     }
 
     // fail to satisfy the convergence requirements
     else {
-        // DEBUG_PRINT("Warning: Ra/Da and Rb/Db are both greater than CONVERGENCE_THRESHOLD(%d), Ra_Da = %f, Rb_Db = %f\n",CONVERGENCE_THRESHOLD, Ra_Da, Rb_Db);
+        DEBUG_PRINT("Warning: Ra/Da and Rb/Db are both greater than CONVERGENCE_THRESHOLD(%d), Ra_Da = %f, Rb_Db = %f\n", CONVERGENCE_THRESHOLD, Ra_Da, Rb_Db);
         #ifdef CLASSIC_TOF_ENABLE
             // calculate T23 with the latest data in classic method
             T23 = (diffA * Rb + diffA * Db + diffB * Ra + diffB * Da) / (Ra + Db + Rb + Da);
@@ -334,7 +340,7 @@ double calculateTof(RangingBuffer_t *buffer, RangingListNode_t* listNode, uint16
     float Tof = T23 / 2;
     float D = Tof * VELOCITY;
     if(D < 0 || D > 1000){
-        // DEBUG_PRINT("Warning: D = %f is out of range(0,1000)\n",D);
+        DEBUG_PRINT("Warning: D = %f is out of range(0,1000)\n", D);
         if(flag == FIRST_CALCULATE){
             // DEBUG_PRINT("Warning: The latest record in rangingbuffer fails, and an attempt is made to recalculate the Tof using the next most recent valid record\n");
             if(status == SENDER) {
@@ -350,14 +356,14 @@ double calculateTof(RangingBuffer_t *buffer, RangingListNode_t* listNode, uint16
     }
 
     int64_t sumAB = Ra + Db + Rb + Da;
-    int64_t classicTof = (diffA * Rb + diffA * Db + diffB * Ra + diffB * Da) / (2 * sumAB);
+    float classicTof = (float)(diffA * Rb + diffA * Db + diffB * Ra + diffB * Da) / (2 * sumAB);
     float classicD = classicTof * VELOCITY;
 
     #ifdef COMMUNICATION_SEND_POSITION_ENABLE
         float trueDx = (listNode->RxCoordinate.x - listNode->TxCoordinate.x);
         float trueDy = (listNode->RxCoordinate.y - listNode->TxCoordinate.y);
         float trueDz = (listNode->RxCoordinate.z - listNode->TxCoordinate.z);
-        float trueD = sqrtf(trueDx*trueDx + trueDy*trueDy + trueDz*trueDz) / 1000;
+        float trueD = sqrtf(trueDx * trueDx + trueDy * trueDy + trueDz * trueDz) / 1000;
     #endif
 
     // update ranging_buffer
@@ -421,17 +427,24 @@ double calculateTof(RangingBuffer_t *buffer, RangingListNode_t* listNode, uint16
 
 void initializeCalculateTof(RangingList_t *listA, RangingList_t *listB, table_index_t indexA, RangingBuffer_t* rangingBuffer, StatusType status) {
     // fetch data successively from listA, listB, and listA 
-    table_index_t indexA1 = indexA;
-    if (indexA1 == NULL_INDEX || listA->rangingList[indexA1].TxTimestamp.full == NULL_TIMESTAMP || listA->rangingList[indexA1].RxTimestamp.full == NULL_TIMESTAMP || listA->rangingList[indexA1].Tf != NULL_TOF) {
-        DEBUG_PRINT("Warning: The lastest record in listA is invalid or the record has owned Tof\n");
+    table_index_t indexA1 = NULL_INDEX, indexB2 = NULL_INDEX, indexA3 = NULL_INDEX;
+    indexA1 = indexA;
+    if (indexA1 == NULL_INDEX || listA->rangingList[indexA1].TxTimestamp.full == NULL_TIMESTAMP || listA->rangingList[indexA1].RxTimestamp.full == NULL_TIMESTAMP) {
+        DEBUG_PRINT("Warning: The lastest record in listA is invalid\n");
         return;
     }
-    table_index_t indexB2 = searchRangingList(listB, listA->rangingList[indexA1].RxTimestamp, status);
+    if(status == SENDER) {
+        indexB2 = searchRangingList(listB, listA->rangingList[indexA1].TxTimestamp, SENDER);
+        indexA3 = searchRangingList(listA, listB->rangingList[indexB2].RxTimestamp, RECEIVER);
+    }
+    else if(status == RECEIVER) {
+        indexB2 = searchRangingList(listB, listA->rangingList[indexA1].RxTimestamp, RECEIVER);
+        indexA3 = searchRangingList(listA, listB->rangingList[indexB2].TxTimestamp, SENDER);
+    }
     if (indexB2 == NULL_INDEX) {
         DEBUG_PRINT("No valid record in listB\n");
         return;
     }
-    table_index_t indexA3 = searchRangingList(listA, listB->rangingList[indexB2].TxTimestamp, status ^ 1);
     if (indexA3 == NULL_INDEX) {
         DEBUG_PRINT("No valid record in listA\n");
         return;
@@ -451,13 +464,18 @@ void initializeCalculateTof(RangingList_t *listA, RangingList_t *listB, table_in
     int64_t diffA = Ra - Da;
     int64_t diffB = Rb - Db;
     int64_t sumAB = Ra + Db + Rb + Da;
-    int64_t classicTof = (diffA * Rb + diffA * Db + diffB * Ra + diffB * Da) / (2 * sumAB);
+    float classicTof = (float)(diffA * Rb + diffA * Db + diffB * Ra + diffB * Da) / (2 * sumAB);
+
+    DEBUG_PRINT("A3.TxTimestamp: %llu, B2.RxTimestamp: %llu, A1.TxTimestamp: %llu\n", 
+        listA->rangingList[indexA3].TxTimestamp.full, listB->rangingList[indexB2].RxTimestamp.full, listA->rangingList[indexA1].TxTimestamp.full);
+    DEBUG_PRINT("A3.RxTimestamp: %llu, B2.TxTimestamp: %llu, A1.RxTimestamp: %llu\n", 
+        listA->rangingList[indexA3].RxTimestamp.full, listB->rangingList[indexB2].TxTimestamp.full, listA->rangingList[indexA1].RxTimestamp.full);
 
     if(classicTof < 0){
         DEBUG_PRINT("[initializeCalculateTof]: Tof is less than 0\n");
         return;
     }
-    DEBUG_PRINT("[initializeCalculateTof]: Tof = %lld\n",classicTof);
+    DEBUG_PRINT("[initializeCalculateTof]: Tof = %f\n", classicTof);
 
     RangingBufferNode_t SenderNode,ReceiverNode;
 
@@ -468,35 +486,35 @@ void initializeCalculateTof(RangingList_t *listA, RangingList_t *listB, table_in
 
             A3.Tx                   B2.Rx   A1.Tx
         */  
-        SenderNode.sendTxTimestamp = listA->rangingList[indexA3].TxTimestamp;
-        SenderNode.sendRxTimestamp = listA->rangingList[indexA3].RxTimestamp;
-        SenderNode.receiveTxTimestamp = listB->rangingList[indexB2].TxTimestamp;
-        SenderNode.receiveRxTimestamp = listB->rangingList[indexB2].RxTimestamp;
-        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            SenderNode.sendTxCoordinate = listA->rangingList[indexA3].TxCoordinate;
-            SenderNode.sendRxCoordinate = listA->rangingList[indexA3].RxCoordinate;
-            SenderNode.receiveTxCoordinate = listB->rangingList[indexB2].TxCoordinate;
-            SenderNode.receiveRxCoordinate = listB->rangingList[indexB2].RxCoordinate;
-        #endif
-        SenderNode.sumTof = classicTof * 2;
-        SenderNode.TxSeq = listA->rangingList[indexA3].localSeq;
-        SenderNode.RxSeq = listB->rangingList[indexB2].localSeq;
-        addRangingBuffer(rangingBuffer, &SenderNode, RECEIVER);
-
-        ReceiverNode.sendTxTimestamp = listA->rangingList[indexA1].TxTimestamp;
-        ReceiverNode.sendRxTimestamp = listA->rangingList[indexA1].RxTimestamp;
+        ReceiverNode.sendTxTimestamp = listA->rangingList[indexA3].TxTimestamp;
+        ReceiverNode.sendRxTimestamp = listA->rangingList[indexA3].RxTimestamp;
         ReceiverNode.receiveTxTimestamp = listB->rangingList[indexB2].TxTimestamp;
         ReceiverNode.receiveRxTimestamp = listB->rangingList[indexB2].RxTimestamp;
         #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            ReceiverNode.sendTxCoordinate = listA->rangingList[indexA1].TxCoordinate;
-            ReceiverNode.sendRxCoordinate = listA->rangingList[indexA1].RxCoordinate;
+            ReceiverNode.sendTxCoordinate = listA->rangingList[indexA3].TxCoordinate;
+            ReceiverNode.sendRxCoordinate = listA->rangingList[indexA3].RxCoordinate;
             ReceiverNode.receiveTxCoordinate = listB->rangingList[indexB2].TxCoordinate;
             ReceiverNode.receiveRxCoordinate = listB->rangingList[indexB2].RxCoordinate;
         #endif
         ReceiverNode.sumTof = classicTof * 2;
-        ReceiverNode.TxSeq = listA->rangingList[indexA1].localSeq;
+        ReceiverNode.TxSeq = listA->rangingList[indexA3].localSeq;
         ReceiverNode.RxSeq = listB->rangingList[indexB2].localSeq;
-        addRangingBuffer(rangingBuffer, &ReceiverNode, SENDER);
+        addRangingBuffer(rangingBuffer, &ReceiverNode, RECEIVER);
+
+        SenderNode.sendTxTimestamp = listA->rangingList[indexA1].TxTimestamp;
+        SenderNode.sendRxTimestamp = listA->rangingList[indexA1].RxTimestamp;
+        SenderNode.receiveTxTimestamp = listB->rangingList[indexB2].TxTimestamp;
+        SenderNode.receiveRxTimestamp = listB->rangingList[indexB2].RxTimestamp;
+        #ifdef COMMUNICATION_SEND_POSITION_ENABLE
+            SenderNode.sendTxCoordinate = listA->rangingList[indexA1].TxCoordinate;
+            SenderNode.sendRxCoordinate = listA->rangingList[indexA1].RxCoordinate;
+            SenderNode.receiveTxCoordinate = listB->rangingList[indexB2].TxCoordinate;
+            SenderNode.receiveRxCoordinate = listB->rangingList[indexB2].RxCoordinate;
+        #endif
+        SenderNode.sumTof = classicTof * 2;
+        SenderNode.TxSeq = listA->rangingList[indexA1].localSeq;
+        SenderNode.RxSeq = listB->rangingList[indexB2].localSeq;
+        addRangingBuffer(rangingBuffer, &SenderNode, SENDER);
     }
     else if(status == RECEIVER){
         /*
@@ -544,13 +562,13 @@ void printRangingBuffer(RangingBuffer_t *buffer) {
         if(index == NULL_INDEX){
             break;
         }
-        DEBUG_PRINT("SendBuffer[%d]: receiveTxTimestamp: %llu,receiveRxTimestamp: %llu,sendTxTimestamp: %llu,sendRxTimestamp: %llu,sumTof: %lld",
+        DEBUG_PRINT("SendBuffer[%d]: receiveTxTimestamp: %llu,receiveRxTimestamp: %llu,sendTxTimestamp: %llu,sendRxTimestamp: %llu,sumTof: %f",
             index,buffer->sendBuffer[index].receiveTxTimestamp.full,buffer->sendBuffer[index].receiveRxTimestamp.full,
             buffer->sendBuffer[index].sendTxTimestamp.full,buffer->sendBuffer[index].sendRxTimestamp.full,
             buffer->sendBuffer[index].sumTof
         );
         #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            DEBUG_PRINT(",receiveCoordinate: (%d,%d,%d),sendCoordinate: (%d,%d,%d)\n",
+            DEBUG_PRINT(",receiveCoordinate: (%u,%u,%u),sendCoordinate: (%u,%u,%u)\n",
                 buffer->sendBuffer[index].receiveRxCoordinate.x,buffer->sendBuffer[index].receiveRxCoordinate.y,buffer->sendBuffer[index].receiveRxCoordinate.z,
                 buffer->sendBuffer[index].sendRxCoordinate.x,buffer->sendBuffer[index].sendRxCoordinate.y,buffer->sendBuffer[index].sendRxCoordinate.z);
         #else
@@ -564,12 +582,12 @@ void printRangingBuffer(RangingBuffer_t *buffer) {
         if(index == NULL_INDEX) {
             break;
         }
-        DEBUG_PRINT("ReceiveBuffer[%d]: sendTxTimestamp: %llu,sendRxTimestamp: %llu,receiveTxTimestamp: %llu,receiveRxTimestamp: %llu,sumTof: %lld",
+        DEBUG_PRINT("ReceiveBuffer[%d]: sendTxTimestamp: %llu,sendRxTimestamp: %llu,receiveTxTimestamp: %llu,receiveRxTimestamp: %llu,sumTof: %f",
             index,buffer->receiveBuffer[index].sendTxTimestamp.full,buffer->receiveBuffer[index].sendRxTimestamp.full,
             buffer->receiveBuffer[index].receiveTxTimestamp.full,buffer->receiveBuffer[index].receiveRxTimestamp.full,
             buffer->receiveBuffer[index].sumTof);
         #ifdef COMMUNICATION_SEND_POSITION_ENABLE
-            DEBUG_PRINT(",sendCoordinate: (%d,%d,%d),receiveCoordinate: (%d,%d,%d)\n",
+            DEBUG_PRINT(",sendCoordinate: (%u,%u,%u),receiveCoordinate: (%u,%u,%u)\n",
                 buffer->receiveBuffer[index].sendRxCoordinate.x,buffer->receiveBuffer[index].sendRxCoordinate.y,buffer->receiveBuffer[index].sendRxCoordinate.z,
                 buffer->receiveBuffer[index].receiveRxCoordinate.x,buffer->receiveBuffer[index].receiveRxCoordinate.y,buffer->receiveBuffer[index].receiveRxCoordinate.z);
         #else

@@ -61,7 +61,6 @@ typedef struct {
     Coordinate_Tuple_t TxCoordinate;
     Coordinate_Tuple_t RxCoordinate;
     #endif
-    int64_t Tf;
     uint16_t localSeq;
     uint16_t remoteSeq;
 } __attribute__((packed)) RangingListNode_t;
@@ -102,7 +101,7 @@ typedef struct {
     Coordinate_Tuple_t receiveTxCoordinate;
     Coordinate_Tuple_t receiveRxCoordinate;
     #endif
-    int64_t sumTof;
+    float sumTof;
     uint16_t TxSeq;
     uint16_t RxSeq;
 } __attribute__((packed)) RangingBufferNode_t;
@@ -128,7 +127,7 @@ void initRangingBufferNode(RangingBufferNode_t *bufferNode);
 void initRangingBuffer(RangingBuffer_t *buffer);
 void addRangingBuffer(RangingBuffer_t *buffer, RangingBufferNode_t *bufferNode, StatusType status);
 table_index_t searchRangingBuffer(RangingBuffer_t *buffer, uint16_t localSeq, StatusType status);
-double calculateTof(RangingBuffer_t *buffer, RangingListNode_t* listNode, uint16_t checkLocalSeq, StatusType status, CALCULATE_FLAG flag, float *Modified, float *Classic, float *True);
+float calculateTof(RangingBuffer_t *buffer, RangingListNode_t* listNode, uint16_t checkLocalSeq, StatusType status, CALCULATE_FLAG flag, float *Modified, float *Classic, float *True);
 void initializeCalculateTof(RangingList_t *listA, RangingList_t *listB, table_index_t IndexA, RangingBuffer_t* rangingBuffer, StatusType status);
 void printRangingBuffer(RangingBuffer_t *buffer);
 

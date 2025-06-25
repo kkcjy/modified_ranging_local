@@ -13,6 +13,7 @@
         "tuple": "c",
         "type_traits": "c",
         "utility": "c",
-        "future": "c"
+        "future": "c",
+        "buffer": "c"
     }
 }

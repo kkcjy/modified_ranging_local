@@ -90,8 +90,8 @@ void *receive_from_center(void *arg) {
                 Coordinate_Tuple_t curLocation = getCurrentLocation();
                 Coordinate_Tuple_t remoteLocation = modified_msg->location;
                 // printf("[local]:  x = %d, y = %d, z = %d\n[remote]: x = %d, y = %d, z = %d\n", curLocation.x, curLocation.y, curLocation.z, remoteLocation.x, remoteLocation.y, remoteLocation.z);
-                double distance = sqrt(pow((curLocation.x - remoteLocation.x), 2) + pow((curLocation.y - remoteLocation.y), 2) + pow((curLocation.z - remoteLocation.z), 2));
-                double Tof = (distance / 1000) / VELOCITY;
+                float distance = sqrt(pow((curLocation.x - remoteLocation.x), 2) + pow((curLocation.y - remoteLocation.y), 2) + pow((curLocation.z - remoteLocation.z), 2));
+                float Tof = (distance / 1000) / VELOCITY;
                 // printf("[%s -> %s][%d]: D = %f, TOF  = %f\n", msg.sender_id, local_drone_id, ranging_msg->header.msgSequence, distance, Tof);
                 local_sleep(Tof);
             #endif
@@ -105,7 +105,7 @@ void *receive_from_center(void *arg) {
             full_info.RxCoordinate = curLocation;
             
             // Rx
-            // DEBUG_PRINT("[QueueTaskRx]: receive the message[%d] from %s at %ld\n", ranging_msg->header.msgSequence, msg.sender_id, curTime);
+            // DEBUG_PRINT("[QueueTaskRx]: receive the message[%u] from %s at %llu\n", ranging_msg->header.msgSequence, msg.sender_id, curTime);
             QueueTaskRx(&queueTaskLock, &full_info, sizeof(full_info));
         }
     }
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
 
     // init operation
     localInit(string_to_hash(local_drone_id));
-    DEBUG_PRINT("[localInit]: localHost is ready: droneId = %s, localAddress = %d, x = %d, y = %d, z = %d, vx = %d, vy = %d, vz = %d, randOffTime = %ld\n", 
+    DEBUG_PRINT("[localInit]: localHost is ready: droneId = %s, localAddress = %u, x = %u, y = %u, z = %u, vx = %d, vy = %d, vz = %d, randOffTime = %llu\n", 
         local_drone_id, localHost->localAddress, localHost->location.x, localHost->location.y, localHost->location.z, localHost->velocity.x, localHost->velocity.y, localHost->velocity.z, localHost->randOffTime);
     initQueueTaskLock(&queueTaskLock);     
     DEBUG_PRINT("[initQueueTaskLock]: QueueTaskLock is ready\n");
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
 
     // main send loop
     while (1) {
-        // DEBUG_PRINT("[QueueTaskTx]: send the message[%d] from %s at %ld\n", localSendSeqNumber, local_drone_id, getCurrentTime());
+        // DEBUG_PRINT("[QueueTaskTx]: send the message[%u] from %s at %llu\n", localSendSeqNumber, local_drone_id, getCurrentTime());
         Time_t time_delay = QueueTaskTx(&queueTaskLock, MESSAGE_SIZE, send_to_center, center_socket, local_drone_id);
         
         #ifdef ALIGN_ENABLE
